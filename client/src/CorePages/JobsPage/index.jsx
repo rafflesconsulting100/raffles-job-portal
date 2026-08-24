@@ -16,7 +16,6 @@ import JobStatsBar from './JobStatsBar';
 import FilterSidebar from './FilterSidebar';
 import MobileFilterDrawer from './MobileFilterDrawer';
 import JobCard from './JobCard';
-import JobDetailPreview from './JobDetailPreview';
 import JobDetailModal from './JobDetailModal';
 import JobApplyModal from './JobApplyModal';
 
@@ -64,8 +63,9 @@ export default function JobsPage() {
   // Mobile filters open/close
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  // Sorting
+  // Sorting & Layout View Mode ('grid' or 'list')
   const [sortBy, setSortBy] = useState('recent'); // 'recent', 'salary_desc', 'salary_asc'
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' (2 columns) or 'list' (1 column)
 
   // Application Modal state
   const [applyingJob, setApplyingJob] = useState(null);
@@ -441,6 +441,8 @@ export default function JobsPage() {
           setMobileFiltersOpen={setMobileFiltersOpen}
           sortBy={sortBy}
           setSortBy={setSortBy}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
         />
 
         {/* Master layout grid */}
@@ -482,38 +484,32 @@ export default function JobsPage() {
               </button>
             </div>
           ) : (
-            <div className="lg:col-span-9 grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
-              {/* B1. MIDDLE COLUMN: CARDS LIST */}
-              <div className={`md:col-span-12 ${currentSelectedJob ? 'xl:col-span-6' : ''} space-y-4`}>
-                {filteredJobs.map((job) => {
-                  const jobId = job._id || job.id;
-                  const isSelected = currentSelectedJob && (currentSelectedJob._id || currentSelectedJob.id) === jobId;
-                  const isSaved = savedJobs.includes(jobId);
-                  const isApplied = appliedJobs.includes(jobId);
+            <div
+              className={`lg:col-span-9 grid gap-5 items-stretch ${
+                viewMode === 'grid'
+                  ? 'grid-cols-1 md:grid-cols-2'
+                  : 'grid-cols-1'
+              }`}
+            >
+              {filteredJobs.map((job) => {
+                const jobId = job._id || job.id;
+                const isSelected = currentSelectedJob && (currentSelectedJob._id || currentSelectedJob.id) === jobId;
+                const isSaved = savedJobs.includes(jobId);
+                const isApplied = appliedJobs.includes(jobId);
 
-                  return (
-                    <JobCard
-                      key={jobId}
-                      job={job}
-                      isSelected={isSelected}
-                      isSaved={isSaved}
-                      isApplied={isApplied}
-                      onCardClick={handleCardClick}
-                      onSaveClick={toggleSaveJob}
-                      onApplyClick={handleApplyClick}
-                    />
-                  );
-                })}
-              </div>
-
-              {/* B2. RIGHT COLUMN: DETAILS PREVIEW (DESKTOP ONLY) */}
-              <JobDetailPreview
-                job={currentSelectedJob}
-                isSaved={currentSelectedJob ? savedJobs.includes(currentSelectedJob._id || currentSelectedJob.id) : false}
-                isApplied={currentSelectedJob ? appliedJobs.includes(currentSelectedJob._id || currentSelectedJob.id) : false}
-                onSaveClick={toggleSaveJob}
-                onApplyClick={handleApplyClick}
-              />
+                return (
+                  <JobCard
+                    key={jobId}
+                    job={job}
+                    isSelected={isSelected}
+                    isSaved={isSaved}
+                    isApplied={isApplied}
+                    onCardClick={handleCardClick}
+                    onSaveClick={toggleSaveJob}
+                    onApplyClick={handleApplyClick}
+                  />
+                );
+              })}
             </div>
           )}
         </div>

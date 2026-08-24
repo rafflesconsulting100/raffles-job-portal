@@ -19,8 +19,8 @@ const sendEmail = async (options) => {
     console.log('----------------------------------------------------');
     return;
   }
-console.log("SMTP USER:", process.env.BREVO_SMTP_USER);
-console.log("SMTP PASS:", process.env.BREVO_SMTP_PASS ? "SET" : "MISSING");
+//console.log("SMTP USER:", process.env.BREVO_SMTP_USER);
+//console.log("SMTP PASS:", process.env.BREVO_SMTP_PASS ? "SET" : "MISSING");
 
 
   // Create Brevo Nodemailer Transporter

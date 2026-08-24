@@ -24,57 +24,6 @@ export default function ActiveJobsSection() {
 
   // High quality sample job cards for rich visual demonstration
   const staticFallbackJobs = [
-    {
-      id: "demo-1",
-      title: "Senior Full Stack Developer",
-      company: "Google",
-      logoBg: "from-blue-600 to-indigo-700",
-      location: "Bangalore, India",
-      experience: "5-8 Yrs",
-      experienceLevel: "Senior Level",
-      salary: "₹18,00,000 - ₹24,00,000 PA",
-      jobType: "Full-Time",
-      workMode: "Hybrid",
-      postedAgo: "11d ago",
-      skills: ["React", "Node.js", "MongoDB", "Express", "TypeScript", "AWS"],
-      category: "Software Engineering",
-      badgeColor: "bg-blue-50 text-[#2B2A8C] border-blue-200",
-      description: "Lead the design and implementation of high-throughput web architecture and scalable cloud microservices."
-    },
-    {
-      id: "demo-2",
-      title: "Lead UI/UX Product Designer",
-      company: "PhonePe",
-      logoBg: "from-purple-600 to-indigo-800",
-      location: "Remote",
-      experience: "3-6 Yrs",
-      experienceLevel: "Mid Level",
-      salary: "₹15,00,000 - ₹22,00,000 PA",
-      jobType: "Full-Time",
-      workMode: "Remote",
-      postedAgo: "2d ago",
-      skills: ["Figma", "Design Systems", "User Research", "Prototyping"],
-      category: "Design",
-      badgeColor: "bg-purple-50 text-purple-700 border-purple-200",
-      description: "Craft intuitive digital payment experiences, design scalable component systems, and conduct candidate testing."
-    },
-    {
-      id: "demo-3",
-      title: "Backend Platform Engineer",
-      company: "Paytm",
-      logoBg: "from-cyan-600 to-blue-700",
-      location: "Noida, India",
-      experience: "2-4 Yrs",
-      experienceLevel: "Mid Level",
-      salary: "₹12,00,000 - ₹16,00,000 PA",
-      jobType: "Full-Time",
-      workMode: "On-site",
-      postedAgo: "3d ago",
-      skills: ["Java", "Spring Boot", "Redis", "Kafka", "PostgreSQL"],
-      category: "Software Engineering",
-      badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
-      description: "Develop low-latency transaction processing APIs and real-time payment reconciliation systems."
-    }
   ];
 
   useEffect(() => {
