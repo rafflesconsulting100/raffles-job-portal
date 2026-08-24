@@ -1,0 +1,184 @@
+/* @import url('https://fonts.googleapis.com/css?family=Catamaran:400,600|IBM+Plex+Sans:400,500,500i,600,700&display=swap');
+@import "tailwindcss";
+
+/* Apply IBM Plex Sans to body */
+/* body { */
+  /* font-family: 'IBM Plex Sans', sans-serif; */
+  /* font-size: 17px; */
+ /* color: #707070; /* body color */
+
+
+/* Apply Catamaran to navbar */
+/* .navbar { */
+  /* font-family: 'Catamaran', sans-serif; */
+  /* color: #001935; heading color */
+
+
+/*@keyframes float {
+  0%,100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+} */
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Catamaran:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@import "tailwindcss";
+
+/* ================================
+   Global Styles
+================================ */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+  color: #0f172a;
+  background: #ffffff;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Keep form elements consistent */
+div,button,span,p,section,form
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+/* Remove default button cursor issue */
+button {
+  cursor: pointer;
+}
+
+/* ================================
+   Headings
+================================ */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-family: 'IBM Plex Sans', sans-serif;
+  line-height: 1.2;
+}
+
+/* ================================
+   Navbar
+================================ */
+
+.navbar {
+  font-family: 'Catamaran', sans-serif;
+  color: #001935;
+}
+
+/* ================================
+   Floating Animation
+================================ */
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* ================================
+   Soft Pulse
+================================ */
+
+@keyframes soft-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.85;
+    transform: scale(1.03);
+  }
+}
+
+.animate-soft-pulse {
+  animation: soft-pulse 2s ease-in-out infinite;
+}
+
+/* ================================
+   Scrollbar
+================================ */
+
+::-webkit-scrollbar {
+  width: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ================================
+   Text Selection
+================================ */
+
+::selection {
+  background: #2b2a8c;
+  color: white;
+}
+
+/* ================================
+   Accessibility
+================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
