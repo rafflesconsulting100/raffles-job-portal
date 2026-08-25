@@ -83,7 +83,7 @@ export default function Register() {
   };
 
   return (
-    <AuthTemplate>
+    <AuthTemplate role={role} onRoleChange={(newRole) => setRole(newRole)}>
       <div className="max-w-lg w-full mx-auto space-y-6">
         <div>
           <h2 className="text-3xl font-bold text-[#1A1A1A]">Create Account</h2>

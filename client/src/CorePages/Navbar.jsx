@@ -14,7 +14,7 @@ import {
   Home,
   LayoutDashboard,
   LogOut,
-  UserCheck,ShieldCheck
+  UserCheck, ShieldCheck
 } from "lucide-react";
 import logo from "../assets/rafflelogo.png";
 
@@ -25,7 +25,7 @@ const navLinks = [
     icon: Home,
   },
   {
-    title: "Jobs",
+    title: "Find Jobs",
     path: "/jobs",
     icon: BriefcaseBusiness,
   },
@@ -111,8 +111,8 @@ export default function Navbar() {
 
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
-            ? "bg-white/95 backdrop-blur-md shadow-md border-b border-slate-200"
-            : "bg-[#0F172A] backdrop-blur-sm border-b border-slate-200/80 shadow-xs"
+          ? "bg-white/95 backdrop-blur-md shadow-md border-b border-slate-200"
+          : "bg-[#0F172A] backdrop-blur-sm border-b border-slate-200/80 shadow-xs"
           }`}
       >
         <div className="max-w-7xl mx-auto">
@@ -180,8 +180,8 @@ export default function Navbar() {
                       user?.role === "Admin"
                         ? "/admin-dashboard"
                         : user?.role === "Employer"
-                        ? "/employer-dashboard"
-                        : "/jobseeker-dashboard"
+                          ? "/employer-dashboard"
+                          : "/jobseeker-dashboard"
                     }
                     className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-base font-semibold text-slate-700 transition hover:border-blue-200 hover:text-[#2563EB] flex items-center gap-1.5"
                   >
@@ -251,8 +251,8 @@ export default function Navbar() {
                   <Link
                     to="/login"
                     className={`rounded-xl px-4 py-2 text-base font-semibold transition-all duration-200 ${scrolled
-                        ? "text-slate-700 hover:bg-slate-100 hover:text-[#2563EB]"
-                        : "text-slate-200 hover:bg-white/10 hover:text-white"
+                      ? "text-slate-700 hover:bg-slate-100 hover:text-[#2563EB]"
+                      : "text-slate-200 hover:bg-white/10 hover:text-white"
                       }`}
                   >
                     Login
@@ -262,7 +262,7 @@ export default function Navbar() {
                     to="/register"
                     className="rounded-xl bg-linear-to-r from-sky-500 to-blue-600 px-5 py-2.5 text-base font-semibold text-white shadow-lg shadow-blue-600/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#1D4ED8] hover:shadow-xl hover:shadow-blue-600/30"
                   >
-                    Get Started
+                    Register Now
                   </Link>
                 </>
               )}
@@ -287,8 +287,8 @@ export default function Navbar() {
       <div
         onClick={() => setMobileOpen(false)}
         className={`fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-xs transition-all duration-300 lg:hidden ${mobileOpen
-            ? "opacity-100 visible"
-            : "opacity-0 invisible"
+          ? "opacity-100 visible"
+          : "opacity-0 invisible"
           }`}
       />
 
@@ -296,8 +296,8 @@ export default function Navbar() {
 
       <aside
         className={`fixed top-0 right-0 z-50 h-screen w-[86%] max-w-sm bg-white shadow-2xl transition-transform duration-300 lg:hidden flex flex-col ${mobileOpen
-            ? "translate-x-0"
-            : "translate-x-full"
+          ? "translate-x-0"
+          : "translate-x-full"
           }`}
       >
         {/* Header */}
@@ -392,12 +392,6 @@ export default function Navbar() {
             </NavLink>
           )}
 
-        </div>
-
-        {/* Bottom Drawer Actions */}
-
-        <div className="border-t border-slate-100 p-5 space-y-3">
-
           {user ? (
             <>
               <div className="flex items-center justify-between px-4 py-3 bg-slate-50 rounded-xl border border-slate-200/70 text-xs text-slate-700 font-semibold">
@@ -413,18 +407,18 @@ export default function Navbar() {
                   setMobileOpen(false);
                   handleLogout();
                 }}
-                className="w-full flex items-center justify-center gap-2 h-11 rounded-xl border border-rose-200 text-rose-600 font-semibold hover:bg-rose-50 transition"
+                className="mx-4 w-[calc(100%-2rem)] flex items-center justify-center gap-2 h-11 rounded-xl border border-rose-200 text-rose-600 font-semibold hover:bg-rose-50 transition"
               >
                 <LogOut size={18} />
                 Logout
               </button>
             </>
           ) : (
-            <>
+           <div className="flex flex-col gap-3 mx-4">
               <Link
                 to="/login"
                 onClick={() => setMobileOpen(false)}
-                className="w-full flex items-center justify-center h-12 rounded-xl border border-[#3B82F6] font-semibold text-slate-700 hover:bg-slate-50 transition text-sm"
+                className="mx-4 w-[calc(100%-2rem)]  flex items-center justify-center h-12 rounded-xl border border-[#3B82F6] font-semibold text-slate-700 hover:bg-slate-50 transition text-sm"
               >
                 Login
               </Link>
@@ -432,14 +426,15 @@ export default function Navbar() {
               <Link
                 to="/register"
                 onClick={() => setMobileOpen(false)}
-                className="w-full flex items-center justify-center h-12 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold border border-transparent transition text-sm shadow-md"
+                className="mx-4 w-[calc(100%-2rem)] flex items-center justify-center h-12 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold border border-transparent transition text-sm shadow-md"
               >
-                Create Account
+                Register Now
               </Link>
-            </>
+          </div>
+            
           )}
-
-        </div>
+          </div>
+        
 
       </aside>
 

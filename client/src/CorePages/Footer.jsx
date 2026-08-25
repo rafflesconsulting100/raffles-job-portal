@@ -146,7 +146,7 @@ export default function Footer() {
   />
 
   <div>
-    <h2 className="text-2xl font-black text-white">Raffles</h2>
+    <h2 className="text-4xl font-black text-white">raffles</h2>
 
   </div>
 </Link>
@@ -170,8 +170,8 @@ export default function Footer() {
                   />
 
                   <span>
-
-                    support@rafflesconsulting.com
+                  hr@rafflesconsulting.in
+                  
 
                   </span>
 
@@ -186,7 +186,7 @@ export default function Footer() {
 
                   <span>
 
-                    +91 98765 43210
+                    +91 7397242159
 
                   </span>
 
@@ -201,7 +201,7 @@ export default function Footer() {
 
                   <span>
 
-                    Bhopal, Madhya Pradesh, India
+                    24, Pavalam St, Veerappanchatram, Erode, Tamil Nadu
 
                   </span>
 
@@ -229,11 +229,6 @@ export default function Footer() {
 
                 </button>
 
-                <button className="w-11 h-11 rounded-full bg-white/10 hover:bg-[#2563EB] transition flex items-center justify-center">
-
-                  <FaTwitter size={18} />
-
-                </button>
 
               </div>
 

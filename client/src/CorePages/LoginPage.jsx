@@ -67,7 +67,7 @@ export default function SignIn() {
   };
 
   return (
-    <AuthTemplate>
+    <AuthTemplate role={role} onRoleChange={(newRole) => { setRole(newRole); setError(''); }}>
       <form onSubmit={handleSubmit} className="max-w-lg w-full mx-auto space-y-6">
         <div>
           <h2 className="text-3xl font-bold text-[#1A1A1A]">Welcome back</h2>

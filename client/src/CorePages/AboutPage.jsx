@@ -122,7 +122,7 @@ export default function AboutPage() {
         <div className="max-w-7xl mx-auto relative z-10 grid lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
             <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/15 text-blue-300 text-xs font-bold border border-blue-400/20 shadow-inner">
-              <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
+              {/* <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" /> */}
               Premier HR & Talent Acquisition Partner
             </span>
 

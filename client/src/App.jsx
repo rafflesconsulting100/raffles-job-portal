@@ -1,7 +1,8 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import "./App.css";
 
+import RoleSelectionPage from "./CorePages/RoleSelectionPage";
 import LandingPage from "./CorePages/LandingPage";
 import RegisterPage from "./CorePages/RegisterPage";
 import LoginPage from "./CorePages/LoginPage";
@@ -15,13 +16,17 @@ import AdminDashboard from "./CorePages/AdminDashboard";
 import Navbar from "./CorePages/Navbar";
 import Footer from "./CorePages/Footer";
 
-function App() {
+function AppContent() {
+  const location = useLocation();
+  const isRoleSelectionPage = location.pathname === "/";
+
   return (
     <>
       <Toaster position="top-center" reverseOrder={false} />
-      <Navbar />
+      {!isRoleSelectionPage && <Navbar />}
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<RoleSelectionPage />} />
+        <Route path="/home" element={<LandingPage />} />
         <Route path="/jobs" element={<JobsPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
@@ -33,9 +38,13 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/verify-otp" element={<OtpPage />} />
       </Routes>
-      <Footer />
+      {!isRoleSelectionPage && <Footer />}
     </>
   );
+}
+
+function App() {
+  return <AppContent />;
 }
 
 export default App;
