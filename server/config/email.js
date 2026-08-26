@@ -1,20 +1,16 @@
 const nodemailer = require('nodemailer');
 const { getRafflesEmailTemplate } = require('../utils/emailTemplate');
 
-// Helper to parse sender name and email from env or default
+// Parse sender name and email address cleanly
 const parseSender = () => {
-  const defaultEmail = process.env.BREVO_SMTP_USER || 'democracyonthepeak@gmail.com';
-  const defaultName = 'Raffles Consulting';
+  const defaultEmail = process.env.BREVO_SMTP_USER || 'rafflesconsulting37@gmail.com';
+  const defaultName = 'Raffles Consultancy';
   const rawFrom = process.env.EMAIL_FROM || `"${defaultName}" <${defaultEmail}>`;
 
   const match = rawFrom.match(/(?:"?([^"]*)"?\s)?<?([^>]+)>?/);
   if (match) {
     const name = (match[1] || defaultName).trim();
     let email = (match[2] || defaultEmail).trim();
-    // If email is dummy noreply but BREVO_SMTP_USER exists, use BREVO_SMTP_USER for deliverability
-    if (email.includes('noreply@') && process.env.BREVO_SMTP_USER && process.env.BREVO_SMTP_USER.includes('@')) {
-      email = process.env.BREVO_SMTP_USER.trim();
-    }
     return { name, email, raw: `"${name}" <${email}>` };
   }
   return { name: defaultName, email: defaultEmail, raw: `"${defaultName}" <${defaultEmail}>` };
@@ -22,7 +18,7 @@ const parseSender = () => {
 
 /**
  * Send email via Brevo REST API over HTTPS (Port 443)
- * This avoids Render/Cloud SMTP port 587/465 blocking and connection timeouts.
+ * Requires a Brevo API v3 key (starts with "xkeysib-")
  */
 const sendViaBrevoRestApi = async (apiKey, sender, options, htmlContent) => {
   const url = 'https://api.brevo.com/v3/smtp/email';
@@ -42,7 +38,6 @@ const sendViaBrevoRestApi = async (apiKey, sender, options, htmlContent) => {
     textContent: options.text || options.body || '',
   };
 
-  // Node 18+ native fetch with fast timeout
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -51,7 +46,7 @@ const sendViaBrevoRestApi = async (apiKey, sender, options, htmlContent) => {
       'content-type': 'application/json',
     },
     body: JSON.stringify(payload),
-    signal: AbortSignal.timeout(6000), // 6 second max timeout
+    signal: AbortSignal.timeout(5000), // 5 second timeout
   });
 
   const data = await response.json().catch(() => ({}));
@@ -70,49 +65,73 @@ const sendViaBrevoRestApi = async (apiKey, sender, options, htmlContent) => {
 };
 
 /**
- * Fallback to Nodemailer SMTP Transporter with strict connection timeouts
+ * Send via Nodemailer SMTP with automatic port failover (465 SSL, 587 TLS, 2525)
+ * Cloud hosts like Render frequently block port 587, but port 465 (SSL) works reliably.
  */
-const sendViaNodemailerSmtp = async (sender, options, htmlContent) => {
+const sendViaNodemailerSmtpWithFallback = async (sender, options, htmlContent) => {
   const host = process.env.BREVO_SMTP_HOST || 'smtp-relay.brevo.com';
-  const port = parseInt(process.env.BREVO_SMTP_PORT || '587', 10);
   const user = process.env.BREVO_SMTP_USER;
   const pass = process.env.BREVO_SMTP_PASS || process.env.BREVO_API_KEY;
 
   if (!user || !pass) {
-    throw new Error('SMTP user or pass missing');
+    throw new Error('SMTP credentials missing (BREVO_SMTP_USER / BREVO_SMTP_PASS)');
   }
 
-  const transporter = nodemailer.createTransport({
-    host: host,
-    port: port,
-    secure: port === 465,
-    auth: {
-      user: user,
-      pass: pass,
-    },
-    pool: true, // Reuse connections
-    connectionTimeout: 4000, // 4 seconds max to establish TCP connection
-    greetingTimeout: 4000,   // 4 seconds max for SMTP handshake
-    socketTimeout: 6000,     // 6 seconds socket inactivity timeout
-    tls: {
-      rejectUnauthorized: false,
-    },
-  });
+  // Priority port order: Configured port -> 465 (SSL) -> 2525 -> 587
+  const configuredPort = parseInt(process.env.BREVO_SMTP_PORT || '465', 10);
+  const portsToTry = [
+    { port: configuredPort, secure: configuredPort === 465 },
+    { port: 465, secure: true },
+    { port: 2525, secure: false },
+    { port: 587, secure: false },
+  ];
 
-  const mailOptions = {
-    from: sender.raw,
-    to: options.to,
-    subject: options.subject,
-    text: options.text || options.body || '',
-    html: htmlContent,
-  };
+  // Remove duplicates from portsToTry
+  const uniquePorts = portsToTry.filter(
+    (item, index, self) => index === self.findIndex((t) => t.port === item.port && t.secure === item.secure)
+  );
 
-  const info = await transporter.sendMail(mailOptions);
-  return {
-    provider: 'brevo-smtp',
-    messageId: info.messageId,
-    success: true,
-  };
+  let lastError = null;
+
+  for (const { port, secure } of uniquePorts) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: host,
+        port: port,
+        secure: secure, // true for 465, false for 587/2525
+        auth: {
+          user: user,
+          pass: pass,
+        },
+        connectionTimeout: 3500, // Fast 3.5s connection timeout so Render never hangs
+        greetingTimeout: 3500,
+        socketTimeout: 5000,
+        tls: {
+          rejectUnauthorized: false,
+        },
+      });
+
+      const mailOptions = {
+        from: sender.raw,
+        to: options.to,
+        subject: options.subject,
+        text: options.text || options.body || '',
+        html: htmlContent,
+      };
+
+      const info = await transporter.sendMail(mailOptions);
+      return {
+        provider: `brevo-smtp-port-${port}`,
+        messageId: info.messageId,
+        success: true,
+      };
+    } catch (err) {
+      lastError = err;
+      console.warn(`[SMTP Port ${port} (${secure ? 'SSL' : 'TLS'}) Failed]: ${err.message}. Trying next available port...`);
+    }
+  }
+
+  throw lastError || new Error('All SMTP ports failed');
 };
 
 /**
@@ -120,7 +139,7 @@ const sendViaNodemailerSmtp = async (sender, options, htmlContent) => {
  */
 const sendEmail = async (options) => {
   const sender = parseSender();
-  const apiKey = process.env.BREVO_API_KEY || process.env.BREVO_SMTP_PASS;
+  const rawKey = process.env.BREVO_API_KEY || process.env.BREVO_SMTP_PASS || '';
 
   // Prepare HTML content using Raffles Consulting email template
   let finalHtml = options.html;
@@ -137,25 +156,26 @@ const sendEmail = async (options) => {
     });
   }
 
-  // Tier 1: Try Brevo Official HTTPS REST API (Port 443 - Never blocked on Render/Cloud)
-  if (apiKey) {
+  // Tier 1: If an API Key (starts with "xkeysib-") or explicit BREVO_API_KEY is present, use Brevo REST API over HTTPS
+  const isV3ApiKey = rawKey.startsWith('xkeysib-') || !!process.env.BREVO_API_KEY;
+  if (isV3ApiKey && rawKey) {
     try {
-      const result = await sendViaBrevoRestApi(apiKey, sender, options, finalHtml);
-      console.log(`[Email Success] Sent to ${options.to} via Brevo REST API (MessageID: ${result.messageId})`);
+      const result = await sendViaBrevoRestApi(rawKey, sender, options, finalHtml);
+      console.log(`[Email Delivered] Sent to ${options.to} via Brevo HTTPS REST API (ID: ${result.messageId})`);
       return result;
     } catch (apiError) {
-      console.warn(`[Brevo REST API Warning]: ${apiError.message}. Attempting SMTP fallback...`);
+      console.warn(`[Brevo REST API Warning]: ${apiError.message}`);
     }
   }
 
-  // Tier 2: Try Optimized Nodemailer SMTP Transporter
+  // Tier 2: Brevo SMTP with Multi-Port Fallback (Port 465 SSL is open on Render!)
   if (process.env.BREVO_SMTP_USER && (process.env.BREVO_SMTP_PASS || process.env.BREVO_API_KEY)) {
     try {
-      const result = await sendViaNodemailerSmtp(sender, options, finalHtml);
-      console.log(`[Email Success] Sent to ${options.to} via Brevo SMTP (MessageID: ${result.messageId})`);
+      const result = await sendViaNodemailerSmtpWithFallback(sender, options, finalHtml);
+      console.log(`[Email Delivered] Sent to ${options.to} via ${result.provider} (ID: ${result.messageId})`);
       return result;
     } catch (smtpError) {
-      console.error(`[Brevo SMTP Error]: ${smtpError.message}`);
+      console.error(`[Brevo SMTP Error]: All ports failed - ${smtpError.message}`);
     }
   }
 
