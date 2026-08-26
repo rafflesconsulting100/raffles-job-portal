@@ -191,10 +191,12 @@ exports.updateApplicationStatus = async (req, res, next) => {
         : 'Thank you for your interest in this opportunity. We encourage you to explore other open positions on our portal.',
     });
 
+    const textSummary = `Your application status for the position of ${application.job.title} at ${application.job.company} has been updated to ${status}.`;
+
     await sendEmail({
       to: application.applicant.email,
-      subject: `[Raffles Consultancy] Application Update for ${application.job.title}`,
-      text: textMsg,
+      subject: `[Raffles Consulting] Application Update for ${application.job.title}`,
+      text: textSummary,
       html: emailHtml,
     });
 
