@@ -11,11 +11,19 @@ export default function JobFormTab({
   handleTabSwitch
 }) {
   const popularSkills = [
-    "React.js", "Node.js", "JavaScript", "TypeScript", "Python", "Java",
-    "SQL", "MongoDB", "AWS", "Docker", "Figma", "UI/UX", "HTML/CSS",
-    "REST API", "Spring Boot", "DevOps", "Machine Learning", "Git",
-    "GraphQL", "Sales", "Marketing", "SEO"
-  ];
+  "Communication",
+  "Customer Service",
+  "Sales",
+  "Business Development",
+  "Recruitment",
+  "Marketing",
+  "Digital Marketing",
+  "Telecalling",
+  "Inside Sales",
+  "Product Advisory",
+  "Operations",
+  "MS Excel"
+];
 
   const currentSkillsList = typeof jobForm.skills === 'string'
     ? jobForm.skills.split(',').map(s => s.trim()).filter(Boolean)
@@ -92,9 +100,7 @@ export default function JobFormTab({
               onChange={(e) => setJobForm({ ...jobForm, category: e.target.value })}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 outline-none focus:bg-white focus:border-[#2B2A8C] focus:ring-2 focus:ring-[#2B2A8C]/10 transition"
             >
-              <option value="Software Engineering">Software Engineering</option>
-              <option value="Data Science">Data Science</option>
-              <option value="Design">Design</option>
+            
               <option value="Marketing">Marketing</option>
               <option value="Finance">Finance</option>
               <option value="HR">HR</option>
@@ -166,7 +172,7 @@ export default function JobFormTab({
             </label>
             <input
               type="text"
-              placeholder="e.g. ₹12,00,000 - ₹18,00,000"
+              placeholder="e.g. 12,00,000 - 18,00,000"
               value={jobForm.salary}
               onChange={(e) => setJobForm({ ...jobForm, salary: e.target.value })}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 outline-none focus:bg-white focus:border-[#2B2A8C] focus:ring-2 focus:ring-[#2B2A8C]/10 transition"

@@ -4,9 +4,6 @@ export const mockJobs = [
 export const filterOptions = {
   categories: [
     "All",
-    "Software Engineering",
-    "Data Science",
-    "Design",
     "Marketing",
     "Finance",
     "HR & Recruitment",

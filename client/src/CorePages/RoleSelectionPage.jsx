@@ -10,7 +10,7 @@ export default function RoleSelectionPage() {
 
   const handleJobSeekerClick = () => {
     // Redirect to candidate job search / registration page
-    navigate('/jobs');
+    navigate('/register');
   };
 
   const handleEmployerClick = () => {

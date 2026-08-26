@@ -21,7 +21,7 @@ import logo from "../assets/rafflelogo.png";
 const navLinks = [
   {
     title: "Home",
-    path: "/",
+    path: "/home",
     icon: Home,
   },
   {

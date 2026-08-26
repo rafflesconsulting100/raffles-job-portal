@@ -215,7 +215,7 @@ export default function LandingPage() {
 
           <input
             type="text"
-            placeholder="Skills (React, Python...)"
+            placeholder="Skills ( Communication ..)"
             value={searchSkill}
             onChange={(e) => setSearchSkill(e.target.value)}
             className="w-full min-w-0 bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400"

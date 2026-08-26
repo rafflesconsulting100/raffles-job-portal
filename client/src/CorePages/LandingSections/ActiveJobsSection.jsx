@@ -81,13 +81,13 @@ export default function ActiveJobsSection() {
         <div>
           <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 text-[#2B2A8C] px-3.5 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider mb-3">
             <SparklesIcon className="w-3.5 h-3.5 text-[#2B2A8C]" />
-            Trending Roles
+            Featured Roles
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
             Active Job Opportunities
           </h2>
           <p className="text-slate-500 text-sm sm:text-base mt-2 max-w-xl leading-relaxed">
-            Explore verified openings from top companies actively hiring tech, design, finance, and growth talent.
+            Explore verified openings from top companies actively hiring Business & Management, finance, and growth talent.
           </p>
         </div>
 
@@ -128,17 +128,25 @@ export default function ActiveJobsSection() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                       {/* Logo avatar with image fallback */}
-                      <div className={`w-13 h-13 rounded-2xl overflow-hidden bg-linear-to-br ${job.logoBg || 'from-blue-600 to-indigo-700'} text-white flex items-center justify-center font-bold text-base shadow-xs shrink-0 group-hover:scale-105 transition-transform border border-slate-100`}>
+                      <div
+                        className={`w-13 h-13 rounded-2xl overflow-hidden bg-linear-to-br ${job.logoBg || "from-blue-600 to-indigo-700"} text-white flex items-center justify-center font-bold text-base shadow-xs shrink-0 group-hover:scale-105 transition-transform border border-slate-100`}
+                      >
                         {job.companyLogo ? (
                           <img
                             src={job.companyLogo}
                             alt={job.company}
                             className="w-full h-full object-cover bg-white"
-                            onError={(e) => { e.target.style.display = 'none'; }}
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                            }}
                           />
                         ) : null}
                         {!job.companyLogo && (
-                          <span>{job.company ? job.company.substring(0, 2).toUpperCase() : 'JP'}</span>
+                          <span>
+                            {job.company
+                              ? job.company.substring(0, 2).toUpperCase()
+                              : "JP"}
+                          </span>
                         )}
                       </div>
 
@@ -149,7 +157,7 @@ export default function ActiveJobsSection() {
                         </h4>
                         <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1 mt-0.5">
                           <ClockIcon className="w-3 h-3 text-slate-300" />
-                          {job.postedAgo || 'Active Now'}
+                          {job.postedAgo || "Active Now"}
                         </span>
                       </div>
                     </div>
@@ -164,7 +172,9 @@ export default function ActiveJobsSection() {
                       }`}
                       title={isSaved ? "Remove Bookmark" : "Save Job"}
                     >
-                      <BookmarkIcon className={`w-4 h-4 ${isSaved ? "fill-current" : ""}`} />
+                      <BookmarkIcon
+                        className={`w-4 h-4 ${isSaved ? "fill-current" : ""}`}
+                      />
                     </button>
                   </div>
 
@@ -185,13 +195,15 @@ export default function ActiveJobsSection() {
                   <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-600 border-t border-slate-100 pt-3">
                     <span className="flex items-center gap-1 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">
                       <MapPinIcon className="w-3.5 h-3.5 text-slate-400" />
-                      {job.location ? job.location.split(',')[0] : 'Remote'}
+                      {job.location ? job.location.split(",")[0] : "Remote"}
                     </span>
                     <span className="flex items-center gap-1 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">
                       <BriefcaseIcon className="w-3.5 h-3.5 text-slate-400" />
                       {job.experience || job.experienceLevel}
                     </span>
-                    <span className={`px-2.5 py-1 rounded-lg border font-bold text-[11px] ${job.badgeColor || 'bg-slate-50 text-slate-700 border-slate-200'}`}>
+                    <span
+                      className={`px-2.5 py-1 rounded-lg border font-bold text-[11px] ${job.badgeColor || "bg-slate-50 text-slate-700 border-slate-200"}`}
+                    >
                       {job.workMode || job.jobType}
                     </span>
                   </div>
@@ -219,20 +231,22 @@ export default function ActiveJobsSection() {
                 {/* Card Footer: Salary & Action CTA */}
                 <div className="border-t border-slate-100 pt-4 mt-6 flex items-center justify-between">
                   <div>
-                    <span className="block text-[10px] uppercase font-bold tracking-wider text-slate-400">Salary range</span>
-                    <span className="text-xs sm:text-sm font-black text-slate-900">
-                     <IndianRupee className="w-3.5 h-3.5 text-gray-400" />
-                      {job.salary || 'Competitive'}
+                    <span className="block text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                      Salary range
                     </span>
+                    <div className="flex items-center gap-1 text-slate-700 font-semibold">
+                      <IndianRupee className="w-4 h-4 text-slate-700" />
+                      <span>{job.salary}</span>
+                    </div>
                   </div>
 
                   {/* <span className="text-xs font-bold text-[#2B2A8C] group-hover:translate-x-1 transition-transform flex items-center gap-1">
                     Apply Now <ArrowRightIcon className="w-4 h-4" />
                   </span> */}
-                    <button
-  type="button"
-  onClick={() => navigate(`/jobs/${job._id}`)}
-  className="
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/jobs/${job._id}`)}
+                    className="
     inline-flex items-center justify-center gap-1.5
     px-4 py-2
     rounded-xl
@@ -247,12 +261,10 @@ export default function ActiveJobsSection() {
     transition-all duration-200
     cursor-pointer
   "
->
-  Apply Now
-  <ArrowRightIcon
-    className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5"
-  />
-</button>
+                  >
+                    Apply Now
+                    <ArrowRightIcon className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+                  </button>
                 </div>
               </div>
             );
