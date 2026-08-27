@@ -154,13 +154,13 @@ const getRafflesEmailTemplate = ({
               </p>
 
               <div style="margin-bottom: 16px;">
-                <a href="https://rafflesconsultancy.com" style="color: #2563EB; font-size: 12px; text-decoration: none; font-weight: 600; margin: 0 10px;">Official Website</a>
+                <a href="https://www.rafflesjobs.com" style="color: #2563EB; font-size: 12px; text-decoration: none; font-weight: 600; margin: 0 10px;">Official Website</a>
                 <span style="color: #CBD5E1;">•</span>
-                <a href="mailto:support@rafflesconsultancy.com" style="color: #2563EB; font-size: 12px; text-decoration: none; font-weight: 600; margin: 0 10px;">Support Team</a>
+                <a href="mailto:support@rafflesjobs.com" style="color: #2563EB; font-size: 12px; text-decoration: none; font-weight: 600; margin: 0 10px;">Support Team</a>
               </div>
 
               <p style="margin: 0; font-size: 11px; color: #94A3B8;">
-                &copy; ${currentYear} Raffles Consultancy. All rights reserved.<br>
+                 &copy; ${currentYear} Raffles Jobs. All rights reserved.<br>
                 This is an automated system notification. Please do not reply directly to this email.
               </p>
 
