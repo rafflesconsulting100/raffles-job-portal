@@ -156,7 +156,7 @@ const getRafflesEmailTemplate = ({
               <div style="margin-bottom: 16px;">
                 <a href="https://www.rafflesjobs.com" style="color: #2563EB; font-size: 12px; text-decoration: none; font-weight: 600; margin: 0 10px;">Official Website</a>
                 <span style="color: #CBD5E1;">•</span>
-                <a href="mailto:support@rafflesjobs.com" style="color: #2563EB; font-size: 12px; text-decoration: none; font-weight: 600; margin: 0 10px;">Support Team</a>
+                <a href="mailto:support@rafflesconsultancy.com" style="color: #2563EB; font-size: 12px; text-decoration: none; font-weight: 600; margin: 0 10px;">Support Team</a>
               </div>
 
               <p style="margin: 0; font-size: 11px; color: #94A3B8;">

@@ -88,13 +88,13 @@ export default function ContactPage() {
     },
     {
       title: "Email Assistance",
-      desc: "hr@rafflesjobs.com",
+      desc: "hr@rafflesconsulting.in",
       subdesc: "Average response under 24 hours",
       icon: Mail,
       badge: "Write Us",
       color: "bg-emerald-50 text-emerald-700 border-emerald-100",
       actionText: "Send Email",
-      link: "mailto:hr@rafflesjobs.com"
+      link: "mailto:hr@rafflesconsulting.in"
     },
     {
       title: "Job Hours",
@@ -123,7 +123,7 @@ export default function ContactPage() {
     },
     {
       q: "How can corporate employers partner with Raffles Jobs?",
-      a: "Employers can submit a query using the contact form on this page or email us directly at hr@rafflesjobs.com. A dedicated Account Manager will connect with you immediately."
+      a: "Employers can submit a query using the contact form on this page or email us directly at hr@rafflesconsulting.in. A dedicated Account Manager will connect with you immediately."
     }
   ];
 
@@ -204,7 +204,7 @@ export default function ContactPage() {
                     )}
                     {card.title.includes('Email') && (
                       <button
-                        onClick={() => handleCopy('hr@rafflesjobs.com', 'Email Address')}
+                        onClick={() => handleCopy('hr@rafflesconsulting.in', 'Email Address')}
                         title="Copy Email Address"
                         className="p-1 text-gray-400 hover:text-gray-600 rounded-md transition cursor-pointer"
                       >
