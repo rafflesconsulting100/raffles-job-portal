@@ -84,12 +84,14 @@ export const formatBackendJob = (job) => {
     skills: formattedSkills,
     requirements: Array.isArray(job.requirements) ? job.requirements : [],
     benefits: Array.isArray(job.benefits) ? job.benefits : [],
-    description: job.description || "",
-    postedAgo: postedAgo,
-    postedDate: job.createdAt || new Date().toISOString(),
-    logoBg: logoBg,
-    badgeColor: "bg-blue-50 text-[#2563EB] border-blue-200",
-    isBackend: true,
-    screeningQuestions: Array.isArray(job.screeningQuestions) ? job.screeningQuestions : []
+      description: job.description || "",
+      postedAgo: postedAgo,
+      postedDate: job.createdAt || new Date().toISOString(),
+      logoBg: logoBg,
+      badgeColor: "bg-blue-50 text-[#2563EB] border-blue-200",
+      isBackend: true,
+      screeningQuestions: Array.isArray(job.screeningQuestions) ? job.screeningQuestions : [],
+      numberOfOpenings: job.numberOfOpenings != null ? job.numberOfOpenings : null,
+      preferredLanguages: Array.isArray(job.preferredLanguages) ? job.preferredLanguages : []
+    };
   };
-};

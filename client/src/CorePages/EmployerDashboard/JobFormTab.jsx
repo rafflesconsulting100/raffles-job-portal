@@ -1,5 +1,22 @@
-import React from "react";
-import { RefreshCw, Plus, X, Sparkles } from "lucide-react";
+import React, { useState } from "react";
+import { RefreshCw, Plus, X, Sparkles, ChevronDown, Check } from "lucide-react";
+
+const PREFERRED_LANGUAGES = [
+  "English",
+  "Hindi",
+  "Telugu",
+  "Tamil",
+  "Kannada",
+  "Malayalam",
+  "Marathi",
+  "Bengali",
+  "Gujarati",
+  "Punjabi",
+  "Urdu",
+  "Odia",
+  "Assamese",
+  "Other",
+];
 
 export default function JobFormTab({
   editingJob,
@@ -8,7 +25,8 @@ export default function JobFormTab({
   handleJobSubmit,
   formSubmitting,
   resetForm,
-  handleTabSwitch
+  handleTabSwitch,
+  validationAttempted = false
 }) {
   const popularSkills = [
   "Communication",
@@ -24,6 +42,55 @@ export default function JobFormTab({
   "Operations",
   "MS Excel"
 ];
+
+  const [langOpen, setLangOpen] = useState(false);
+  const [customLang, setCustomLang] = useState("");
+
+  const addCustomLanguage = () => {
+    const value = customLang.trim();
+    if (!value) return;
+    const exists = selectedLanguages.some(
+      (l) => l.toLowerCase() === value.toLowerCase()
+    );
+    if (!exists) {
+      setJobForm({ ...jobForm, preferredLanguages: [...selectedLanguages, value] });
+    }
+    setCustomLang("");
+  };
+
+  const selectedLanguages = Array.isArray(jobForm.preferredLanguages)
+    ? jobForm.preferredLanguages
+    : [];
+
+  const toggleLanguage = (lang) => {
+    const updated = selectedLanguages.includes(lang)
+      ? selectedLanguages.filter((l) => l !== lang)
+      : [...selectedLanguages, lang];
+    setJobForm({ ...jobForm, preferredLanguages: updated });
+  };
+
+  const removeLanguage = (lang) => {
+    setJobForm({
+      ...jobForm,
+      preferredLanguages: selectedLanguages.filter((l) => l !== lang),
+    });
+  };
+
+  // Frontend validation messages for Number of Openings
+  const openingsRaw = jobForm.numberOfOpenings;
+  const openingsNum = Number(openingsRaw);
+  let openingsError = null;
+  if (openingsRaw !== "" && openingsRaw !== null && openingsRaw !== undefined) {
+    if (Number.isNaN(openingsNum) || !Number.isInteger(openingsNum)) {
+      openingsError = "Number of openings must be a whole number.";
+    } else if (openingsNum < 1) {
+      openingsError = "Number of openings must be at least 1.";
+    }
+  }
+
+  const showOpeningsError = openingsError && (validationAttempted || openingsRaw !== "");
+  const showLanguagesError =
+    validationAttempted && selectedLanguages.length === 0;
 
   const currentSkillsList = typeof jobForm.skills === 'string'
     ? jobForm.skills.split(',').map(s => s.trim()).filter(Boolean)
@@ -246,6 +313,138 @@ export default function JobFormTab({
               </select>
             </div>
           </div>
+        </div>
+
+        {/* NUMBER OF OPENINGS & PREFERRED LANGUAGES */}
+        <div className="grid sm:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+              Number of Openings <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="number"
+              min="1"
+              step="1"
+              required
+              placeholder="e.g. 5"
+              value={jobForm.numberOfOpenings}
+              onChange={(e) => setJobForm({ ...jobForm, numberOfOpenings: e.target.value })}
+              className={`w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-[#2B2A8C]/10 transition ${
+                showOpeningsError
+                  ? "border-rose-400 focus:border-rose-500"
+                  : "border-slate-200 focus:border-[#2B2A8C]"
+              }`}
+            />
+            {showOpeningsError && (
+              <p className="text-xs text-rose-500 mt-1.5 font-medium">{openingsError}</p>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+            Preferred Languages <span className="text-rose-500">*</span>
+          </label>
+          <p className="text-slate-500 text-xs mb-3">
+            Select from the list or type your own language and click Add.
+          </p>
+
+          {/* Selected language tags */}
+          {selectedLanguages.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {selectedLanguages.map((lang) => (
+                <span
+                  key={lang}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#2B2A8C] text-white text-xs font-semibold rounded-lg shadow-xs"
+                >
+                  {lang}
+                  <button
+                    type="button"
+                    onClick={() => removeLanguage(lang)}
+                    className="hover:bg-white/20 p-0.5 rounded-full transition cursor-pointer"
+                    aria-label={`Remove ${lang}`}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Free-text custom language entry */}
+          <div className="flex items-center gap-2 mb-3">
+            <input
+              type="text"
+              value={customLang}
+              onChange={(e) => setCustomLang(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addCustomLanguage();
+                }
+              }}
+              placeholder="Type a language (e.g. English, Hindi, Tamil, Telugu)..."
+              className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 outline-none focus:bg-white focus:border-[#2B2A8C] focus:ring-2 focus:ring-[#2B2A8C]/10 transition"
+            />
+            <button
+              type="button"
+              onClick={addCustomLanguage}
+              className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition cursor-pointer shrink-0"
+            >
+              Add
+            </button>
+          </div>
+
+          {/* Multi-select dropdown for preset languages */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setLangOpen((o) => !o)}
+              onBlur={() => setTimeout(() => setLangOpen(false), 120)}
+              className={`w-full flex items-center justify-between bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#2B2A8C]/10 transition ${
+                showLanguagesError
+                  ? "border-rose-400 focus:border-rose-500"
+                  : "border-slate-200 focus:border-[#2B2A8C]"
+              } ${langOpen ? "border-[#2B2A8C] bg-white" : "text-slate-900"}`}
+            >
+              <span className={selectedLanguages.length ? "text-slate-900" : "text-slate-400"}>
+                {selectedLanguages.length
+                  ? `${selectedLanguages.length} language${selectedLanguages.length > 1 ? "s" : ""} selected`
+                  : "Select from common languages"}
+              </span>
+              <ChevronDown
+                className={`w-4 h-4 text-slate-400 transition-transform ${langOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            {langOpen && (
+              <div className="absolute z-20 mt-2 w-full max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 space-y-0.5">
+                {PREFERRED_LANGUAGES.map((lang) => {
+                  const isSelected = selectedLanguages.includes(lang);
+                  return (
+                    <button
+                      key={lang}
+                      type="button"
+                      onClick={() => toggleLanguage(lang)}
+                      className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm text-left transition cursor-pointer ${
+                        isSelected
+                          ? "bg-blue-50 text-[#2B2A8C] font-semibold"
+                          : "text-slate-700 hover:bg-slate-100"
+                      }`}
+                    >
+                      <span>{lang}</span>
+                      {isSelected && <Check className="w-4 h-4 text-[#2B2A8C]" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          {showLanguagesError && (
+            <p className="text-xs text-rose-500 mt-1.5 font-medium">
+              Please select at least one preferred language.
+            </p>
+          )}
         </div>
 
         {/* KEY SKILLS & CORE TECH STACK SECTION */}

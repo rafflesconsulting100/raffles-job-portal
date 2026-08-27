@@ -19,7 +19,8 @@ import {
   Share2,
   Layers,
   Sparkles,
-  Award
+  Award,
+  Languages
 } from 'lucide-react';
 import { showSuccess } from '../../Utils/toast';
 
@@ -155,6 +156,41 @@ export default function JobDetailModal({
             </div>
           </div>
         </div>
+
+        {/* Number of Openings & Preferred Languages */}
+        {(job.numberOfOpenings != null || (job.preferredLanguages && job.preferredLanguages.length > 0)) && (
+          <div className="space-y-3">
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+              <Layers className="w-4 h-4 text-[#2563EB]" />
+              Job Information
+            </h3>
+
+            <div className="grid grid-cols-2 gap-3 bg-slate-50 border border-slate-200 rounded-2xl p-4">
+              {job.numberOfOpenings != null && (
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                    Number of Openings
+                  </span>
+                  <p className="text-xs font-bold text-slate-900 flex items-center gap-1">
+                    <Users className="w-3.5 h-3.5 text-[#2563EB]" />
+                    {job.numberOfOpenings}
+                  </p>
+                </div>
+              )}
+              {job.preferredLanguages && job.preferredLanguages.length > 0 && (
+                <div className="space-y-0.5 col-span-2 border-t border-slate-200 pt-2">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                    Preferred Languages
+                  </span>
+                  <p className="text-xs font-bold text-slate-900 flex flex-wrap items-center gap-1.5">
+                    <Languages className="w-3.5 h-3.5 text-[#2563EB] shrink-0" />
+                    {job.preferredLanguages.join(', ')}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Quick Highlights Grid */}
         <div className="space-y-3">

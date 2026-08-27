@@ -71,10 +71,13 @@ export default function EmployerDashboard() {
     requirements: "",
     benefits: "",
     screeningQuestions: "",
+    numberOfOpenings: "",
+    preferredLanguages: [],
     status: "active"
   });
 
   const [formSubmitting, setFormSubmitting] = useState(false);
+  const [validationAttempted, setValidationAttempted] = useState(false);
 
   // Applicants ATS state
   const [selectedJobId, setSelectedJobId] = useState(selectedJobIdParam);
@@ -180,6 +183,7 @@ export default function EmployerDashboard() {
   // Reset job form
   const resetForm = () => {
     setEditingJob(null);
+    setValidationAttempted(false);
     setJobForm({
       title: "",
       company: user?.username ? `${user.username} Inc` : "",
@@ -197,6 +201,8 @@ export default function EmployerDashboard() {
       requirements: "",
       benefits: "",
       screeningQuestions: "",
+      numberOfOpenings: "",
+      preferredLanguages: [],
       status: "active"
     });
   };
@@ -204,6 +210,7 @@ export default function EmployerDashboard() {
   // Populate form for Editing
   const startEditJob = (job) => {
     setEditingJob(job);
+    setValidationAttempted(false);
     setJobForm({
       title: job.title || "",
       company: job.company || "",
@@ -221,6 +228,8 @@ export default function EmployerDashboard() {
       requirements: Array.isArray(job.requirements) ? job.requirements.join("\n") : job.requirements || "",
       benefits: Array.isArray(job.benefits) ? job.benefits.join("\n") : job.benefits || "",
       screeningQuestions: Array.isArray(job.screeningQuestions) ? job.screeningQuestions.join("\n") : job.screeningQuestions || "",
+      numberOfOpenings: job.numberOfOpenings != null ? String(job.numberOfOpenings) : "",
+      preferredLanguages: Array.isArray(job.preferredLanguages) ? job.preferredLanguages : [],
       status: job.status || "active"
     });
     handleTabSwitch("post-job");
@@ -236,10 +245,38 @@ export default function EmployerDashboard() {
       return;
     }
 
+    // Frontend validation: Number of Openings (whole number >= 1)
+    const openingsRaw = jobForm.numberOfOpenings;
+    const openingsNum = Number(openingsRaw);
+    if (
+      openingsRaw === "" ||
+      openingsRaw === null ||
+      openingsRaw === undefined ||
+      Number.isNaN(openingsNum) ||
+      !Number.isInteger(openingsNum) ||
+      openingsNum < 1
+    ) {
+      setValidationAttempted(true);
+      showError("Please enter a valid number of openings (whole number, minimum 1).");
+      return;
+    }
+
+    // Frontend validation: Preferred Languages (at least one)
+    if (!Array.isArray(jobForm.preferredLanguages) || jobForm.preferredLanguages.length === 0) {
+      setValidationAttempted(true);
+      showError("Please select at least one preferred language.");
+      return;
+    }
+
+    const payload = {
+      ...jobForm,
+      numberOfOpenings: openingsNum,
+    };
+
     setFormSubmitting(true);
     try {
       if (editingJob) {
-        const res = await updateEmployerJob(editingJob._id, jobForm, token);
+        const res = await updateEmployerJob(editingJob._id, payload, token);
         if (res.success) {
           showSuccess("Job updated successfully!");
           resetForm();
@@ -247,7 +284,7 @@ export default function EmployerDashboard() {
           handleTabSwitch("my-jobs");
         }
       } else {
-        const res = await createEmployerJob(jobForm, token);
+        const res = await createEmployerJob(payload, token);
         if (res.success) {
           showSuccess("Job posted successfully!");
           resetForm();
@@ -407,6 +444,7 @@ export default function EmployerDashboard() {
             formSubmitting={formSubmitting}
             resetForm={resetForm}
             handleTabSwitch={handleTabSwitch}
+            validationAttempted={validationAttempted}
           />
         )}
 

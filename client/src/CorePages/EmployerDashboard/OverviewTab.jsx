@@ -11,7 +11,8 @@ import {
   IndianRupee,
   Edit3,
   Sparkles,
-  HelpCircle
+  HelpCircle,
+  Languages
 } from "lucide-react";
 
 export default function OverviewTab({ stats, jobs, handleTabSwitch, startEditJob, resetForm }) {
@@ -134,6 +135,16 @@ export default function OverviewTab({ stats, jobs, handleTabSwitch, startEditJob
                       <span className="flex items-center gap-1 text-emerald-600 font-semibold">
                         <IndianRupee className="w-3.5 h-3.5" /> {job.salary || "Negotiable"}
                       </span>
+                      {job.numberOfOpenings != null && (
+                        <span className="flex items-center gap-1 text-[#2B2A8C] font-semibold">
+                          <Users className="w-3.5 h-3.5" /> {job.numberOfOpenings} Openings
+                        </span>
+                      )}
+                      {job.preferredLanguages && job.preferredLanguages.length > 0 && (
+                        <span className="flex items-center gap-1 text-slate-600">
+                          <Languages className="w-3.5 h-3.5" /> {job.preferredLanguages.join(', ')}
+                        </span>
+                      )}
                     </div>
                   </div>
 

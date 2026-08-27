@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Building, FileText, Upload, Loader2, Send } from 'lucide-react';
+import { X, Building, FileText, Upload, Loader2, Send, Users, Languages } from 'lucide-react';
 
 export default function JobApplyModal({
   job,
@@ -44,6 +44,23 @@ export default function JobApplyModal({
             <Building className="w-3.5 h-3.5" />
             {job.company} • {job.location}
           </p>
+
+          {(job.numberOfOpenings != null || (job.preferredLanguages && job.preferredLanguages.length > 0)) && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {job.numberOfOpenings != null && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg text-[11px] font-bold">
+                  <Users className="w-3.5 h-3.5 text-[#2B2A8C]" />
+                  {job.numberOfOpenings} Openings
+                </span>
+              )}
+              {job.preferredLanguages && job.preferredLanguages.length > 0 && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg text-[11px] font-bold">
+                  <Languages className="w-3.5 h-3.5 text-[#2B2A8C]" />
+                  {job.preferredLanguages.join(' · ')}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <form onSubmit={onSubmit} className="mt-6 space-y-5">

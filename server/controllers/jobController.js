@@ -1,6 +1,33 @@
 const Job = require('../models/Job');
 const User = require('../models/User');
 
+// Validate Number of Openings (whole number >= 1)
+const validateNumberOfOpenings = (value) => {
+  if (value === undefined || value === null || value === '') {
+    return { valid: false, message: 'Number of openings is required.' };
+  }
+  const num = Number(value);
+  if (Number.isNaN(num) || !Number.isInteger(num)) {
+    return { valid: false, message: 'Number of openings must be a whole number.' };
+  }
+  if (num < 1) {
+    return { valid: false, message: 'Number of openings must be at least 1.' };
+  }
+  return { valid: true, value: num };
+};
+
+// Validate Preferred Languages (non-empty array of strings; any language allowed)
+const validatePreferredLanguages = (value) => {
+  if (!Array.isArray(value) || value.length === 0) {
+    return { valid: false, message: 'Please select at least one preferred language.' };
+  }
+  const invalid = value.filter((lang) => typeof lang !== 'string' || lang.trim() === '');
+  if (invalid.length > 0) {
+    return { valid: false, message: 'Preferred languages must be valid text values.' };
+  }
+  return { valid: true, value: value.map((lang) => lang.trim()) };
+};
+
 // @desc    Create a new job posting
 // @route   POST /api/jobs
 // @access  Private (Employer only)
@@ -23,7 +50,21 @@ exports.createJob = async (req, res, next) => {
       aboutCompany,
       companyLogo,
       screeningQuestions,
+      numberOfOpenings,
+      preferredLanguages,
     } = req.body;
+
+    // Validate Number of Openings
+    const openingsCheck = validateNumberOfOpenings(numberOfOpenings);
+    if (!openingsCheck.valid) {
+      return res.status(400).json({ success: false, message: openingsCheck.message });
+    }
+
+    // Validate Preferred Languages
+    const languagesCheck = validatePreferredLanguages(preferredLanguages);
+    if (!languagesCheck.valid) {
+      return res.status(400).json({ success: false, message: languagesCheck.message });
+    }
 
     // Build requirements, benefits, and skills arrays
     const parsedRequirements = Array.isArray(requirements)
@@ -67,6 +108,8 @@ exports.createJob = async (req, res, next) => {
       aboutCompany,
       companyLogo,
       screeningQuestions: parsedScreening,
+      numberOfOpenings: openingsCheck.value,
+      preferredLanguages: languagesCheck.value,
       creator: req.user.id,
     });
 
@@ -198,6 +241,8 @@ exports.updateJob = async (req, res, next) => {
       companyLogo,
       screeningQuestions,
       status,
+      numberOfOpenings,
+      preferredLanguages,
     } = req.body;
 
     if (title) job.title = title;
@@ -213,6 +258,22 @@ exports.updateJob = async (req, res, next) => {
     if (aboutCompany !== undefined) job.aboutCompany = aboutCompany;
     if (companyLogo !== undefined) job.companyLogo = companyLogo;
     if (status) job.status = status;
+
+    if (numberOfOpenings !== undefined) {
+      const openingsCheck = validateNumberOfOpenings(numberOfOpenings);
+      if (!openingsCheck.valid) {
+        return res.status(400).json({ success: false, message: openingsCheck.message });
+      }
+      job.numberOfOpenings = openingsCheck.value;
+    }
+
+    if (preferredLanguages !== undefined) {
+      const languagesCheck = validatePreferredLanguages(preferredLanguages);
+      if (!languagesCheck.valid) {
+        return res.status(400).json({ success: false, message: languagesCheck.message });
+      }
+      job.preferredLanguages = languagesCheck.value;
+    }
 
     if (skills !== undefined) {
       job.skills = Array.isArray(skills)

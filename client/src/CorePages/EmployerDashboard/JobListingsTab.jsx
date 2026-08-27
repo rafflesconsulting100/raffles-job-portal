@@ -10,7 +10,8 @@ import {
   Clock,
   Users,
   Edit3,
-  Trash2
+  Trash2,
+  Languages
 } from "lucide-react";
 
 export default function JobListingsTab({
@@ -132,6 +133,16 @@ export default function JobListingsTab({
                   <span className="flex items-center gap-1 text-slate-400">
                     <Clock className="w-3.5 h-3.5" /> Posted {new Date(job.createdAt).toLocaleDateString()}
                   </span>
+                  {job.numberOfOpenings != null && (
+                    <span className="flex items-center gap-1 text-[#2B2A8C] font-semibold">
+                      <Users className="w-3.5 h-3.5" /> {job.numberOfOpenings} Openings
+                    </span>
+                  )}
+                  {job.preferredLanguages && job.preferredLanguages.length > 0 && (
+                    <span className="flex items-center gap-1 text-slate-600">
+                      <Languages className="w-3.5 h-3.5" /> {job.preferredLanguages.join(', ')}
+                    </span>
+                  )}
                 </div>
 
                 <p className="text-slate-600 text-xs line-clamp-2 leading-relaxed">

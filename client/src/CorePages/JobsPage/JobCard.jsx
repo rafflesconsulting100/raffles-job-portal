@@ -9,7 +9,9 @@ import {
   Check,
   Share2,
   Clock,
-  GraduationCap
+  GraduationCap,
+  Users,
+  Languages
 } from 'lucide-react';
 import { showSuccess } from '../../Utils/toast';
 
@@ -158,6 +160,18 @@ export default function JobCard({
             <span className="flex items-center gap-1 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100">
               <GraduationCap className="w-3.5 h-3.5 text-indigo-500" />
               {job.minEducation}
+            </span>
+          )}
+          {job.numberOfOpenings != null && (
+            <span className="flex items-center gap-1 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100">
+              <Users className="w-3.5 h-3.5 text-[#2B2A8C]" />
+              {job.numberOfOpenings} Openings
+            </span>
+          )}
+          {job.preferredLanguages && job.preferredLanguages.length > 0 && (
+            <span className="flex items-center gap-1 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100">
+              <Languages className="w-3.5 h-3.5 text-[#2B2A8C]" />
+              {job.preferredLanguages.join(' · ')}
             </span>
           )}
           <span className="flex items-center gap-1 text-slate-400 font-medium sm:ml-auto text-[11px]">

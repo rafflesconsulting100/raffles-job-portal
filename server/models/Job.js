@@ -83,6 +83,14 @@ const jobSchema = new mongoose.Schema(
         trim: true,
       },
     ],
+    numberOfOpenings: {
+      type: Number,
+      min: [1, 'Number of openings must be at least 1'],
+      validate: [Number.isInteger, 'Number of openings must be a whole number'],
+    },
+    preferredLanguages: {
+      type: [String],
+    },
     creator: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
