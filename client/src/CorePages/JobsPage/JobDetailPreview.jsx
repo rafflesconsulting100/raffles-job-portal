@@ -345,11 +345,11 @@ export default function JobDetailPreview({
       <div className="space-y-3 bg-gradient-to-br from-slate-50 to-blue-50/30 p-5 rounded-2xl border border-slate-200">
         <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
           <Building className="w-4 h-4 text-[#2B2A8C]" />
-          About {job.company || 'Raffles Consulting'}
+          About {job.company || 'RAFFLES JOBS'}
         </h3>
         <p className="text-xs sm:text-sm text-slate-700 font-medium leading-relaxed whitespace-pre-line">
           {job.aboutCompany ||
-            `${job.company || 'Raffles Consulting'} is a top recruitment and staffing agency committed to bridging top-tier talent with industry leaders. We foster a collaborative, growth-oriented environment with competitive compensation.`}
+            `${job.company || 'RAFFLES JOBS'} is a top recruitment and staffing agency committed to bridging top-tier talent with industry leaders. We foster a collaborative, growth-oriented environment with competitive compensation.`}
         </p>
 
         <div className="pt-2 border-t border-slate-200/80 flex flex-wrap items-center justify-between text-xs text-slate-700 font-bold gap-2">

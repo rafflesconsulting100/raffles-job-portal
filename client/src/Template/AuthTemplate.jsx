@@ -257,7 +257,7 @@ export default function AuthTemplate({
 
             {/* Brand Left Panel Footer */}
             <div className="relative z-10 text-[11px] text-slate-400 font-medium flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-5 mt-6">
-              {/* <span>© 2026 Raffles Consulting</span>
+              {/* <span>© 2026 RAFFLES JOBS</span>
               <div className="flex items-center gap-3">
                 <span className="hover:text-white cursor-pointer transition">Privacy Policy</span>
                 <span>•</span>

@@ -29,7 +29,7 @@ export default function RoleSelectionPage() {
           <Link to="/home" className="flex items-center gap-2 group">
             <img 
               src={logo} 
-              alt="Raffles Consulting" 
+              alt="RAFFLES JOBS" 
               className="h-10 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105" 
             />
             <div className="leading-none">
@@ -189,7 +189,7 @@ export default function RoleSelectionPage() {
       {/* 3. MINIMALIST FOOTER */}
       <footer className="py-6 border-t border-slate-200/60 bg-white/60 backdrop-blur-xs text-center text-xs text-slate-500 font-medium">
         <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span>© 2026 Raffles Consulting. All Rights Reserved.</span>
+          <span>© 2026 RAFFLES JOBS. All Rights Reserved.</span>
           <div className="flex items-center gap-4 text-slate-500">
             <span>By proceeding, you agree to our</span>
             <Link to="/about" className="text-[#2B2A8C] font-semibold hover:underline">Terms of Use</Link>

@@ -141,11 +141,11 @@ const sendEmail = async (options) => {
   const sender = parseSender();
   const rawKey = process.env.BREVO_API_KEY || process.env.BREVO_SMTP_PASS || '';
 
-  // Prepare HTML content using Raffles Consulting email template
+  // Prepare HTML content using RAFFLES JOBS email template
   let finalHtml = options.html;
   if (!finalHtml) {
     finalHtml = getRafflesEmailTemplate({
-      title: options.title || options.subject || 'Raffles Consulting Notification',
+      title: options.title || options.subject || 'RAFFLES JOBS Notification',
       subtitle: options.subtitle || 'Talent & Career Solutions',
       greeting: options.greeting || 'Dear User,',
       bodyText: options.text || options.body || '',

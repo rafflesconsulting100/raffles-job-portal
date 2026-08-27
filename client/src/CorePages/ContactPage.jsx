@@ -145,7 +145,7 @@ export default function ContactPage() {
           </div>
 
           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/15 text-blue-300 text-xs font-bold border border-blue-400/20 shadow-xs">
-            Get in Touch with Raffles Consulting
+            Get in Touch with RAFFLES JOBS
           </span>
 
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
@@ -372,9 +372,9 @@ export default function ContactPage() {
           <div className="lg:col-span-5 space-y-6">
             <div className="bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-8 rounded-3xl shadow-xl space-y-6 relative overflow-hidden border border-slate-700/50">
               <div className="flex items-center gap-3">
-                <img src={logo} alt="Raffles Consulting" className="h-14 w-auto p-1.5 rounded-xl bg-white/10 backdrop-blur-xs" />
+                <img src={logo} alt="RAFFLES JOBS" className="h-14 w-auto p-1.5 rounded-xl bg-white/10 backdrop-blur-xs" />
                 <div>
-                  <h3 className="text-lg font-black text-white">Raffles Consulting</h3>
+                  <h3 className="text-lg font-black text-white">RAFFLES JOBS</h3>
                   <p className="text-xs text-blue-300 font-semibold">Tamil Nadu Office</p>
                 </div>
               </div>

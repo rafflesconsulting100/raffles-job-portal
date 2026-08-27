@@ -195,7 +195,7 @@ exports.updateApplicationStatus = async (req, res, next) => {
 
     await sendEmail({
       to: application.applicant.email,
-      subject: `[Raffles Consulting] Application Update for ${application.job.title}`,
+      subject: `[RAFFLES JOBS] Application Update for ${application.job.title}`,
       text: textSummary,
       html: emailHtml,
     });

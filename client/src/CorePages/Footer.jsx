@@ -261,7 +261,7 @@ export default function Footer() {
             <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
               <div className="text-center lg:text-left">
                 <p className="text-sm text-gray-400">
-                  © {new Date().getFullYear()} Raffles Consulting. All Rights
+                  © {new Date().getFullYear()} RAFFLES JOBS. All Rights
                   Reserved.
                 </p>
 

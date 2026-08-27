@@ -147,7 +147,7 @@ const getRafflesEmailTemplate = ({
             <td style="background-color: #F8FAFC; border-top: 1px solid #E2E8F0; padding: 28px 40px; text-align: center;">
               
               <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 800; color: #2B2A8C; tracking: 0.5px;">
-                RAFFLES CONSULTING
+                RAFFLES JOBS
               </p>
               <p style="margin: 0 0 16px 0; font-size: 12px; color: #64748B;">
                 Premier Recruitment, Executive Search & Talent Advisory Services
