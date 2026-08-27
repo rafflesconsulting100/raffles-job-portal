@@ -3,8 +3,8 @@ const { getRafflesEmailTemplate } = require('../utils/emailTemplate');
 
 // Parse sender name and email address cleanly
 const parseSender = () => {
-  const defaultEmail = process.env.BREVO_SMTP_USER || 'rafflesconsulting37@gmail.com';
-  const defaultName = 'Raffles Consultancy';
+  const defaultEmail = process.env.BREVO_SMTP_USER || 'rafflesjobs37@gmail.com';
+  const defaultName = 'Raffles Jobs';
   const rawFrom = process.env.EMAIL_FROM || `"${defaultName}" <${defaultEmail}>`;
 
   const match = rawFrom.match(/(?:"?([^"]*)"?\s)?<?([^>]+)>?/);

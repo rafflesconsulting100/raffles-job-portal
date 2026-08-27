@@ -63,7 +63,7 @@ export default function ContactPage() {
     setSubmitting(true);
     setTimeout(() => {
       setSubmitting(false);
-      showSuccess('Thank you for contacting Raffles Consultancy! Our team will get back to you within 24 hours.');
+      showSuccess('Thank you for contacting Raffles Jobs! Our team will get back to you within 24 hours.');
       setFormData({
         fullName: '',
         email: '',
@@ -88,13 +88,13 @@ export default function ContactPage() {
     },
     {
       title: "Email Assistance",
-      desc: "hr@rafflesconsulting.in",
+      desc: "hr@rafflesjobs.com",
       subdesc: "Average response under 24 hours",
       icon: Mail,
       badge: "Write Us",
       color: "bg-emerald-50 text-emerald-700 border-emerald-100",
       actionText: "Send Email",
-      link: "mailto:hr@rafflesconsulting.in"
+      link: "mailto:hr@rafflesjobs.com"
     },
     {
       title: "Consultancy Hours",
@@ -110,20 +110,20 @@ export default function ContactPage() {
 
   const faqs = [
     {
-      q: "Does Raffles Consultancy charge job seekers for placement services?",
-      a: "No. Raffles Consultancy never charges job seekers or candidates any fees for job placement, resume review, or interview scheduling. Our placement services are 100% free for candidates."
+      q: "Does Raffles Jobs charge job seekers for placement services?",
+      a: "No. Raffles Jobs never charges job seekers or candidates any fees for job placement, resume review, or interview scheduling. Our placement services are 100% free for candidates."
     },
     {
-      q: "How quickly can Raffles Consultancy source tech & leadership candidates?",
+      q: "How quickly can Raffles Jobs source tech & leadership candidates?",
       a: "Our specialized talent acquisition team presents pre-screened candidate shortlists within 48 to 72 hours for tech, engineering, and executive search mandates."
     },
     {
-      q: "What industries does Raffles Consultancy specialize in?",
+      q: "What industries does Raffles Jobs specialize in?",
       a: "We specialize in IT & Software Development, Global Capability Centers (GCCs), BFSI & Fintech, Healthcare & Life Sciences, E-Commerce, and Corporate Executive Search."
     },
     {
-      q: "How can corporate employers partner with Raffles Consultancy?",
-      a: "Employers can submit a query using the contact form on this page or email us directly at hr@rafflesconsulting.in. A dedicated Account Manager will connect with you immediately."
+      q: "How can corporate employers partner with Raffles Jobs?",
+      a: "Employers can submit a query using the contact form on this page or email us directly at hr@rafflesjobs.com. A dedicated Account Manager will connect with you immediately."
     }
   ];
 
@@ -204,7 +204,7 @@ export default function ContactPage() {
                     )}
                     {card.title.includes('Email') && (
                       <button
-                        onClick={() => handleCopy('hr@rafflesconsulting.in', 'Email Address')}
+                        onClick={() => handleCopy('hr@rafflesjobs.com', 'Email Address')}
                         title="Copy Email Address"
                         className="p-1 text-gray-400 hover:text-gray-600 rounded-md transition cursor-pointer"
                       >
@@ -341,7 +341,7 @@ export default function ContactPage() {
                   name="message"
                   required
                   rows={4}
-                  placeholder="How can Raffles Consultancy assist you today? Provide details on the positions or support required..."
+                  placeholder="How can Raffles Jobs assist you today? Provide details on the positions or support required..."
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-xs font-semibold text-[#1e293b] focus:outline-none focus:border-[#2B2A8C] focus:ring-2 focus:ring-[#2B2A8C]/20 transition resize-none"
                   value={formData.message}
                   onChange={handleInputChange}
@@ -414,7 +414,7 @@ export default function ContactPage() {
               </div>
               <div className="h-48 w-full rounded-2xl overflow-hidden border border-gray-200 shadow-inner">
                 <iframe
-                  title="Raffles Consultancy Office Location"
+                  title="Raffles Jobs Office Location"
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3911.8906915152865!2d77.7187121!3d11.342423!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ba96f42c33efb1b%3A0xa618bf5d96a56e07!2sMunicipal%20Colony%2C%20Veerappanchatram%2C%20Erode%2C%20Tamil%20Nadu%20638004!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
                   width="100%"
                   height="100%"

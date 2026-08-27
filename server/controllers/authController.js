@@ -71,7 +71,7 @@ exports.sendOtp = async (req, res, next) => {
     await OTP.deleteMany({ email });
     await OTP.create({ email, otp: otpCode });
 
-    // Send Email via Raffles Consultancy Brevo SMTP Template
+    // Send Email via Raffles Jobs Brevo SMTP Template
     const { getRafflesEmailTemplate } = require('../utils/emailTemplate');
     const emailHtml = getRafflesEmailTemplate({
       title: 'Verify Your Email Address',
@@ -85,7 +85,7 @@ exports.sendOtp = async (req, res, next) => {
     await sendEmail({
       to: email,
       subject: `[RAFFLES JOBS] Your Verification OTP (${otpCode})`,
-      text: `Your OTP verification code for Raffles Consultancy is ${otpCode}. It is valid for 5 minutes.`,
+      text: `Your OTP verification code for Raffles Jobs is ${otpCode}. It is valid for 5 minutes.`,
       html: emailHtml,
     });
 

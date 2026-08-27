@@ -109,7 +109,7 @@ export default function Footer() {
               <Link to="/" className="flex items-center gap-1">
                 <img
                   src={logo}
-                  alt="Raffles Consultancy"
+                  alt="Raffles Jobs"
                   className="h-14 w-auto object-contain transition-transform duration-300 hover:scale-105"
                 />
 
@@ -128,7 +128,7 @@ export default function Footer() {
                 <div className="flex items-center gap-3">
                   <Mail size={18} className="text-blue-400" />
 
-                  <span>hr@rafflesconsulting.in</span>
+                  <span>hr@rafflesjobs.com</span>
                 </div>
 
                 <div className="flex items-center gap-3">

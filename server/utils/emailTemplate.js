@@ -1,10 +1,10 @@
 /**
- * Raffles Consultancy - Premium Email Template Generator
- * Generates responsive, high-converting HTML emails with Raffles Consultancy branding.
+ * Raffles Jobs - Premium Email Template Generator
+ * Generates responsive, high-converting HTML emails with Raffles Jobs branding.
  */
 
 const getRafflesEmailTemplate = ({
-  title = "Notification from Raffles Consultancy",
+  title = "Notification from Raffles Jobs",
   subtitle = "Talent & Career Solutions",
   greeting = "Hello,",
   bodyText = "",
@@ -12,7 +12,7 @@ const getRafflesEmailTemplate = ({
   ctaText = null,
   ctaUrl = null,
   details = null, // Array of { label, value }
-  footerNote = "Thank you for choosing Raffles Consultancy. We are dedicated to connecting top talents with leading opportunities.",
+  footerNote = "Thank you for choosing Raffles Jobs. We are dedicated to connecting top talents with leading opportunities.",
 }) => {
   const currentYear = new Date().getFullYear();
 
@@ -107,7 +107,7 @@ const getRafflesEmailTemplate = ({
                 <tr>
                   <td>
                     <div style="display: inline-block; background: rgba(255,255,255,0.1); border-radius: 12px; padding: 8px 16px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.15);">
-                      <span style="color: #60A5FA; font-size: 12px; font-weight: 800; tracking: 1px; text-transform: uppercase;">Raffles Consultancy</span>
+                      <span style="color: #60A5FA; font-size: 12px; font-weight: 800; tracking: 1px; text-transform: uppercase;">Raffles Jobs</span>
                     </div>
                     <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #FFFFFF; letter-spacing: -0.5px;">${title}</h1>
                     <p style="margin: 6px 0 0 0; font-size: 13px; color: #94A3B8;">${subtitle}</p>
