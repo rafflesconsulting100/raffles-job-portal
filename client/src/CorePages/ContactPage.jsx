@@ -97,7 +97,7 @@ export default function ContactPage() {
       link: "mailto:hr@rafflesjobs.com"
     },
     {
-      title: "Consultancy Hours",
+      title: "Job Hours",
       desc: "Monday - Friday: 9:30 AM - 6:30 PM (IST)",
       subdesc: "Closed on Sundays",
       icon: Clock,
@@ -433,7 +433,7 @@ export default function ContactPage() {
                 Prompt Response Guarantee
               </h4>
               <p className="text-xs text-emerald-700 leading-relaxed font-medium">
-                Our consultancy representatives respond to candidate inquiries and corporate hiring requirements within 24 business hours.
+                Our Job representatives respond to candidate inquiries and corporate hiring requirements within 24 business hours.
               </p>
             </div>
           </div>
@@ -451,7 +451,7 @@ export default function ContactPage() {
             Frequently Asked Questions
           </h2>
           <p className="text-xs sm:text-base text-gray-500 max-w-xl mx-auto">
-            Find answers to common questions regarding candidate placement, employer mandates, and consultancy services.
+            Find answers to common questions regarding candidate placement, employer mandates, and Job services.
           </p>
         </div>
 
