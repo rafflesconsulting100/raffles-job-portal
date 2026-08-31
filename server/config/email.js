@@ -141,7 +141,6 @@ const sendEmail = async (options) => {
   const sender = parseSender();
   const rawKey = process.env.BREVO_API_KEY || process.env.BREVO_SMTP_PASS || '';
 
-<<<<<<< HEAD
 
   // 🔑 For testing only: log OTP if present
   if (options.otp || options.otpCode) {
@@ -149,9 +148,7 @@ const sendEmail = async (options) => {
   }
 
   // Prepare HTML content using Raffles Consulting email template
-=======
   // Prepare HTML content using RAFFLES JOBS email template
->>>>>>> origin/main
   let finalHtml = options.html;
   if (!finalHtml) {
     finalHtml = getRafflesEmailTemplate({
