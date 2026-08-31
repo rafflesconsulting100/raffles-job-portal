@@ -63,7 +63,7 @@ export default function ContactPage() {
     setSubmitting(true);
     setTimeout(() => {
       setSubmitting(false);
-      showSuccess('Thank you for contacting Raffles Consultancy! Our team will get back to you within 24 hours.');
+      showSuccess('Thank you for contacting Raffles Jobs! Our team will get back to you within 24 hours.');
       setFormData({
         fullName: '',
         email: '',
@@ -97,7 +97,7 @@ export default function ContactPage() {
       link: "mailto:hr@rafflesconsulting.in"
     },
     {
-      title: "Consultancy Hours",
+      title: "Job Hours",
       desc: "Monday - Friday: 9:30 AM - 6:30 PM (IST)",
       subdesc: "Closed on Sundays",
       icon: Clock,
@@ -110,19 +110,19 @@ export default function ContactPage() {
 
   const faqs = [
     {
-      q: "Does Raffles Consultancy charge job seekers for placement services?",
-      a: "No. Raffles Consultancy never charges job seekers or candidates any fees for job placement, resume review, or interview scheduling. Our placement services are 100% free for candidates."
+      q: "Does Raffles Jobs charge job seekers for placement services?",
+      a: "No. Raffles Jobs never charges job seekers or candidates any fees for job placement, resume review, or interview scheduling. Our placement services are 100% free for candidates."
     },
     {
-      q: "How quickly can Raffles Consultancy source tech & leadership candidates?",
+      q: "How quickly can Raffles Jobs source tech & leadership candidates?",
       a: "Our specialized talent acquisition team presents pre-screened candidate shortlists within 48 to 72 hours for tech, engineering, and executive search mandates."
     },
     {
-      q: "What industries does Raffles Consultancy specialize in?",
+      q: "What industries does Raffles Jobs specialize in?",
       a: "We specialize in IT & Software Development, Global Capability Centers (GCCs), BFSI & Fintech, Healthcare & Life Sciences, E-Commerce, and Corporate Executive Search."
     },
     {
-      q: "How can corporate employers partner with Raffles Consultancy?",
+      q: "How can corporate employers partner with Raffles Jobs?",
       a: "Employers can submit a query using the contact form on this page or email us directly at hr@rafflesconsulting.in. A dedicated Account Manager will connect with you immediately."
     }
   ];
@@ -145,7 +145,7 @@ export default function ContactPage() {
           </div>
 
           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/15 text-blue-300 text-xs font-bold border border-blue-400/20 shadow-xs">
-            Get in Touch with Raffles Consulting
+            Get in Touch with RAFFLES JOBS
           </span>
 
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
@@ -341,7 +341,7 @@ export default function ContactPage() {
                   name="message"
                   required
                   rows={4}
-                  placeholder="How can Raffles Consultancy assist you today? Provide details on the positions or support required..."
+                  placeholder="How can Raffles Jobs assist you today? Provide details on the positions or support required..."
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-xs font-semibold text-[#1e293b] focus:outline-none focus:border-[#2B2A8C] focus:ring-2 focus:ring-[#2B2A8C]/20 transition resize-none"
                   value={formData.message}
                   onChange={handleInputChange}
@@ -372,9 +372,9 @@ export default function ContactPage() {
           <div className="lg:col-span-5 space-y-6">
             <div className="bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-8 rounded-3xl shadow-xl space-y-6 relative overflow-hidden border border-slate-700/50">
               <div className="flex items-center gap-3">
-                <img src={logo} alt="Raffles Consulting" className="h-14 w-auto p-1.5 rounded-xl bg-white/10 backdrop-blur-xs" />
+                <img src={logo} alt="RAFFLES JOBS" className="h-14 w-auto p-1.5 rounded-xl bg-white/10 backdrop-blur-xs" />
                 <div>
-                  <h3 className="text-lg font-black text-white">Raffles Consulting</h3>
+                  <h3 className="text-lg font-black text-white">RAFFLES JOBS</h3>
                   <p className="text-xs text-blue-300 font-semibold">Tamil Nadu Office</p>
                 </div>
               </div>
@@ -414,7 +414,7 @@ export default function ContactPage() {
               </div>
               <div className="h-48 w-full rounded-2xl overflow-hidden border border-gray-200 shadow-inner">
                 <iframe
-                  title="Raffles Consultancy Office Location"
+                  title="Raffles Jobs Office Location"
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3911.8906915152865!2d77.7187121!3d11.342423!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ba96f42c33efb1b%3A0xa618bf5d96a56e07!2sMunicipal%20Colony%2C%20Veerappanchatram%2C%20Erode%2C%20Tamil%20Nadu%20638004!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
                   width="100%"
                   height="100%"
@@ -433,7 +433,7 @@ export default function ContactPage() {
                 Prompt Response Guarantee
               </h4>
               <p className="text-xs text-emerald-700 leading-relaxed font-medium">
-                Our consultancy representatives respond to candidate inquiries and corporate hiring requirements within 24 business hours.
+                Our Job representatives respond to candidate inquiries and corporate hiring requirements within 24 business hours.
               </p>
             </div>
           </div>
@@ -451,7 +451,7 @@ export default function ContactPage() {
             Frequently Asked Questions
           </h2>
           <p className="text-xs sm:text-base text-gray-500 max-w-xl mx-auto">
-            Find answers to common questions regarding candidate placement, employer mandates, and consultancy services.
+            Find answers to common questions regarding candidate placement, employer mandates, and Job services.
           </p>
         </div>
 

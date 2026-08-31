@@ -1,10 +1,10 @@
 /**
- * Raffles Consultancy - Premium Email Template Generator
- * Generates responsive, high-converting HTML emails with Raffles Consultancy branding.
+ * Raffles Jobs - Premium Email Template Generator
+ * Generates responsive, high-converting HTML emails with Raffles Jobs branding.
  */
 
 const getRafflesEmailTemplate = ({
-  title = "Notification from Raffles Consultancy",
+  title = "Notification from Raffles Jobs",
   subtitle = "Talent & Career Solutions",
   greeting = "Hello,",
   bodyText = "",
@@ -12,7 +12,7 @@ const getRafflesEmailTemplate = ({
   ctaText = null,
   ctaUrl = null,
   details = null, // Array of { label, value }
-  footerNote = "Thank you for choosing Raffles Consultancy. We are dedicated to connecting top talents with leading opportunities.",
+  footerNote = "Thank you for choosing Raffles Jobs. We are dedicated to connecting top talents with leading opportunities.",
 }) => {
   const currentYear = new Date().getFullYear();
 
@@ -107,7 +107,7 @@ const getRafflesEmailTemplate = ({
                 <tr>
                   <td>
                     <div style="display: inline-block; background: rgba(255,255,255,0.1); border-radius: 12px; padding: 8px 16px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.15);">
-                      <span style="color: #60A5FA; font-size: 12px; font-weight: 800; tracking: 1px; text-transform: uppercase;">Raffles Consultancy</span>
+                      <span style="color: #60A5FA; font-size: 12px; font-weight: 800; tracking: 1px; text-transform: uppercase;">Raffles Jobs</span>
                     </div>
                     <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #FFFFFF; letter-spacing: -0.5px;">${title}</h1>
                     <p style="margin: 6px 0 0 0; font-size: 13px; color: #94A3B8;">${subtitle}</p>
@@ -147,20 +147,20 @@ const getRafflesEmailTemplate = ({
             <td style="background-color: #F8FAFC; border-top: 1px solid #E2E8F0; padding: 28px 40px; text-align: center;">
               
               <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 800; color: #2B2A8C; tracking: 0.5px;">
-                RAFFLES CONSULTING
+                RAFFLES JOBS
               </p>
               <p style="margin: 0 0 16px 0; font-size: 12px; color: #64748B;">
                 Premier Recruitment, Executive Search & Talent Advisory Services
               </p>
 
               <div style="margin-bottom: 16px;">
-                <a href="https://rafflesconsultancy.com" style="color: #2563EB; font-size: 12px; text-decoration: none; font-weight: 600; margin: 0 10px;">Official Website</a>
+                <a href="https://www.rafflesjobs.com" style="color: #2563EB; font-size: 12px; text-decoration: none; font-weight: 600; margin: 0 10px;">Official Website</a>
                 <span style="color: #CBD5E1;">•</span>
                 <a href="mailto:support@rafflesconsultancy.com" style="color: #2563EB; font-size: 12px; text-decoration: none; font-weight: 600; margin: 0 10px;">Support Team</a>
               </div>
 
               <p style="margin: 0; font-size: 11px; color: #94A3B8;">
-                &copy; ${currentYear} Raffles Consultancy. All rights reserved.<br>
+                 &copy; ${currentYear} Raffles Jobs. All rights reserved.<br>
                 This is an automated system notification. Please do not reply directly to this email.
               </p>
 

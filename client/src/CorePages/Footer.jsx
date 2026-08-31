@@ -111,7 +111,7 @@ export default function Footer() {
               <Link to="/" className="flex items-center gap-1">
                 <img
                   src={logo}
-                  alt="Raffles Consultancy"
+                  alt="Raffles Jobs"
                   className="h-14 w-auto object-contain transition-transform duration-300 hover:scale-105"
                 />
 
@@ -263,7 +263,7 @@ export default function Footer() {
             <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
               <div className="text-center lg:text-left">
                 <p className="text-sm text-gray-400">
-                  © {new Date().getFullYear()} Raffles Consulting. All Rights
+                  © {new Date().getFullYear()} RAFFLES JOBS. All Rights
                   Reserved.
                 </p>
 

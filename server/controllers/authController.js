@@ -71,12 +71,12 @@ exports.sendOtp = async (req, res, next) => {
     await OTP.deleteMany({ email });
     await OTP.create({ email, otp: otpCode });
 
-    // Send Email via Raffles Consultancy Brevo SMTP Template
+    // Send Email via Raffles Jobs Brevo SMTP Template
     const { getRafflesEmailTemplate } = require('../utils/emailTemplate');
     const emailHtml = getRafflesEmailTemplate({
       title: 'Verify Your Email Address',
-      subtitle: 'Raffles Consulting Account Verification',
-      greeting: 'Welcome to Raffles Consulting,',
+      subtitle: 'RAFFLES JOBS Account Verification',
+      greeting: 'Welcome to RAFFLES JOBS,',
       bodyText: 'Thank you for registering with us. Please use the following One-Time Password (OTP) code to verify your email address and activate your account:',
       otpCode: otpCode,
       footerNote: 'This OTP is valid for 5 minutes. If you did not request this verification, please ignore this email.',
@@ -84,8 +84,8 @@ exports.sendOtp = async (req, res, next) => {
 
     await sendEmail({
       to: email,
-      subject: `[Raffles Consulting] Your Verification OTP (${otpCode})`,
-      text: `Your OTP verification code for Raffles Consultancy is ${otpCode}. It is valid for 5 minutes.`,
+      subject: `[RAFFLES JOBS] Your Verification OTP (${otpCode})`,
+      text: `Your OTP verification code for Raffles Jobs is ${otpCode}. It is valid for 5 minutes.`,
       html: emailHtml,
     });
 

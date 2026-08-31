@@ -4,7 +4,7 @@ const { getRafflesEmailTemplate } = require('../utils/emailTemplate');
 // Parse sender name and email address cleanly
 const parseSender = () => {
   const defaultEmail = process.env.BREVO_SMTP_USER || 'rafflesconsulting37@gmail.com';
-  const defaultName = 'Raffles Consultancy';
+  const defaultName = 'Raffles Jobs';
   const rawFrom = process.env.EMAIL_FROM || `"${defaultName}" <${defaultEmail}>`;
 
   const match = rawFrom.match(/(?:"?([^"]*)"?\s)?<?([^>]+)>?/);
@@ -141,6 +141,7 @@ const sendEmail = async (options) => {
   const sender = parseSender();
   const rawKey = process.env.BREVO_API_KEY || process.env.BREVO_SMTP_PASS || '';
 
+<<<<<<< HEAD
 
   // 🔑 For testing only: log OTP if present
   if (options.otp || options.otpCode) {
@@ -148,10 +149,13 @@ const sendEmail = async (options) => {
   }
 
   // Prepare HTML content using Raffles Consulting email template
+=======
+  // Prepare HTML content using RAFFLES JOBS email template
+>>>>>>> origin/main
   let finalHtml = options.html;
   if (!finalHtml) {
     finalHtml = getRafflesEmailTemplate({
-      title: options.title || options.subject || 'Raffles Consulting Notification',
+      title: options.title || options.subject || 'RAFFLES JOBS Notification',
       subtitle: options.subtitle || 'Talent & Career Solutions',
       greeting: options.greeting || 'Dear User,',
       bodyText: options.text || options.body || '',

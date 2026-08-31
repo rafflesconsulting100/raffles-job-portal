@@ -172,12 +172,12 @@ exports.updateApplicationStatus = async (req, res, next) => {
       relatedJob: application.job._id,
     });
 
-    // Send email notification to applicant via Raffles Consultancy Brevo SMTP
+    // Send email notification to applicant via Raffles Jobs Brevo SMTP
     const { getRafflesEmailTemplate } = require('../utils/emailTemplate');
     const isAccepted = status === 'accepted';
     const emailHtml = getRafflesEmailTemplate({
       title: `Application Update: ${application.job.title}`,
-      subtitle: `Raffles Consultancy Recruitment Update`,
+      subtitle: `Raffles Jobs Recruitment Update`,
       greeting: `Dear ${application.applicant.username},`,
       bodyText: `Your application status for the position of <strong>${application.job.title}</strong> at <strong>${application.job.company}</strong> has been updated to <span style="font-weight:700; text-transform:uppercase; color:${isAccepted ? '#059669' : '#DC2626'}">${status}</span>.`,
       details: [
@@ -195,7 +195,7 @@ exports.updateApplicationStatus = async (req, res, next) => {
 
     await sendEmail({
       to: application.applicant.email,
-      subject: `[Raffles Consulting] Application Update for ${application.job.title}`,
+      subject: `[RAFFLES JOBS] Application Update for ${application.job.title}`,
       text: textSummary,
       html: emailHtml,
     });

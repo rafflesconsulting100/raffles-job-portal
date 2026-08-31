@@ -84,7 +84,7 @@ export default function AuthTemplate({
         </span>
       </>
     ),
-    subtitle: "Partner with Raffles Consultancy for executive search, IT staffing, and turnkey workforce solutions. Source pre-screened top 1% talent.",
+    subtitle: "Partner with Raffles Jobs for executive search, IT staffing, and turnkey workforce solutions. Source pre-screened top 1% talent.",
     badgeText: "Enterprise Recruitment Partner",
     image: employerImg || approvedImg,
     statBadge: "650+ Corporate Partners",
@@ -257,7 +257,7 @@ export default function AuthTemplate({
 
             {/* Brand Left Panel Footer */}
             <div className="relative z-10 text-[11px] text-slate-400 font-medium flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-5 mt-6">
-              {/* <span>© 2026 Raffles Consulting</span>
+              {/* <span>© 2026 RAFFLES JOBS</span>
               <div className="flex items-center gap-3">
                 <span className="hover:text-white cursor-pointer transition">Privacy Policy</span>
                 <span>•</span>
