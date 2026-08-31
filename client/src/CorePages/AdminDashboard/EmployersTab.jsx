@@ -4,6 +4,7 @@ import {
   Building2,
   CheckCircle2,
   XCircle,
+  Clock,
   ShieldAlert,
   ShieldCheck,
   Briefcase,
@@ -11,10 +12,7 @@ import {
   Eye,
   Trash2,
   RefreshCw,
-  Filter,
-  Check,
   X,
-  Phone,
   Mail,
   MapPin
 } from "lucide-react";
@@ -31,17 +29,32 @@ export default function EmployersTab({
   const [statusFilter, setStatusFilter] = useState("all");
   const [togglingId, setTogglingId] = useState(null);
 
+  const getEmployerState = (emp) => {
+    if (emp.status === "Pending" || (emp.isApproved === false && emp.status !== "Suspended")) {
+      return "pending";
+    }
+    if (emp.status === "Suspended" || emp.employerAccess === false || emp.isApproved === false) {
+      return "revoked";
+    }
+    return "granted";
+  };
+
   const filteredEmployers = employers.filter((emp) => {
-    const isGranted = emp.employerAccess !== false && emp.isApproved !== false && emp.status !== "Suspended";
+    const state = getEmployerState(emp);
     const matchesSearch =
       emp.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       emp.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       emp.location?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    if (statusFilter === "granted") return matchesSearch && isGranted;
-    if (statusFilter === "revoked") return matchesSearch && !isGranted;
+    if (statusFilter === "pending") return matchesSearch && state === "pending";
+    if (statusFilter === "granted") return matchesSearch && state === "granted";
+    if (statusFilter === "revoked") return matchesSearch && state === "revoked";
     return matchesSearch;
   });
+
+  const pendingCount = employers.filter((e) => getEmployerState(e) === "pending").length;
+  const grantedCount = employers.filter((e) => getEmployerState(e) === "granted").length;
+  const revokedCount = employers.filter((e) => getEmployerState(e) === "revoked").length;
 
   const handleAccessToggle = async (empId, currentGranted) => {
     setTogglingId(empId);
@@ -61,7 +74,7 @@ export default function EmployersTab({
             <Building2 className="text-blue-600" size={24} /> Employer Portal Access Directory
           </h2>
           <p className="text-slate-500 text-xs sm:text-sm mt-0.5">
-            Grant or restrict access privileges for employers to use the recruiter portal and post jobs.
+            Review registration requests, approve new recruiters, or manage access privileges across employers.
           </p>
         </div>
 
@@ -112,6 +125,16 @@ export default function EmployersTab({
             All Employers ({employers.length})
           </button>
           <button
+            onClick={() => setStatusFilter("pending")}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+              statusFilter === "pending"
+                ? "bg-amber-600 text-white shadow-xs"
+                : "bg-white border border-amber-200 text-amber-800 hover:bg-amber-50"
+            }`}
+          >
+            <Clock size={14} /> Pending Approval ({pendingCount})
+          </button>
+          <button
             onClick={() => setStatusFilter("granted")}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
               statusFilter === "granted"
@@ -119,9 +142,7 @@ export default function EmployersTab({
                 : "bg-white border border-slate-200 text-emerald-700 hover:bg-emerald-50"
             }`}
           >
-            <CheckCircle2 size={14} /> Access Granted (
-            {employers.filter((e) => e.employerAccess !== false && e.isApproved !== false && e.status !== "Suspended").length}
-            )
+            <CheckCircle2 size={14} /> Access Granted ({grantedCount})
           </button>
           <button
             onClick={() => setStatusFilter("revoked")}
@@ -131,9 +152,7 @@ export default function EmployersTab({
                 : "bg-white border border-slate-200 text-rose-700 hover:bg-rose-50"
             }`}
           >
-            <XCircle size={14} /> Access Revoked (
-            {employers.filter((e) => e.employerAccess === false || e.isApproved === false || e.status === "Suspended").length}
-            )
+            <XCircle size={14} /> Access Revoked ({revokedCount})
           </button>
         </div>
       </div>
@@ -150,20 +169,19 @@ export default function EmployersTab({
             <table className="w-full text-left text-sm border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/80 text-xs font-bold uppercase tracking-wider text-slate-400">
-                  <th className="py-4 px-6">Employer / Organization</th>
-                  <th className="py-4 px-6">Portal Access State</th>
+                  <th className="py-4 px-6">Employer / Recruiter</th>
+                  <th className="py-4 px-6">Access & Approval State</th>
                   <th className="py-4 px-6">Jobs Posted</th>
                   <th className="py-4 px-6">Applications Received</th>
-                  <th className="py-4 px-6">Joined Date</th>
-                  <th className="py-4 px-6 text-right">Access Controls</th>
+                  <th className="py-4 px-6">Registered On</th>
+                  <th className="py-4 px-6 text-right">Approval Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredEmployers.map((emp) => {
-                  const isGranted =
-                    emp.employerAccess !== false &&
-                    emp.isApproved !== false &&
-                    emp.status !== "Suspended";
+                  const state = getEmployerState(emp);
+                  const isGranted = state === "granted";
+                  const isPending = state === "pending";
                   const isBusy = togglingId === emp._id;
 
                   return (
@@ -190,7 +208,12 @@ export default function EmployersTab({
 
                       {/* Access Status Badge */}
                       <td className="py-4 px-6">
-                        {isGranted ? (
+                        {isPending ? (
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
+                            <Clock size={14} className="text-amber-700" />
+                            <span>PENDING APPROVAL</span>
+                          </div>
+                        ) : isGranted ? (
                           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-2xs">
                             <ShieldCheck size={14} className="text-emerald-600" />
                             <span>ACCESS GRANTED</span>
@@ -202,9 +225,11 @@ export default function EmployersTab({
                           </div>
                         )}
                         <p className="text-[11px] text-slate-400 mt-1">
-                          {isGranted
-                            ? "Can post & manage jobs"
-                            : "Portal features restricted"}
+                          {isPending
+                            ? "Awaiting Admin approval to use portal"
+                            : isGranted
+                            ? "Authorized to post & manage jobs"
+                            : "Dashboard access suspended"}
                         </p>
                       </td>
 
@@ -230,23 +255,27 @@ export default function EmployersTab({
 
                       {/* Joined Date */}
                       <td className="py-4 px-6 text-xs text-slate-500 font-medium">
-                        {new Date(emp.createdAt).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
+                        {emp.createdAt
+                          ? new Date(emp.createdAt).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })
+                          : "N/A"}
                       </td>
 
                       {/* Action Controls */}
                       <td className="py-4 px-6 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          {/* Toggle Access Button */}
+                          {/* Approve / Grant or Revoke Access Button */}
                           <button
                             disabled={isBusy}
                             onClick={() => handleAccessToggle(emp._id, isGranted)}
                             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
                               isGranted
                                 ? "bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200"
+                                : isPending
+                                ? "bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-500/20"
                                 : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20"
                             }`}
                           >
@@ -256,9 +285,13 @@ export default function EmployersTab({
                               <>
                                 <XCircle size={14} /> Revoke Access
                               </>
+                            ) : isPending ? (
+                              <>
+                                <CheckCircle2 size={14} /> Approve Recruiter
+                              </>
                             ) : (
                               <>
-                                <CheckCircle2 size={14} /> Grant Access
+                                <CheckCircle2 size={14} /> Re-Grant Access
                               </>
                             )}
                           </button>
@@ -267,7 +300,7 @@ export default function EmployersTab({
                           <button
                             onClick={() => onViewEmployerModal(emp)}
                             className="p-2 rounded-xl text-slate-600 hover:bg-slate-100 border border-slate-200 transition cursor-pointer"
-                            title="View Details"
+                            title="View Employer Details"
                           >
                             <Eye size={16} />
                           </button>
@@ -301,3 +334,4 @@ export default function EmployersTab({
     </div>
   );
 }
+

@@ -2,6 +2,7 @@ import { apiConnector } from "../apiConnector";
 import { endpoints } from "../apis";
 
 const {
+  ADMIN_LOGIN_API,
   ADMIN_STATS_API,
   ADMIN_EMPLOYERS_API,
   TOGGLE_EMPLOYER_ACCESS_API,
@@ -13,6 +14,15 @@ const {
   DELETE_USER_API,
   SEED_ADMIN_API,
 } = endpoints;
+
+export const adminLogin = async (credentials) => {
+  try {
+    const response = await apiConnector("POST", ADMIN_LOGIN_API, credentials);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || "Admin authentication failed");
+  }
+};
 
 export const fetchAdminStats = async (token) => {
   try {

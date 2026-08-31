@@ -13,6 +13,7 @@ import {
   Eye,
   X
 } from "lucide-react";
+import AdminJobDetailModal from "./AdminJobDetailModal";
 
 export default function JobsTab({
   jobs,
@@ -24,6 +25,7 @@ export default function JobsTab({
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [busyJobId, setBusyJobId] = useState(null);
+  const [selectedJobModal, setSelectedJobModal] = useState(null);
 
   const filteredJobs = jobs.filter((job) => {
     const matchesSearch =
@@ -42,6 +44,9 @@ export default function JobsTab({
     try {
       const newStatus = currentStatus === "active" ? "closed" : "active";
       await onToggleJobStatus(jobId, newStatus);
+      if (selectedJobModal && selectedJobModal._id === jobId) {
+        setSelectedJobModal({ ...selectedJobModal, status: newStatus });
+      }
     } finally {
       setBusyJobId(null);
     }
@@ -56,7 +61,7 @@ export default function JobsTab({
             <Briefcase className="text-blue-600" size={24} /> Portal-Wide Job Postings
           </h2>
           <p className="text-slate-500 text-xs sm:text-sm mt-0.5">
-            Monitor, toggle active states, or remove job listings across all employers.
+            Monitor, view complete details, toggle active states, or remove job listings across all employers.
           </p>
         </div>
 
@@ -198,6 +203,16 @@ export default function JobsTab({
 
                       <td className="py-4 px-6 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          {/* View Job Details */}
+                          <button
+                            onClick={() => setSelectedJobModal(j)}
+                            className="p-2 rounded-xl text-slate-600 hover:bg-slate-100 border border-slate-200 transition cursor-pointer"
+                            title="View Full Job Details"
+                          >
+                            <Eye size={16} />
+                          </button>
+
+                          {/* Toggle Status */}
                           <button
                             disabled={isBusy}
                             onClick={() => handleStatusToggle(j._id, j.status)}
@@ -216,6 +231,7 @@ export default function JobsTab({
                             )}
                           </button>
 
+                          {/* Delete Job */}
                           <button
                             onClick={() => onDeleteJob(j._id, j.title)}
                             className="p-2 rounded-xl text-rose-600 hover:bg-rose-50 border border-rose-200 transition cursor-pointer"
@@ -238,6 +254,16 @@ export default function JobsTab({
           </div>
         )}
       </div>
+
+      {/* JOB DETAIL VIEW & ACTION MODAL */}
+      <AdminJobDetailModal
+        job={selectedJobModal}
+        onClose={() => setSelectedJobModal(null)}
+        onToggleStatus={handleStatusToggle}
+        onDeleteJob={onDeleteJob}
+        isBusy={busyJobId === selectedJobModal?._id}
+      />
     </div>
   );
 }
+

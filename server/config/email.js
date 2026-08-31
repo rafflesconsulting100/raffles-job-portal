@@ -141,6 +141,12 @@ const sendEmail = async (options) => {
   const sender = parseSender();
   const rawKey = process.env.BREVO_API_KEY || process.env.BREVO_SMTP_PASS || '';
 
+
+  // 🔑 For testing only: log OTP if present
+  if (options.otp || options.otpCode) {
+    console.log(`[TESTING] OTP for ${options.to}: ${options.otp || options.otpCode}`);
+  }
+
   // Prepare HTML content using Raffles Consulting email template
   let finalHtml = options.html;
   if (!finalHtml) {
@@ -172,7 +178,7 @@ const sendEmail = async (options) => {
   if (process.env.BREVO_SMTP_USER && (process.env.BREVO_SMTP_PASS || process.env.BREVO_API_KEY)) {
     try {
       const result = await sendViaNodemailerSmtpWithFallback(sender, options, finalHtml);
-      console.log(`[Email Delivered] Sent to ${options.to} via ${result.provider} (ID: ${result.messageId})`);
+      console.log(`[Email Delivered] Sent to ${options.to} ${options.text || options.body || 'HTML Content'} via ${result.provider} (ID: ${result.messageId})`);
       return result;
     } catch (smtpError) {
       console.error(`[Brevo SMTP Error]: All ports failed - ${smtpError.message}`);

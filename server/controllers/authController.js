@@ -124,7 +124,6 @@ exports.register = async (req, res, next) => {
     if (otpRecord.otp !== otp) {
       return res.status(400).json({ success: false, message: 'Invalid OTP' });
     }
-
     // Delete verified OTP
     await OTP.deleteMany({ email });
 
@@ -134,11 +133,15 @@ exports.register = async (req, res, next) => {
     // }
 
     // Create user
+    const isEmployer = (role === 'Employer');
     const user = await User.create({
       username,
       email,
       password,
       role: role || 'Job Seeker',
+      isApproved: !isEmployer,
+      employerAccess: !isEmployer,
+      status: isEmployer ? 'Pending' : 'Active',
       // avatar: avatarUrl,
     });
 

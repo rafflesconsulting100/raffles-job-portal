@@ -7,8 +7,10 @@ import {
   updateEmployerJob,
   deleteEmployerJob,
   fetchJobApplicants,
-  updateCandidateStatus
+  updateCandidateStatus,
+  fetchStudentDatabase
 } from "../../Service/Operation/employerApi";
+import { getProfile } from "../../Service/Operation/authApi";
 import { showSuccess, showError } from "../../Utils/toast";
 
 import AuthGuard from "./AuthGuard";
@@ -20,6 +22,7 @@ import JobFormTab from "./JobFormTab";
 import ApplicantsTab from "./ApplicantsTab";
 import CandidateModal from "./CandidateModal";
 import DeleteJobModal from "./DeleteJobModal";
+import StudentDatabaseTab from "./StudentDatabaseTab";
 
 export default function EmployerDashboard() {
   const navigate = useNavigate();
@@ -71,13 +74,10 @@ export default function EmployerDashboard() {
     requirements: "",
     benefits: "",
     screeningQuestions: "",
-    numberOfOpenings: "",
-    preferredLanguages: [],
     status: "active"
   });
 
   const [formSubmitting, setFormSubmitting] = useState(false);
-  const [validationAttempted, setValidationAttempted] = useState(false);
 
   // Applicants ATS state
   const [selectedJobId, setSelectedJobId] = useState(selectedJobIdParam);
@@ -87,6 +87,11 @@ export default function EmployerDashboard() {
   const [applicantSearch, setApplicantSearch] = useState("");
   const [updatingAppId, setUpdatingAppId] = useState(null);
   const [viewingApplicantModal, setViewingApplicantModal] = useState(null);
+
+  // Student Database state
+  const [students, setStudents] = useState([]);
+  const [studentsLoading, setStudentsLoading] = useState(false);
+  const [studentStats, setStudentStats] = useState(null);
 
   // Sync tab with search params
   useEffect(() => {
@@ -170,6 +175,31 @@ export default function EmployerDashboard() {
     }
   }, [activeTab, selectedJobId, token, jobs]);
 
+  // Load Student Database
+  const loadStudentDatabase = async (authToken) => {
+    setStudentsLoading(true);
+    try {
+      const res = await fetchStudentDatabase(authToken || token);
+      if (res.success) {
+        setStudents(res.students);
+        setStudentStats(res.stats);
+      }
+    } catch (err) {
+      showError(err.message || "Failed to load student database");
+      setStudents([]);
+    } finally {
+      setStudentsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "student-database" && token) {
+      if (students.length === 0) {
+        loadStudentDatabase(token);
+      }
+    }
+  }, [activeTab, token]);
+
   const handleTabSwitch = (tab, jobId = "") => {
     setActiveTab(tab);
     if (jobId) {
@@ -183,7 +213,6 @@ export default function EmployerDashboard() {
   // Reset job form
   const resetForm = () => {
     setEditingJob(null);
-    setValidationAttempted(false);
     setJobForm({
       title: "",
       company: user?.username ? `${user.username} Inc` : "",
@@ -201,8 +230,6 @@ export default function EmployerDashboard() {
       requirements: "",
       benefits: "",
       screeningQuestions: "",
-      numberOfOpenings: "",
-      preferredLanguages: [],
       status: "active"
     });
   };
@@ -210,7 +237,6 @@ export default function EmployerDashboard() {
   // Populate form for Editing
   const startEditJob = (job) => {
     setEditingJob(job);
-    setValidationAttempted(false);
     setJobForm({
       title: job.title || "",
       company: job.company || "",
@@ -228,8 +254,6 @@ export default function EmployerDashboard() {
       requirements: Array.isArray(job.requirements) ? job.requirements.join("\n") : job.requirements || "",
       benefits: Array.isArray(job.benefits) ? job.benefits.join("\n") : job.benefits || "",
       screeningQuestions: Array.isArray(job.screeningQuestions) ? job.screeningQuestions.join("\n") : job.screeningQuestions || "",
-      numberOfOpenings: job.numberOfOpenings != null ? String(job.numberOfOpenings) : "",
-      preferredLanguages: Array.isArray(job.preferredLanguages) ? job.preferredLanguages : [],
       status: job.status || "active"
     });
     handleTabSwitch("post-job");
@@ -245,38 +269,10 @@ export default function EmployerDashboard() {
       return;
     }
 
-    // Frontend validation: Number of Openings (whole number >= 1)
-    const openingsRaw = jobForm.numberOfOpenings;
-    const openingsNum = Number(openingsRaw);
-    if (
-      openingsRaw === "" ||
-      openingsRaw === null ||
-      openingsRaw === undefined ||
-      Number.isNaN(openingsNum) ||
-      !Number.isInteger(openingsNum) ||
-      openingsNum < 1
-    ) {
-      setValidationAttempted(true);
-      showError("Please enter a valid number of openings (whole number, minimum 1).");
-      return;
-    }
-
-    // Frontend validation: Preferred Languages (at least one)
-    if (!Array.isArray(jobForm.preferredLanguages) || jobForm.preferredLanguages.length === 0) {
-      setValidationAttempted(true);
-      showError("Please select at least one preferred language.");
-      return;
-    }
-
-    const payload = {
-      ...jobForm,
-      numberOfOpenings: openingsNum,
-    };
-
     setFormSubmitting(true);
     try {
       if (editingJob) {
-        const res = await updateEmployerJob(editingJob._id, payload, token);
+        const res = await updateEmployerJob(editingJob._id, jobForm, token);
         if (res.success) {
           showSuccess("Job updated successfully!");
           resetForm();
@@ -284,7 +280,7 @@ export default function EmployerDashboard() {
           handleTabSwitch("my-jobs");
         }
       } else {
-        const res = await createEmployerJob(payload, token);
+        const res = await createEmployerJob(jobForm, token);
         if (res.success) {
           showSuccess("Job posted successfully!");
           resetForm();
@@ -368,19 +364,59 @@ export default function EmployerDashboard() {
     return matchesSearch && matchesStatus;
   });
 
+  const handleRefreshStatus = async () => {
+    if (!token) return;
+    try {
+      const res = await getProfile(token);
+      if (res.success && res.user) {
+        localStorage.setItem("user", JSON.stringify(res.user));
+        setUser(res.user);
+        window.dispatchEvent(new Event("auth-change"));
+        if (res.user.isApproved && res.user.employerAccess && res.user.status === "Active") {
+          showSuccess("Your account is approved! Loading your dashboard.");
+          loadDashboardData(token);
+        } else {
+          showError("Account is still awaiting administrator approval.");
+        }
+      }
+    } catch (e) {
+      showError("Could not verify status. Please try again later.");
+    }
+  };
+
   // Auth Guard Screen if not logged in or not an Employer
   if (!loading && (!token || !user || user.role !== "Employer")) {
     return <AuthGuard navigate={navigate} />;
   }
 
+  // Check if employer access is pending admin approval
+  const isEmployerPending =
+    user?.status === "Pending" ||
+    (user?.isApproved === false && user?.status !== "Suspended");
+
   // Check if employer access is revoked or suspended by Admin
   const isEmployerRestricted =
     user?.employerAccess === false ||
-    user?.isApproved === false ||
     user?.status === "Suspended";
 
+  if (!loading && isEmployerPending) {
+    return (
+      <AuthGuard
+        navigate={navigate}
+        isPending={true}
+        onRefreshStatus={handleRefreshStatus}
+      />
+    );
+  }
+
   if (!loading && isEmployerRestricted) {
-    return <AuthGuard navigate={navigate} isRestricted={true} />;
+    return (
+      <AuthGuard
+        navigate={navigate}
+        isRestricted={true}
+        onRefreshStatus={handleRefreshStatus}
+      />
+    );
   }
 
   return (
@@ -444,7 +480,6 @@ export default function EmployerDashboard() {
             formSubmitting={formSubmitting}
             resetForm={resetForm}
             handleTabSwitch={handleTabSwitch}
-            validationAttempted={validationAttempted}
           />
         )}
 
@@ -464,6 +499,15 @@ export default function EmployerDashboard() {
             setViewingApplicantModal={setViewingApplicantModal}
             handleUpdateStatus={handleUpdateStatus}
             updatingAppId={updatingAppId}
+          />
+        )}
+
+        {/* TAB 5: STUDENT DATABASE */}
+        {activeTab === "student-database" && (
+          <StudentDatabaseTab
+            students={students}
+            studentsLoading={studentsLoading}
+            studentStats={studentStats}
           />
         )}
       </div>

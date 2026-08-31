@@ -52,12 +52,13 @@ const checkEmployerAccess = (req, res, next) => {
     const isAccessGranted = 
       req.user.employerAccess !== false && 
       req.user.isApproved !== false && 
-      req.user.status !== 'Suspended';
+      req.user.status !== 'Suspended' &&
+      req.user.status !== 'Pending';
       
     if (!isAccessGranted) {
       return res.status(403).json({
         success: false,
-        message: 'Your employer portal access is restricted or suspended by Admin. Please contact system support for approval.',
+        message: 'Your employer portal access is pending admin approval or has been restricted. Please contact support.',
       });
     }
   }

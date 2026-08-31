@@ -47,6 +47,17 @@ export default function NavigationTabs({ activeTab, handleTabSwitch, jobsCount, 
       >
         <Users className="w-4 h-4" /> Applicant ATS Pipeline ({totalApplicants})
       </button>
+
+      <button
+        onClick={() => handleTabSwitch("student-database")}
+        className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm transition whitespace-nowrap cursor-pointer ${
+          activeTab === "student-database"
+            ? "bg-[#2B2A8C] text-white shadow-md shadow-[#2B2A8C]/20"
+            : "bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 border border-slate-200"
+        }`}
+      >
+        <Users className="w-4 h-4" /> Student Database
+      </button>
     </div>
   );
 }

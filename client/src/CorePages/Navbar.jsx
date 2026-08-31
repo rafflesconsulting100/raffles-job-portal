@@ -16,6 +16,7 @@ import {
   LogOut,
   UserCheck, ShieldCheck
 } from "lucide-react";
+import { showSuccess, showError } from '../Utils/toast';
 import logo from "../assets/rafflelogo.png";
 
 const navLinks = [
@@ -95,6 +96,7 @@ export default function Navbar() {
     setDropdownOpen(false);
     window.dispatchEvent(new Event("auth-change"));
     navigate("/login");
+    showSuccess('Logged out Successfully');
   };
 
   const handlePostJobClick = () => {

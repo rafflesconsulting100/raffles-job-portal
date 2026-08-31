@@ -454,11 +454,11 @@ export default function JobFormTab({
               Key Skills / Core Tech Stack (Comma separated or click badges)
             </label>
             <p className="text-slate-500 text-xs mb-3">
-              Add technical skills or required competencies for candidate matching.
+              Add key skills or required competencies for candidate matching.
             </p>
             <input
               type="text"
-              placeholder="e.g. React.js, Node.js, TypeScript, MongoDB, AWS"
+              placeholder="e.g. Communication, Sales, Marketing, Python, React..."
               value={jobForm.skills || ""}
               onChange={(e) => setJobForm({ ...jobForm, skills: e.target.value })}
               className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 outline-none focus:border-[#2B2A8C] focus:ring-2 focus:ring-[#2B2A8C]/10 transition"

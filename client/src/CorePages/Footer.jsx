@@ -1,5 +1,4 @@
-// src/components/layout/Footer.jsx
-
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   BriefcaseBusiness,
@@ -9,32 +8,35 @@ import {
   MapPin,
   ArrowUp,
   Send,
+  ShieldCheck,
 } from "lucide-react";
-import { FaFacebook,FaInstagram, FaLinkedin, FaTwitter} from "react-icons/fa";
+import { FaFacebook, FaInstagram, FaLinkedin, FaTwitter } from "react-icons/fa";
 import logo from "../assets/rafflelogo.png";
+import AdminLoginModal from "./Footer/AdminLoginModal";
 
 const candidateLinks = [
   { name: "Browse Jobs", path: "/jobs" },
-  { name: "Companies", path: "/companies" },
-  { name: "Career Advice", path: "/career-advice" },
-  { name: "Job Alerts", path: "/job-alerts" },
+  { name: "Companies", path: "/jobs" },
+  { name: "Career Advice", path: "/about" },
+  { name: "Job Alerts", path: "/jobs" },
 ];
 
 const employerLinks = [
-  { name: "Post a Job", path: "/post-job" },
-  { name: "Browse Candidates", path: "/candidates" },
-  { name: "Recruitment Solutions", path: "/solutions" },
-  { name: "Employer Login", path: "/employer/login" },
+  { name: "Post a Job", path: "/employer-dashboard?tab=post-job" },
+  { name: "Browse Candidates", path: "/employer-dashboard?tab=student-database" },
+  { name: "Recruitment Solutions", path: "/about" },
+  { name: "Employer Dashboard", path: "/employer-dashboard" },
 ];
 
 const companyLinks = [
   { name: "About Us", path: "/about" },
   { name: "Contact", path: "/contact" },
-  { name: "Our Team", path: "/team" },
   { name: "Privacy Policy", path: "/privacy" },
 ];
 
 export default function Footer() {
+  const [adminModalOpen, setAdminModalOpen] = useState(false);
+
   const scrollTop = () => {
     window.scrollTo({
       top: 0,
@@ -277,17 +279,22 @@ export default function Footer() {
                   Privacy
                 </Link>
 
-                <Link to="/terms" className="hover:text-blue-400 transition">
+                <Link to="/about" className="hover:text-blue-400 transition">
                   Terms
                 </Link>
 
-                <Link to="/cookies" className="hover:text-blue-400 transition">
-                  Cookies
-                </Link>
-
-                <Link to="/support" className="hover:text-blue-400 transition">
+                <Link to="/contact" className="hover:text-blue-400 transition">
                   Support
                 </Link>
+
+                <button
+                  onClick={() => setAdminModalOpen(true)}
+                  className="px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                  title="Super Admin Control Access"
+                >
+                  <ShieldCheck size={14} className="text-blue-400" />
+                  Admin Portal
+                </button>
               </div>
             </div>
           </div>
@@ -298,10 +305,16 @@ export default function Footer() {
 
       <button
         onClick={scrollTop}
-        className="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full bg-[#2563EB] hover:bg-blue-700 text-white shadow-2xl flex items-center justify-center transition-all duration-300 hover:-translate-y-1"
+        className="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full bg-[#2563EB] hover:bg-blue-700 text-white shadow-2xl flex items-center justify-center transition-all duration-300 hover:-translate-y-1 cursor-pointer"
       >
         <ArrowUp size={20} />
       </button>
+
+      {/* ADMIN LOGIN MODAL */}
+      <AdminLoginModal
+        isOpen={adminModalOpen}
+        onClose={() => setAdminModalOpen(false)}
+      />
     </footer>
   );
 }

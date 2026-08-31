@@ -9,6 +9,7 @@ const {
   DELETE_JOB_API,
   GET_JOB_APPLICANTS_API,
   UPDATE_APPLICATION_STATUS_API,
+  GET_STUDENT_DATABASE_API,
 } = endpoints;
 
 const getAuthHeaders = (token) => {
@@ -89,3 +90,14 @@ export const updateCandidateStatus = async (applicationId, status, token) => {
     throw new Error(error.response?.data?.message || "Failed to update application status");
   }
 };
+
+// Fetch student database (all candidates)
+export const fetchStudentDatabase = async (token) => {
+  try {
+    const response = await apiConnector("GET", GET_STUDENT_DATABASE_API, null, getAuthHeaders(token));
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || "Failed to fetch student database");
+  }
+};
+

@@ -10,6 +10,7 @@ import {
   Users,
   ShieldCheck,
   ShieldAlert,
+  Clock,
   CheckCircle2,
   XCircle
 } from "lucide-react";
@@ -21,10 +22,14 @@ export default function EmployerDetailModal({
 }) {
   if (!employer) return null;
 
+  const isPending =
+    employer.status === "Pending" ||
+    (employer.isApproved === false && employer.status !== "Suspended");
+
   const isGranted =
     employer.employerAccess !== false &&
     employer.isApproved !== false &&
-    employer.status !== "Suspended";
+    employer.status === "Active";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
@@ -56,24 +61,34 @@ export default function EmployerDetailModal({
         <div className="p-6 space-y-6">
           {/* ACCESS STATUS BANNER */}
           <div
-            className={`p-4 rounded-2xl border flex items-center justify-between ${
-              isGranted
+            className={`p-4 rounded-2xl border flex items-center justify-between gap-3 ${
+              isPending
+                ? "bg-amber-50 border-amber-300 text-amber-950"
+                : isGranted
                 ? "bg-emerald-50 border-emerald-200 text-emerald-900"
                 : "bg-rose-50 border-rose-200 text-rose-900"
             }`}
           >
             <div className="flex items-center gap-3">
-              {isGranted ? (
+              {isPending ? (
+                <Clock className="w-6 h-6 text-amber-600 shrink-0" />
+              ) : isGranted ? (
                 <ShieldCheck className="w-6 h-6 text-emerald-600 shrink-0" />
               ) : (
                 <ShieldAlert className="w-6 h-6 text-rose-600 shrink-0" />
               )}
               <div>
                 <p className="font-bold text-sm">
-                  {isGranted ? "Portal Access: GRANTED" : "Portal Access: REVOKED"}
+                  {isPending
+                    ? "Portal Access: PENDING APPROVAL"
+                    : isGranted
+                    ? "Portal Access: GRANTED"
+                    : "Portal Access: REVOKED"}
                 </p>
                 <p className="text-xs text-slate-600">
-                  {isGranted
+                  {isPending
+                    ? "Employer is waiting for administrator approval before accessing the dashboard."
+                    : isGranted
                     ? "Employer has active permission to post and manage jobs."
                     : "Employer access to recruiter tools is suspended."}
                 </p>
@@ -85,11 +100,20 @@ export default function EmployerDetailModal({
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0 ${
                 isGranted
                   ? "bg-rose-600 hover:bg-rose-700 text-white"
+                  : isPending
+                  ? "bg-amber-500 hover:bg-amber-600 text-white shadow-sm"
                   : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
               }`}
             >
-              {isGranted ? <XCircle size={14} /> : <CheckCircle2 size={14} />}
-              {isGranted ? "Revoke" : "Grant"}
+              {isGranted ? (
+                <>
+                  <XCircle size={14} /> Revoke
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 size={14} /> Approve & Grant
+                </>
+              )}
             </button>
           </div>
 

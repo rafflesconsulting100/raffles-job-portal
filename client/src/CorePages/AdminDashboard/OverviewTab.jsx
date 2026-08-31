@@ -18,10 +18,19 @@ export default function OverviewTab({ stats, recentUsers, handleTabSwitch, onGra
     {
       title: "Total Employers",
       value: stats.totalEmployers || 0,
-      subtext: `${stats.grantedEmployers || 0} Access Granted • ${stats.suspendedEmployers || 0} Access Revoked`,
+      subtext: `${stats.grantedEmployers || 0} Granted • ${stats.pendingEmployers || 0} Pending`,
       icon: Building2,
       color: "from-blue-600 to-indigo-700",
       iconBg: "bg-blue-500/10 text-blue-600",
+      tab: "employers",
+    },
+    {
+      title: "Pending Approval",
+      value: stats.pendingEmployers || 0,
+      subtext: "Recruiters awaiting admin authorization",
+      icon: Clock,
+      color: "from-amber-600 to-yellow-600",
+      iconBg: "bg-amber-500/10 text-amber-600",
       tab: "employers",
     },
     {
@@ -36,9 +45,9 @@ export default function OverviewTab({ stats, recentUsers, handleTabSwitch, onGra
     {
       title: "Access Revoked / Suspended",
       value: stats.suspendedEmployers || 0,
-      subtext: "Employers requiring admin review",
+      subtext: "Employers with restricted portal access",
       icon: XCircle,
-      color: "from-amber-600 to-rose-600",
+      color: "from-rose-600 to-red-700",
       iconBg: "bg-rose-500/10 text-rose-600",
       tab: "employers",
     },

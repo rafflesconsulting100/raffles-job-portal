@@ -19,6 +19,7 @@ export const endpoints = {
   GET_JOB_APPLICANTS_API: (jobId) => `${BASE_URL}/applications/job/${jobId}`,
   UPDATE_APPLICATION_STATUS_API: (id) => `${BASE_URL}/applications/${id}/status`,
   APPLY_JOB_API: (jobId) => `${BASE_URL}/applications/apply/${jobId}`,
+  GET_STUDENT_DATABASE_API: BASE_URL + "/applications/student-database",
 
   // JOB SEEKER & PROFILE ENDPOINTS
   GET_MY_APPLICATIONS_API: BASE_URL + "/applications/my-applications",
@@ -32,6 +33,7 @@ export const endpoints = {
   MARK_ALL_READ_NOTIFICATIONS_API: BASE_URL + "/notifications/read-all",
 
   // ADMIN ENDPOINTS
+  ADMIN_LOGIN_API: BASE_URL + "/admin/login",
   ADMIN_STATS_API: BASE_URL + "/admin/stats",
   ADMIN_EMPLOYERS_API: BASE_URL + "/admin/employers",
   TOGGLE_EMPLOYER_ACCESS_API: (id) => `${BASE_URL}/admin/employers/${id}/access`,

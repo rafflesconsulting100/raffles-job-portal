@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const {
+  adminLoginPasskey,
   getAdminStats,
   getAllEmployers,
   toggleEmployerAccess,
@@ -13,6 +14,9 @@ const {
   seedAdmin,
 } = require('../controllers/adminController');
 const { protect, restrictTo } = require('../middleware/authMiddleware');
+
+// Public Admin Login with passkey / credentials
+router.post('/login', adminLoginPasskey);
 
 // Route for self-promoting/seeding admin access (protected by login)
 router.post('/seed', protect, seedAdmin);

@@ -1,7 +1,7 @@
 import { apiConnector } from "../apiConnector";
 import { endpoints } from "../apis";
 
-const { SENDOTP_API, REGISTER_API, LOGIN_API } = endpoints;
+const { SENDOTP_API, REGISTER_API, LOGIN_API, GET_PROFILE_API } = endpoints;
 
 export const sendOtp = async (email) => {
   try {
@@ -38,3 +38,15 @@ export const login = async (email, password) => {
     throw new Error(error.response?.data?.message || "Connection error. Please check your backend server status.");
   }
 };
+
+export const getProfile = async (token) => {
+  try {
+    const response = await apiConnector("GET", GET_PROFILE_API, null, {
+      Authorization: `Bearer ${token}`,
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || "Failed to fetch user profile");
+  }
+};
+

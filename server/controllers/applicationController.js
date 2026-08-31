@@ -269,3 +269,59 @@ exports.getDashboardStats = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Get student database for employers
+// @route   GET /api/applications/student-database
+// @access  Private (Employer only)
+exports.getStudentDatabase = async (req, res, next) => {
+  try {
+    // 1. Get all Job Seekers
+    const jobSeekers = await User.find({ role: 'Job Seeker' })
+      .select('-password -__v')
+      .lean();
+
+    // 2. Find jobs posted by this employer
+    const employerJobs = await Job.find({ creator: req.user.id }).select('_id');
+    const employerJobIds = employerJobs.map(job => job._id);
+
+    // 3. Find all applications made to this employer's jobs
+    const applicationsToEmployer = await Application.find({
+      job: { $in: employerJobIds }
+    }).select('applicant status').lean();
+
+    // Create a Set of applicant IDs that have applied to this employer
+    const applicantIds = new Set(applicationsToEmployer.map(app => app.applicant.toString()));
+
+    // 4. Map students and add hasAppliedToMe flag
+    const students = jobSeekers.map(student => ({
+      ...student,
+      hasAppliedToMe: applicantIds.has(student._id.toString())
+    }));
+
+    // Calculate quick stats
+    let totalApplied = 0;
+    const locationCounts = {};
+
+    students.forEach(student => {
+      if (student.hasAppliedToMe) totalApplied++;
+      
+      const loc = student.location || 'Not Specified';
+      locationCounts[loc] = (locationCounts[loc] || 0) + 1;
+    });
+
+    res.status(200).json({
+      success: true,
+      count: students.length,
+      stats: {
+        total: students.length,
+        appliedToYou: totalApplied,
+        notApplied: students.length - totalApplied,
+        locationCounts
+      },
+      students
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

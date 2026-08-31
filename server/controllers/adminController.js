@@ -1,6 +1,104 @@
+const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Job = require('../models/Job');
 const Application = require('../models/Application');
+
+// Helper to generate Admin token response
+const generateAdminToken = (adminUser) => {
+  return jwt.sign(
+    { id: adminUser._id },
+    process.env.JWT_SECRET || 'supersecretkey1234567890abcdefjobportal',
+    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+  );
+};
+
+// @desc    Admin Login using Environment Passkey / Admin Credentials
+// @route   POST /api/admin/login
+// @access  Public
+exports.adminLoginPasskey = async (req, res, next) => {
+  try {
+    const { email, password, passkey } = req.body;
+    const providedPasskey = passkey || password;
+
+    const envPasskey = process.env.ADMIN_PASSKEY || 'RafflesAdmin@2026';
+    const envEmail = process.env.ADMIN_EMAIL || 'admin@rafflesconsulting.in';
+
+    if (!providedPasskey) {
+      return res.status(400).json({ success: false, message: 'Please provide administrator passkey/password' });
+    }
+
+    const targetEmail = (email && email.trim().length > 0) ? email.trim().toLowerCase() : envEmail.toLowerCase();
+
+    // Check if provided passkey matches the ENV passkey
+    const isMasterPasskeyMatch = providedPasskey === envPasskey;
+
+    // Check if user already exists in DB
+    let adminUser = await User.findOne({ email: targetEmail }).select('+password');
+
+    if (adminUser) {
+      let isPasswordMatch = false;
+      if (adminUser.password) {
+        try {
+          isPasswordMatch = await adminUser.comparePassword(providedPasskey);
+        } catch (e) {
+          isPasswordMatch = false;
+        }
+      }
+
+      if (!isMasterPasskeyMatch && !isPasswordMatch) {
+        return res.status(401).json({ success: false, message: 'Invalid admin credentials or passkey' });
+      }
+
+      // Upgrade/Ensure role is Admin
+      if (adminUser.role !== 'Admin' || adminUser.status !== 'Active') {
+        adminUser.role = 'Admin';
+        adminUser.status = 'Active';
+        adminUser.isApproved = true;
+        adminUser.employerAccess = true;
+        await adminUser.save();
+      }
+    } else {
+      // If passkey matches master passkey, auto-create Admin user
+      if (!isMasterPasskeyMatch) {
+        return res.status(401).json({ success: false, message: 'Invalid admin credentials or passkey' });
+      }
+
+      adminUser = await User.create({
+        username: 'Raffles Super Admin',
+        email: targetEmail,
+        password: providedPasskey,
+        role: 'Admin',
+        status: 'Active',
+        isApproved: true,
+        employerAccess: true,
+      });
+    }
+
+    const token = generateAdminToken(adminUser);
+
+    res.cookie('token', token, {
+      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+    }).status(200).json({
+      success: true,
+      message: 'Admin authorization successful',
+      token,
+      user: {
+        _id: adminUser._id,
+        username: adminUser.username,
+        email: adminUser.email,
+        role: adminUser.role,
+        status: adminUser.status,
+        isApproved: adminUser.isApproved,
+        employerAccess: adminUser.employerAccess,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 // @desc    Get Overall Platform Statistics
 // @route   GET /api/admin/stats
@@ -11,15 +109,21 @@ exports.getAdminStats = async (req, res, next) => {
     const totalJobSeekers = await User.countDocuments({ role: 'Job Seeker' });
     const totalEmployers = await User.countDocuments({ role: 'Employer' });
     
+    const pendingEmployers = await User.countDocuments({
+      role: 'Employer',
+      $or: [{ status: 'Pending' }, { isApproved: false, status: { $ne: 'Suspended' } }]
+    });
+
     const grantedEmployers = await User.countDocuments({
       role: 'Employer',
-      employerAccess: { $ne: false },
-      status: { $ne: 'Suspended' }
+      status: 'Active',
+      isApproved: { $ne: false },
+      employerAccess: { $ne: false }
     });
 
     const suspendedEmployers = await User.countDocuments({
       role: 'Employer',
-      $or: [{ employerAccess: false }, { isApproved: false }, { status: 'Suspended' }]
+      $or: [{ status: 'Suspended' }, { employerAccess: false }]
     });
 
     const totalJobs = await Job.countDocuments();
@@ -38,6 +142,7 @@ exports.getAdminStats = async (req, res, next) => {
         totalUsers,
         totalJobSeekers,
         totalEmployers,
+        pendingEmployers,
         grantedEmployers,
         suspendedEmployers,
         totalJobs,
@@ -61,7 +166,7 @@ exports.getAllEmployers = async (req, res, next) => {
       .select('-password')
       .sort({ createdAt: -1 });
 
-    // Enhance each employer with posted job counts
+    // Enhance each employer with posted job counts & explicit approval status
     const employersWithStats = await Promise.all(
       employers.map(async (emp) => {
         const empObj = emp.toObject();
@@ -73,12 +178,17 @@ exports.getAllEmployers = async (req, res, next) => {
         const jobIds = jobs.map((j) => j._id);
         const applicantCount = await Application.countDocuments({ job: { $in: jobIds } });
 
+        const isGranted = emp.employerAccess !== false && emp.isApproved !== false && emp.status === 'Active';
+        const isPending = emp.status === 'Pending' || (emp.isApproved === false && emp.status !== 'Suspended');
+
         return {
           ...empObj,
           jobCount,
           activeJobCount,
           applicantCount,
-          employerAccess: emp.employerAccess !== false && emp.isApproved !== false && emp.status !== 'Suspended',
+          isApproved: emp.isApproved !== undefined ? emp.isApproved : isGranted,
+          employerAccess: isGranted,
+          approvalStatus: isPending ? 'Pending' : isGranted ? 'Approved' : 'Suspended',
         };
       })
     );
@@ -93,7 +203,7 @@ exports.getAllEmployers = async (req, res, next) => {
   }
 };
 
-// @desc    Grant or Revoke Employer Portal Access
+// @desc    Grant, Approve or Revoke Employer Portal Access
 // @route   PUT /api/admin/employers/:id/access
 // @access  Private (Admin)
 exports.toggleEmployerAccess = async (req, res, next) => {
@@ -114,12 +224,14 @@ exports.toggleEmployerAccess = async (req, res, next) => {
     if (isApproved !== undefined) employer.isApproved = isApproved;
     if (status !== undefined) employer.status = status;
 
-    // If employerAccess is explicitly set to false, sync status to Suspended
-    if (employerAccess === false) {
+    // Handle access granting/approving vs revoking
+    if (employerAccess === false || isApproved === false || status === 'Suspended') {
       employer.status = 'Suspended';
+      employer.employerAccess = false;
       employer.isApproved = false;
-    } else if (employerAccess === true) {
+    } else if (employerAccess === true || isApproved === true || status === 'Active') {
       employer.status = 'Active';
+      employer.employerAccess = true;
       employer.isApproved = true;
     }
 
@@ -127,7 +239,7 @@ exports.toggleEmployerAccess = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: `Employer access updated to ${employer.employerAccess ? 'GRANTED' : 'REVOKED'}`,
+      message: `Employer access updated to ${employer.isApproved && employer.employerAccess ? 'APPROVED & GRANTED' : 'SUSPENDED/REVOKED'}`,
       employer: {
         _id: employer._id,
         username: employer.username,
@@ -142,6 +254,7 @@ exports.toggleEmployerAccess = async (req, res, next) => {
     next(error);
   }
 };
+
 
 // @desc    Get All Job Listings Portal-wide
 // @route   GET /api/admin/jobs
@@ -339,3 +452,59 @@ exports.seedAdmin = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Get student database for employers
+// @route   GET /api/applications/student-database
+// @access  Private (Employer only)
+exports.getStudentDatabase = async (req, res, next) => {
+  try {
+    // 1. Get all Job Seekers
+    const jobSeekers = await User.find({ role: 'Job Seeker' })
+      .select('-password -__v')
+      .lean();
+
+    // 2. Find jobs posted by this employer
+    const employerJobs = await Job.find({ creator: req.user.id }).select('_id');
+    const employerJobIds = employerJobs.map(job => job._id);
+
+    // 3. Find all applications made to this employer's jobs
+    const applicationsToEmployer = await Application.find({
+      job: { $in: employerJobIds }
+    }).select('applicant status').lean();
+
+    // Create a Set of applicant IDs that have applied to this employer
+    const applicantIds = new Set(applicationsToEmployer.map(app => app.applicant.toString()));
+
+    // 4. Map students and add hasAppliedToMe flag
+    const students = jobSeekers.map(student => ({
+      ...student,
+      hasAppliedToMe: applicantIds.has(student._id.toString())
+    }));
+
+    // Calculate quick stats
+    let totalApplied = 0;
+    const locationCounts = {};
+
+    students.forEach(student => {
+      if (student.hasAppliedToMe) totalApplied++;
+      
+      const loc = student.location || 'Not Specified';
+      locationCounts[loc] = (locationCounts[loc] || 0) + 1;
+    });
+
+    res.status(200).json({
+      success: true,
+      count: students.length,
+      stats: {
+        total: students.length,
+        appliedToYou: totalApplied,
+        notApplied: students.length - totalApplied,
+        locationCounts
+      },
+      students
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

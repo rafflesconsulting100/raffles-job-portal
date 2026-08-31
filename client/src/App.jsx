@@ -18,12 +18,12 @@ import Footer from "./CorePages/Footer";
 
 function AppContent() {
   const location = useLocation();
-  const isRoleSelectionPage = location.pathname === "/";
+  const isStandalonePage = location.pathname === "/" || location.pathname === "/verify-otp";
 
   return (
     <>
       <Toaster position="top-center" reverseOrder={false} />
-      {!isRoleSelectionPage && <Navbar />}
+      {!isStandalonePage && <Navbar />}
       <Routes>
         <Route path="/" element={<RoleSelectionPage />} />
         <Route path="/home" element={<LandingPage />} />
@@ -38,7 +38,7 @@ function AppContent() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/verify-otp" element={<OtpPage />} />
       </Routes>
-      {!isRoleSelectionPage && <Footer />}
+      {!isStandalonePage && <Footer />}
     </>
   );
 }

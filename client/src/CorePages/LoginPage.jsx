@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { MailIcon, LockIcon, ArrowRightIcon } from 'lucide-react';
 import { login } from '../Service/Operation/authApi';
@@ -6,6 +6,9 @@ import { showSuccess, showError } from '../Utils/toast';
 import { AuthTemplate, RoleSelector, AuthInput } from '../Template';
 
 export default function SignIn() {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   const navigate = useNavigate();
   const [role, setRole] = useState('Job Seeker');
   const [formData, setFormData] = useState({
