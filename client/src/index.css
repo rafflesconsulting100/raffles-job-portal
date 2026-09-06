@@ -1,31 +1,4 @@
-/* @import url('https://fonts.googleapis.com/css?family=Catamaran:400,600|IBM+Plex+Sans:400,500,500i,600,700&display=swap');
-@import "tailwindcss";
 
-/* Apply IBM Plex Sans to body */
-/* body { */
-  /* font-family: 'IBM Plex Sans', sans-serif; */
-  /* font-size: 17px; */
- /* color: #707070; /* body color */
-
-
-/* Apply Catamaran to navbar */
-/* .navbar { */
-  /* font-family: 'Catamaran', sans-serif; */
-  /* color: #001935; heading color */
-
-
-/*@keyframes float {
-  0%,100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-6px);
-  }
-}
-
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-} */
 
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Catamaran:wght@400;500;600;700&display=swap');

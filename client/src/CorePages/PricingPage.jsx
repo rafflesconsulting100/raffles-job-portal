@@ -40,7 +40,7 @@ export default function PricingPage() {
       {/* 1. HERO HEADER */}
       <section className="bg-linear-to-b from-slate-900 via-slate-900 to-[#0F172A] text-white pt-24 sm:pt-28 md:pt-32 pb-16 sm:pb-20 px-4 sm:px-6 lg:px-8 text-center relative overflow-hidden">
         {/* Decorative Background Elements */}
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] bg-size-[16px_16px] pointer-events-none" />
         <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none" />
 
@@ -98,10 +98,13 @@ export default function PricingPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
 
           {/* CARD 1: BASIC */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+          <div
+            onClick={() => handleBuyNow('BASIC Plan (₹2000/Month)')}
+            className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs hover:shadow-2xl hover:border-[#0052CC] hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col justify-between group"
+          >
             <div>
               <div className="space-y-1">
-                <h3 className="text-sm font-black text-slate-900 tracking-wider uppercase">
+                <h3 className="text-sm font-black text-slate-900 tracking-wider uppercase group-hover:text-[#0052CC] transition-colors">
                   BASIC
                 </h3>
                 <div className="flex items-baseline gap-1">
@@ -112,10 +115,13 @@ export default function PricingPage() {
               </div>
 
               <button
-                disabled
-                className="w-full py-2.5 mt-5 bg-slate-300 text-slate-600 font-bold text-xs rounded-xl cursor-not-allowed text-center transition"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleBuyNow('BASIC Plan (₹2000/Month)');
+                }}
+                className="w-full py-2.5 mt-5 bg-[#0052CC] hover:bg-[#0040A8] text-white font-extrabold text-xs rounded-xl shadow-md transition active:scale-95 cursor-pointer text-center"
               >
-                Currently Unavailable
+                Buy Now
               </button>
 
               <div className="border-t border-slate-100 my-5" />
@@ -133,7 +139,7 @@ export default function PricingPage() {
                 </li>
                 <li className="flex items-start gap-2.5 text-slate-600">
                   <CheckCircle2 className="w-4 h-4 text-[#0052CC] shrink-0 mt-0.5" />
-                  <span>Unlock 100 candidates profiles from database</span>
+                  <span>Unlock 40 candidates profiles from database</span>
                 </li>
                 <li className="flex items-start gap-2.5 text-slate-600">
                   <CheckCircle2 className="w-4 h-4 text-[#0052CC] shrink-0 mt-0.5" />
@@ -152,10 +158,13 @@ export default function PricingPage() {
           </div>
 
           {/* CARD 2: PRO */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+          <div
+            onClick={() => handleBuyNow('PRO Plan (₹3800/Month)')}
+            className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs hover:shadow-2xl hover:border-[#0052CC] hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col justify-between group"
+          >
             <div>
               <div className="space-y-1">
-                <h3 className="text-sm font-black text-slate-900 tracking-wider uppercase">
+                <h3 className="text-sm font-black text-slate-900 tracking-wider uppercase group-hover:text-[#0052CC] transition-colors">
                   PRO
                 </h3>
                 <div className="flex items-baseline gap-1">
@@ -166,10 +175,13 @@ export default function PricingPage() {
               </div>
 
               <button
-                disabled
-                className="w-full py-2.5 mt-5 bg-slate-300 text-slate-600 font-bold text-xs rounded-xl cursor-not-allowed text-center transition"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleBuyNow('PRO Plan (₹3800/Month)');
+                }}
+                className="w-full py-2.5 mt-5 bg-[#0052CC] hover:bg-[#0040A8] text-white font-extrabold text-xs rounded-xl shadow-md transition active:scale-95 cursor-pointer text-center"
               >
-                Currently Unavailable
+                Buy Now
               </button>
 
               <div className="border-t border-slate-100 my-5" />
@@ -206,7 +218,10 @@ export default function PricingPage() {
           </div>
 
           {/* CARD 3: PREMIUM (MOST POPULAR) */}
-          <div className="bg-white border-2 border-[#0052CC] rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-200 relative flex flex-col justify-between">
+          <div
+            onClick={() => handleBuyNow('PREMIUM Plan (₹5500/Month)')}
+            className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs hover:shadow-2xl hover:border-[#0052CC] hover:-translate-y-1 transition-all duration-300 cursor-pointer relative flex flex-col justify-between group"
+          >
             {/* MOST POPULAR BADGE */}
             <div className="absolute -top-3.5 right-6 bg-[#FF9900] text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-md shadow-xs">
               MOST POPULAR
@@ -214,7 +229,7 @@ export default function PricingPage() {
 
             <div>
               <div className="space-y-1">
-                <h3 className="text-sm font-black text-slate-900 tracking-wider uppercase">
+                <h3 className="text-sm font-black text-slate-900 tracking-wider uppercase group-hover:text-[#0052CC] transition-colors">
                   PREMIUM
                 </h3>
                 <div className="flex items-baseline gap-1">
@@ -225,10 +240,13 @@ export default function PricingPage() {
               </div>
 
               <button
-                disabled
-                className="w-full py-2.5 mt-5 bg-[#0052CC] text-white font-bold text-xs rounded-xl shadow-md cursor-not-allowed text-center transition"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleBuyNow('PREMIUM Plan (₹5500/Month)');
+                }}
+                className="w-full py-2.5 mt-5 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md transition active:scale-95 cursor-pointer text-center"
               >
-                Currently Unavailable
+                Buy Now
               </button>
 
               <div className="border-t border-slate-100 my-5" />
@@ -265,10 +283,13 @@ export default function PricingPage() {
           </div>
 
           {/* CARD 4: Take a Top Up */}
-          <div className="bg-white border-2 border-[#0052CC] rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-200 flex flex-col justify-between">
+          <div
+            onClick={() => handleBuyNow('Single Job Post Top Up')}
+            className="bg-white border border-slate-200 rounded-2xl p-6 shadow-md hover:shadow-2xl hover:border-[#0052CC] hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col justify-between group"
+          >
             <div>
               <div className="space-y-1">
-                <h3 className="text-base font-black text-slate-900">
+                <h3 className="text-base font-black text-slate-900 group-hover:text-[#0052CC] transition-colors">
                   Take a Top Up
                 </h3>
                 <div className="flex items-baseline gap-1 flex-wrap">
@@ -279,7 +300,10 @@ export default function PricingPage() {
               </div>
 
               <button
-                onClick={() => handleBuyNow('Single Job Post Top Up')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleBuyNow('Single Job Post Top Up');
+                }}
                 className="w-full py-2.5 mt-5 bg-[#0052CC] hover:bg-[#0040A8] text-white font-extrabold text-xs rounded-xl shadow-md transition active:scale-95 cursor-pointer text-center"
               >
                 Buy Now
