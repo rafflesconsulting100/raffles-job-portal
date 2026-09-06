@@ -11,6 +11,7 @@ import JobsPage from "./CorePages/JobsPage";
 import AboutPage from "./CorePages/AboutPage";
 import ContactPage from "./CorePages/ContactPage";
 import EmployerDashboard from "./CorePages/EmployerDashboard";
+import PricingPage from "./CorePages/PricingPage";
 import JobSeekerDashboard from "./CorePages/JobSeekerDashboard";
 import AdminDashboard from "./CorePages/AdminDashboard";
 import Navbar from "./CorePages/Navbar";
@@ -30,6 +31,7 @@ function AppContent() {
         <Route path="/jobs" element={<JobsPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/pricing" element={<PricingPage />} />
         <Route path="/employer-dashboard" element={<EmployerDashboard />} />
         <Route path="/jobseeker-dashboard" element={<JobSeekerDashboard />} />
         <Route path="/job-seeker-dashboard" element={<JobSeekerDashboard />} />

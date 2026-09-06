@@ -11,7 +11,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { FaFacebook, FaInstagram, FaLinkedin, FaTwitter } from "react-icons/fa";
-import logo from "../assets/rafflelogo.png";
+import logo from "../assets/rafflelogo-light.png";
 import AdminLoginModal from "./Footer/AdminLoginModal";
 
 const candidateLinks = [
@@ -111,13 +111,9 @@ export default function Footer() {
               <Link to="/" className="flex items-center gap-1">
                 <img
                   src={logo}
-                  alt="Raffles Jobs"
+                  alt="rafflesjobs"
                   className="h-14 w-auto object-contain transition-transform duration-300 hover:scale-105"
                 />
-
-                <div>
-                  <h2 className="text-4xl font-black text-white">raffles</h2>
-                </div>
               </Link>
 
               <p className="mt-6 text-gray-400 leading-8 max-w-md">

@@ -45,24 +45,6 @@ export default function AboutPage() {
 
   const services = [
     {
-      title: "Software Engineering",
-      description: "Frontend, backend, full-stack, mobile, DevOps and software development opportunities.",
-      icon: Briefcase,
-      tag: "Technology"
-    },
-    {
-      title: "Data Science",
-      description: "Data analysis, data science, machine learning, AI and analytics opportunities.",
-      icon: TrendingUp,
-      tag: "Data"
-    },
-    {
-      title: "Design",
-      description: "UI/UX, product design, graphic design and creative opportunities.",
-      icon: Target,
-      tag: "Creative"
-    },
-    {
       title: "Marketing",
       description: "Digital marketing, SEO, content, growth, brand and marketing opportunities.",
       icon: Sparkles,
@@ -150,75 +132,49 @@ export default function AboutPage() {
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-[#F8FAFC] text-[#1e293b] pt-15 pb-16">
-      {/* 1. HERO SECTION */}
-      <section className="relative overflow-hidden bg-linear-to-b from-slate-900 via-slate-900 to-[#0F172A] text-white py-14 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8">
-        {/* Decorative ambient glows */}
-        <div className="absolute top-0 left-1/2 sm:left-1/4 -translate-x-1/2 sm:translate-x-0 w-64 h-64 sm:w-80 sm:h-80 lg:w-96 lg:h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 right-1/2 sm:right-1/4 translate-x-1/2 sm:translate-x-0 w-64 h-64 sm:w-80 sm:h-80 lg:w-96 lg:h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+      {/* 1. HERO HEADER */}
+      <section className="bg-linear-to-b from-slate-900 via-slate-900 to-[#0F172A] text-white py-16 sm:py-20 px-4 sm:px-6 lg:px-8 text-center relative overflow-hidden">
+        {/* Decorative Background Elements */}
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="w-full max-w-7xl mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-10 lg:gap-12 items-center">
-          <div className="min-w-0 lg:col-span-7 space-y-5 sm:space-y-6 text-center lg:text-left">
-            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/15 text-blue-300 text-xs font-bold border border-blue-400/20 shadow-inner">
-              <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
-              RafflesJobs — Jobs & Careers
-            </span>
-
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-[1.12]">
-              Connecting Talent with <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-300 via-indigo-200 to-amber-300">Better Opportunities</span>
-            </h1>
-
-            <p className="text-sm sm:text-base md:text-lg text-slate-300 max-w-2xl mx-auto lg:mx-0 leading-7 sm:leading-relaxed">
-              RafflesJobs is a modern recruitment platform connecting job seekers with employers across Software Engineering, Data Science, Design, Marketing, Finance, HR, Management, Operations, Sales, and Customer Support.
-            </p>
-
-            <div className="pt-2 flex flex-col min-[420px]:flex-row flex-wrap items-stretch sm:items-center justify-center lg:justify-start gap-3 sm:gap-4">
-              <Link
-                to="/jobs"
-                className="w-full min-[420px]:w-auto justify-center px-5 sm:px-6 py-3.5 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-extrabold text-sm shadow-xl hover:shadow-2xl transition duration-300 flex items-center gap-2 active:scale-95"
-              >
-                <Briefcase className="w-4 h-4" />
-                Explore Jobs
-              </Link>
-              <Link
-                to="/contact"
-                className="w-full min-[420px]:w-auto justify-center px-5 sm:px-6 py-3.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl font-bold text-sm transition duration-300 flex items-center gap-2 active:scale-95 backdrop-blur-md"
-              >
-                Hire Talent
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
+        <div className="max-w-4xl mx-auto space-y-4 relative z-10">
+          {/* Breadcrumb Navigation */}
+          <div className="flex items-center justify-center gap-2 text-xs font-semibold text-blue-300/80 mb-2">
+            <Link to="/" className="hover:text-white transition">Home</Link>
+            <span>/</span>
+            <span className="text-white font-bold">About Us</span>
           </div>
 
-          {/* Right Card Visual */}
-          <div className="min-w-0 lg:col-span-5 flex w-full justify-center">
-            <div className="relative w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-2xl space-y-5 sm:space-y-6">
-              <div className="flex items-center gap-3 sm:gap-4 border-b border-white/10 pb-5">
-                <img src={logo} alt="RafflesJobs" className="h-12 sm:h-16 max-w-[8rem] w-auto p-2 rounded-xl object-contain shrink-0" />
-                <div>
-                  <h3 className="text-base sm:text-lg font-black text-white">RafflesJobs</h3>
-                  <p className="text-[11px] sm:text-xs text-blue-200 font-semibold leading-5">Find Jobs. Hire Talent. Build Careers.</p>
-                </div>
-              </div>
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/15 text-blue-300 text-xs font-bold border border-blue-400/20 shadow-xs">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+            "Empowering Careers, Driving Organizational Excellence"
+          </span>
 
-              <div className="space-y-4">
-                <div className="flex items-start gap-3 text-xs text-slate-200 leading-5">
-                  <CheckCircle2 className="w-5 h-5 mt-0.5 text-emerald-400 shrink-0" />
-                  <span>Opportunities across 10 professional role categories</span>
-                </div>
-                <div className="flex items-start gap-3 text-xs text-slate-200 leading-5">
-                  <CheckCircle2 className="w-5 h-5 mt-0.5 text-emerald-400 shrink-0" />
-                  <span>Simple job discovery and application experience</span>
-                </div>
-                <div className="flex items-start gap-3 text-xs text-slate-200 leading-5">
-                  <CheckCircle2 className="w-5 h-5 mt-0.5 text-emerald-400 shrink-0" />
-                  <span>Tools for job seekers and employers</span>
-                </div>
-              </div>
+          <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
+            Connecting Talent with <span className="bg-linear-to-r from-blue-400 via-indigo-300 to-amber-300 bg-clip-text text-transparent">Better Opportunities</span>
+          </h1>
 
-              <div className="bg-linear-to-r from-blue-600/30 to-indigo-600/30 p-3 sm:p-4 rounded-2xl border border-blue-400/20 text-center">
-                <p className="text-xs font-bold text-amber-300 uppercase tracking-wider">Trusted by Growing Enterprise Clients</p>
-              </div>
-            </div>
+          <p className="text-sm sm:text-base text-blue-100 max-w-2xl mx-auto leading-relaxed">
+            RafflesJobs is a premier recruitment and talent acquisition platform dedicated to bridging the gap between exceptional professionals and industry-leading organizations across technology, data, engineering, and corporate domains.
+          </p>
+
+          <div className="pt-3 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              to="/jobs"
+              className="px-5 py-2.5 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-extrabold text-xs sm:text-sm shadow-lg hover:shadow-xl transition duration-300 flex items-center gap-2 active:scale-95 cursor-pointer"
+            >
+              <Briefcase className="w-4 h-4" />
+              Explore Jobs
+            </Link>
+            <Link
+              to="/contact"
+              className="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl font-bold text-xs sm:text-sm transition duration-300 flex items-center gap-2 active:scale-95 backdrop-blur-md cursor-pointer"
+            >
+              Contact Us
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         </div>
       </section>

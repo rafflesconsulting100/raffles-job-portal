@@ -17,7 +17,8 @@ import {
   UserCheck, ShieldCheck
 } from "lucide-react";
 import { showSuccess, showError } from '../Utils/toast';
-import logo from "../assets/rafflelogo.png";
+import lightLogo from "../assets/rafflelogo-light.png";
+import darkLogo from "../assets/rafflelogo-dark.png";
 
 const navLinks = [
   {
@@ -113,8 +114,8 @@ export default function Navbar() {
 
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
-          ? "bg-white/95 backdrop-blur-md shadow-md border-b border-slate-200"
-          : "bg-[#0F172A] backdrop-blur-sm border-b border-slate-200/80 shadow-xs"
+          ? "bg-white/95 backdrop-blur-xl shadow-lg border-b border-slate-200/80"
+          : "bg-[#0F172A]/95 backdrop-blur-md border-b border-white/10"
           }`}
       >
         <div className="max-w-7xl mx-auto">
@@ -124,22 +125,13 @@ export default function Navbar() {
 
             <Link
               to="/"
-              className="flex items-center shrink-0 group gap-1"
+              className="flex items-center shrink-0 group"
             >
               <img
-                src={logo}
-                alt="R"
+                 src={scrolled ? darkLogo : lightLogo}
+                alt="logo"
                 className="h-10 sm:h-12 lg:h-14 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
               />
-
-              <div className="leading-none">
-                <h2
-                  className={`text-xl md:text-3xl font-black tracking-tight  ${scrolled ? "text-[#2B2A8C]" : "text-white"
-                    }`}
-                >
-                  raffles
-                </h2>
-              </div>
             </Link>
 
             {/* ================= NAVIGATION ================= */}
@@ -312,15 +304,10 @@ export default function Navbar() {
             className="flex items-center gap-2 group"
           >
             <img
-              src={logo}
+              src={darkLogo}
               alt="R"
               className="h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
             />
-            <div className="leading-none">
-              <h2 className="text-xl font-black tracking-tight text-[#2B2A8C]">
-                raffles
-              </h2>
-            </div>
           </Link>
 
           <button

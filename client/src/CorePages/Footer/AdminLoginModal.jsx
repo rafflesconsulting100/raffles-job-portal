@@ -125,7 +125,7 @@ export default function AdminLoginModal({ isOpen, onClose }) {
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                <KeyRound size={13} className="text-blue-400" /> Master Key / Passkey
+                <KeyRound size={13} className="text-blue-400" /> Master Key
               </label>
               {/* <button
                 type="button"
@@ -158,7 +158,7 @@ export default function AdminLoginModal({ isOpen, onClose }) {
 
           {/* Environmental Hint */}
           <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/60 text-[11px] text-slate-400 leading-relaxed">
-            🔐 Protected by master key configured in server environment (<code>ADMIN_PASSKEY</code>).
+            🔐 Protected by master key configured in server environment
           </div>
 
           {/* SUBMIT BUTTON */}
@@ -175,7 +175,7 @@ export default function AdminLoginModal({ isOpen, onClose }) {
               disabled={loading}
               className="flex-1 px-5 py-2.5 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
-              {loading ? "Authenticating..." : "Authorize & Enter"}
+              {loading ? "Authenticating..." : "Authorize"}
               <ArrowRight size={14} />
             </button>
           </div>

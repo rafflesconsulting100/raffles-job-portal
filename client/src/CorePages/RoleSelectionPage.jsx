@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ExternalLink, ArrowRight, CheckCircle2 } from 'lucide-react';
-import logo from '../assets/rafflelogo.png';
+import logo from '../assets/rafflelogo-dark.png';
 import boyImg from '../assets/boy.png';
 import hr from '../assets/hr.png';
 
@@ -14,8 +14,8 @@ export default function RoleSelectionPage() {
   };
 
   const handleEmployerClick = () => {
-    // Redirect to employer dashboard / corporate hiring page
-    navigate('/employer-dashboard');
+    // Redirect to pricing page
+    navigate('/pricing');
   };
 
   return (
@@ -26,20 +26,26 @@ export default function RoleSelectionPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
           
           {/* Logo Brand */}
-          <Link to="/home" className="flex items-center gap-2 group">
+          <Link to="/home" className="flex flex-col items-center shrink-0 group">
             <img 
               src={logo} 
               alt="RAFFLES JOBS" 
               className="h-10 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105" 
             />
-            <div className="leading-none">
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#2B2A8C]">
-                raffles
-              </h1>
-              <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase block">
-                Job Portal
-              </span>
-            </div>
+            <span
+        className="
+          -mt-0.5
+          text-[8px] sm:text-[9px]
+          font-bold
+          tracking-[0.3em]
+          uppercase
+          text-slate-500
+          leading-none
+        "
+      >
+        Job Portal
+      </span>
+          
           </Link>
 
           {/* Right Header CTAs */}
