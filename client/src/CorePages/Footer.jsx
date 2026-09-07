@@ -235,7 +235,7 @@ export default function Footer() {
 
               {/* Statistics */}
 
-              <div className="mt-10 space-y-4">
+              {/* <div className="mt-10 space-y-4">
                 <div className="flex items-center gap-3">
                   <Building2 size={18} className="text-blue-400" />
 
@@ -247,7 +247,7 @@ export default function Footer() {
 
                   <span>25,000+ Active Jobs</span>
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
         </section>

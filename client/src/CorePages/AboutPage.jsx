@@ -131,7 +131,7 @@ export default function AboutPage() {
   ];
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-[#F8FAFC] text-[#1e293b] pt-15 pb-16">
+    <div className="min-h-screen w-full overflow-x-hidden bg-[#F8FAFC] text-[#1e293b] pt-10 pb-16">
       {/* 1. HERO HEADER */}
       <section className="bg-linear-to-b from-slate-900 via-slate-900 to-[#0F172A] text-white py-16 sm:py-20 px-4 sm:px-6 lg:px-8 text-center relative overflow-hidden">
         {/* Decorative Background Elements */}

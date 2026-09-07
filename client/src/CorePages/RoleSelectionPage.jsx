@@ -128,10 +128,10 @@ export default function RoleSelectionPage() {
               <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-[#2563EB] font-semibold">
                 <span className="flex items-center gap-1">
                   <CheckCircle2 className="w-4 h-4 text-[#2563EB]" />
-                  100% Free Placement Services
+                  Free to search and apply
                 </span>
                 <span className="text-slate-400 group-hover:text-slate-600 transition">
-                  12,500+ Hired Candidate Network
+                  Explore jobs from multiple companies
                 </span>
               </div>
             </div>
@@ -179,10 +179,10 @@ export default function RoleSelectionPage() {
               <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-[#2B2A8C] font-semibold">
                 <span className="flex items-center gap-1">
                   <CheckCircle2 className="w-4 h-4 text-[#2B2A8C]" />
-                  48-Hour Shortlist Guarantee
+                  Post your job openings
                 </span>
                 <span className="text-slate-400 group-hover:text-slate-600 transition">
-                  650+ Corporate Partners
+                  Connect with relevant candidates
                 </span>
               </div>
             </div>
