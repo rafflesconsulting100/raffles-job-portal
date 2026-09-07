@@ -130,9 +130,6 @@ export default function RoleSelectionPage() {
                   <CheckCircle2 className="w-4 h-4 text-[#2563EB]" />
                   100% Free Placement Services
                 </span>
-                <span className="text-slate-400 group-hover:text-slate-600 transition">
-                  12,500+ Hired Candidate Network
-                </span>
               </div>
             </div>
 
