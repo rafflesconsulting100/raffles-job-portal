@@ -131,7 +131,7 @@ export default function RoleSelectionPage() {
                   Free to search and apply
                 </span>
                 <span className="text-slate-400 group-hover:text-slate-600 transition">
-                  Explore jobs from multiple companies
+                  12,500+ Hired Candidate Network
                 </span>
               </div>
             </div>
