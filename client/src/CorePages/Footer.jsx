@@ -245,7 +245,7 @@ export default function Footer() {
                 <div className="flex items-center gap-3">
                   <BriefcaseBusiness size={18} className="text-blue-400" />
 
-                  <span>25,000+ Active Jobs</span>
+                  
                 </div>
               </div> */}
             </div>
