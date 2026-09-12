@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+
+  <!-- RafflesJobs main entry / role selection -->
+  <url>
+    <loc>https://www.rafflesjobs.com/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://www.rafflesjobs.com/favicon.jpg</image:loc>
+      <image:title>RafflesJobs</image:title>
+      <image:caption>RafflesJobs - Jobs, Talent and Careers</image:caption>
+    </image:image>
+  </url>
+
+  <!-- RafflesJobs home page -->
+  <url>
+    <loc>https://www.rafflesjobs.com/home</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://www.rafflesjobs.com/favicon.jpg</image:loc>
+      <image:title>RafflesJobs Home</image:title>
+      <image:caption>Find jobs and connect with employers on RafflesJobs</image:caption>
+    </image:image>
+  </url>
+
+  <!-- Public jobs listing -->
+  <url>
+    <loc>https://www.rafflesjobs.com/jobs</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://www.rafflesjobs.com/favicon.jpg</image:loc>
+      <image:title>RafflesJobs Jobs</image:title>
+      <image:caption>Browse the latest job opportunities on RafflesJobs</image:caption>
+    </image:image>
+  </url>
+
+  <!-- About RafflesJobs -->
+  <url>
+    <loc>https://www.rafflesjobs.com/about</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <image:image>
+      <image:loc>https://www.rafflesjobs.com/favicon.jpg</image:loc>
+      <image:title>About RafflesJobs</image:title>
+      <image:caption>Learn more about RafflesJobs</image:caption>
+    </image:image>
+  </url>
+
+  <!-- Contact RafflesJobs -->
+  <url>
+    <loc>https://www.rafflesjobs.com/contact</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <image:image>
+      <image:loc>https://www.rafflesjobs.com/favicon.jpg</image:loc>
+      <image:title>Contact RafflesJobs</image:title>
+      <image:caption>Contact the RafflesJobs team</image:caption>
+    </image:image>
+  </url>
+
+</urlset>
