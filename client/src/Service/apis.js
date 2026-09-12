@@ -7,6 +7,8 @@ export const endpoints = {
   SENDOTP_API: BASE_URL + "/auth/send-otp",
   REGISTER_API: BASE_URL + "/auth/register",
   LOGIN_API: BASE_URL + "/auth/login",
+  GOOGLE_LOGIN_API: BASE_URL + "/auth/job-seeker/google/login",
+  GOOGLE_REGISTER_API: BASE_URL + "/auth/job-seeker/google/register",
   GET_ME_API: BASE_URL + "/auth/me",
 
   // EMPLOYER & JOB ENDPOINTS

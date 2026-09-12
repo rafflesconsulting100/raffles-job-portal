@@ -1,7 +1,7 @@
 import { apiConnector } from "../apiConnector";
 import { endpoints } from "../apis";
 
-const { SENDOTP_API, REGISTER_API, LOGIN_API, GET_PROFILE_API } = endpoints;
+const { SENDOTP_API, REGISTER_API, LOGIN_API, GET_PROFILE_API, GOOGLE_LOGIN_API, GOOGLE_REGISTER_API } = endpoints;
 
 export const sendOtp = async (email) => {
   try {
@@ -47,6 +47,37 @@ export const getProfile = async (token) => {
     return response.data;
   } catch (error) {
     throw new Error(error.response?.data?.message || "Failed to fetch user profile");
+  }
+};
+
+export const googleLogin = async (firebaseUid, email, displayName, photoURL, emailVerified) => {
+  try {
+    const response = await apiConnector("POST", GOOGLE_LOGIN_API, {
+      firebaseUid,
+      email,
+      displayName,
+      photoURL,
+      emailVerified,
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || "Google Login failed. Please try again.");
+  }
+};
+
+export const googleRegister = async (firebaseUid, email, displayName, photoURL, emailVerified) => {
+  try {
+    const response = await apiConnector("POST", GOOGLE_REGISTER_API, {
+      firebaseUid,
+      email,
+      displayName,
+      photoURL,
+      emailVerified,
+      acceptedTerms: true,
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || "Google Registration failed. Please try again.");
   }
 };
 

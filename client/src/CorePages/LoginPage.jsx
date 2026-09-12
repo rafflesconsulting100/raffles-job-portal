@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { MailIcon, LockIcon, ArrowRightIcon } from 'lucide-react';
 import { login } from '../Service/Operation/authApi';
 import { showSuccess, showError } from '../Utils/toast';
-import { AuthTemplate, RoleSelector, AuthInput } from '../Template';
+import { AuthTemplate, RoleSelector, AuthInput, GoogleLoginButton } from '../Template';
 
 export default function SignIn() {
   useEffect(() => {
@@ -143,6 +143,8 @@ export default function SignIn() {
         >
           {loading ? 'Logging in...' : 'Login to Portal'} <ArrowRightIcon className="w-4 h-4" />
         </button>
+
+        {role === 'Job Seeker' && <GoogleLoginButton mode="login" />}
 
         <div className="text-xs text-center text-gray-500">
           Don't have an account?{' '}

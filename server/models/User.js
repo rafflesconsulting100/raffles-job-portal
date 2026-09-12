@@ -14,11 +14,9 @@ const userSchema = new mongoose.Schema(
       unique: true,
       trim: true,
       lowercase: true,
-      match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please provide a valid email'],
     },
     password: {
       type: String,
-      required: [true, 'Password is required'],
       minlength: [6, 'Password must be at least 6 characters'],
       select: false,
     },
@@ -41,6 +39,33 @@ const userSchema = new mongoose.Schema(
       default: 'Active',
     },
     avatar: {
+      type: String,
+      default: '',
+    },
+    firebaseUid: {
+      type: String,
+      default: null,
+      sparse: true,
+      trim: true,
+    },
+    authProvider: {
+      type: String,
+      enum: ['email', 'google'],
+      default: 'email',
+    },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    acceptedTerms: {
+      type: Boolean,
+      default: false,
+    },
+    termsAcceptedAt: {
+      type: Date,
+      default: null,
+    },
+    termsVersion: {
       type: String,
       default: '',
     },
@@ -127,6 +152,8 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+userSchema.index({ firebaseUid: 1 }, { unique: true, sparse: true });
 
 // Hash password before saving
 userSchema.pre('save', async function (next) {

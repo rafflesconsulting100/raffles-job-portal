@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const User = require('../models/User');
 const OTP = require('../models/OTP');
 const sendEmail = require('../config/email');
@@ -46,6 +47,132 @@ const sendTokenResponse = (user, statusCode, res) => {
       savedJobs: user.savedJobs,
     },
   });
+};
+
+// @desc    Register new Job Seeker via Google
+// @route   POST /api/auth/job-seeker/google/register
+// @access  Public
+exports.googleRegister = async (req, res, next) => {
+  try {
+    const { firebaseUid, email, displayName, photoURL, emailVerified, acceptedTerms } = req.body;
+
+    if (!firebaseUid || !email) {
+      return res.status(400).json({ success: false, message: 'Missing required Google authentication data' });
+    }
+
+    if (!acceptedTerms) {
+      return res.status(400).json({ success: false, message: 'You must agree to the Terms & Conditions and Privacy Policy.' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const name = (displayName || email.split('@')[0] || 'Job Seeker').trim();
+
+    // Check if email already exists
+    const existingUser = await User.findOne({ email: normalizedEmail });
+
+    if (existingUser) {
+      if (existingUser.role === 'Job Seeker') {
+        return res.status(400).json({
+          success: false,
+          message: 'An account with this email already exists. Please log in.',
+        });
+      }
+      if (existingUser.role === 'Employer') {
+        return res.status(403).json({
+          success: false,
+          message: 'An Employer account already exists with this email. Please use the Employer login.',
+        });
+      }
+      if (existingUser.role === 'Admin') {
+        return res.status(403).json({
+          success: false,
+          message: 'An Admin account already exists with this email.',
+        });
+      }
+    }
+
+    // Create new Job Seeker
+    const randomPassword = crypto.randomBytes(32).toString('hex');
+    const user = await User.create({
+      username: name,
+      email: normalizedEmail,
+      password: randomPassword,
+      firebaseUid,
+      authProvider: 'google',
+      avatar: photoURL || '',
+      isEmailVerified: !!emailVerified,
+      role: 'Job Seeker',
+      isApproved: true,
+      employerAccess: true,
+      status: 'Active',
+      acceptedTerms: true,
+      termsAcceptedAt: new Date(),
+      termsVersion: '1.0',
+    });
+
+    sendTokenResponse(user, 201, res);
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ success: false, message: 'An account with this Google email already exists.' });
+    }
+    console.error('Google register error:', error.message);
+    next(error);
+  }
+};
+
+// @desc    Login existing Job Seeker via Google
+// @route   POST /api/auth/job-seeker/google
+// @access  Public
+// SECURITY NOTE: This endpoint receives Firebase user info from the frontend.
+// Without Firebase Admin SDK, the backend cannot cryptographically verify
+// the Firebase ID token. The frontend sends user data after Firebase Client SDK
+// authentication. This is a known limitation.
+// Google Sign-In is LOGIN ONLY — it never creates new accounts.
+exports.googleLogin = async (req, res, next) => {
+  try {
+    const { firebaseUid, email, displayName, photoURL, emailVerified } = req.body;
+
+    if (!firebaseUid || !email) {
+      return res.status(400).json({ success: false, message: 'Missing required Google authentication data' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Find existing user by email
+    const user = await User.findOne({ email: normalizedEmail });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'No RafflesJobs account was found with this Google email. Please register first.',
+      });
+    }
+
+    // Role check — only Job Seekers allowed
+    if (user.role !== 'Job Seeker') {
+      return res.status(403).json({
+        success: false,
+        message: 'Google Sign-In is available only for registered Job Seekers.',
+      });
+    }
+
+    // Link Google UID if not already linked
+    if (!user.firebaseUid) {
+      user.firebaseUid = firebaseUid;
+      user.authProvider = 'google';
+    }
+    if (!user.avatar && photoURL) user.avatar = photoURL;
+    user.isEmailVerified = user.isEmailVerified || !!emailVerified;
+    await user.save();
+
+    return sendTokenResponse(user, 200, res);
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ success: false, message: 'An account with this Google email already exists.' });
+    }
+    console.error('Google login error:', error.message);
+    next(error);
+  }
 };
 
 // @desc    Send OTP via Email
@@ -166,6 +293,10 @@ exports.login = async (req, res, next) => {
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    if (!user.password) {
+      return res.status(401).json({ success: false, message: 'This account uses Google Sign-In. Please use "Continue with Google" to sign in.' });
     }
 
     // Check if password matches

@@ -1,10 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, logout, getProfile, updateProfile, sendOtp } = require('../controllers/authController');
+const { register, login, logout, getProfile, updateProfile, sendOtp, googleLogin, googleRegister } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 const upload = require('../middleware/multerMiddleware');
 
 router.post('/send-otp', sendOtp);
+
+router.post('/job-seeker/google/register', googleRegister);
+router.post('/job-seeker/google/login', googleLogin);
 
 router.post(
   '/register',
