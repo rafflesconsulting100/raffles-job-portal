@@ -20,9 +20,11 @@ const allowedOrigins = (process.env.CLIENT_URL || '')
   .map(o => o.trim())
   .filter(Boolean);
 
+console.log('CORS allowed origins:', allowedOrigins.length > 0 ? allowedOrigins : 'NONE SET');
+
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
