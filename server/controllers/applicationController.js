@@ -122,7 +122,7 @@ exports.getJobApplicants = async (req, res, next) => {
     }
 
     const applicants = await Application.find({ job: req.params.jobId })
-      .populate('applicant', 'username email avatar bio location skills contactNumber')
+      .populate('applicant', 'username email avatar bio location skills contactNumber education experience projects certifications resume resumeOriginalName')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -325,3 +325,61 @@ exports.getStudentDatabase = async (req, res, next) => {
   }
 };
 
+
+
+// @desc    Get candidate resume for an application (with strict Employer ownership check)
+// @route   GET /api/applications/:id/resume
+// @access  Private (Employer only)
+exports.getApplicationResume = async (req, res, next) => {
+  try {
+    const application = await Application.findById(req.params.id)
+      .populate('job', 'creator title company')
+      .populate('applicant', 'username email resume resumeOriginalName');
+
+    if (!application) {
+      return res.status(404).json({ success: false, message: 'Application not found' });
+    }
+
+    // Strict Employer authorization check:
+    const isOwner = application.job && application.job.creator.toString() === req.user.id;
+    const isAdmin = req.user.role === 'Admin';
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden: You are not authorized to view this candidate resume',
+      });
+    }
+
+    const resumeUrl = application.resume || application.applicant?.resume;
+    const fileName = application.resumeOriginalName || application.applicant?.resumeOriginalName || 'candidate_resume.pdf';
+
+    if (!resumeUrl) {
+      return res.status(404).json({
+        success: false,
+        message: 'Resume not found for this candidate',
+      });
+    }
+
+    if (req.query.download === 'true') {
+      return res.redirect(resumeUrl);
+    }
+
+    res.status(200).json({
+      success: true,
+      applicationId: application._id,
+      jobId: application.job?._id,
+      candidate: {
+        id: application.applicant?._id,
+        name: application.applicant?.username,
+        email: application.applicant?.email,
+      },
+      resume: {
+        available: true,
+        fileName: fileName,
+        url: resumeUrl,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
