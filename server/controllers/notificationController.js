@@ -65,3 +65,20 @@ exports.markAllRead = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Clear all user notifications
+// @route   DELETE /api/notifications
+// @access  Private
+exports.clearNotifications = async (req, res, next) => {
+  try {
+    const result = await Notification.deleteMany({ recipient: req.user.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'All notifications cleared successfully',
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
