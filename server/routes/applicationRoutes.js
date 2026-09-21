@@ -8,6 +8,7 @@ const {
   withdrawApplication,
   getDashboardStats,
   getStudentDatabase,
+  getApplicationResume,
 } = require('../controllers/applicationController');
 const { protect, restrictTo } = require('../middleware/authMiddleware');
 const upload = require('../middleware/multerMiddleware');

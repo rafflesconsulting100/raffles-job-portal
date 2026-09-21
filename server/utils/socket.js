@@ -99,7 +99,7 @@ const sendNotificationToUser = (recipientId, notification) => {
         sender: notification.sender,
         message: notification.message,
         type: notification.type || 'system',
-        relatedJob: notification.relatedJob,
+        relatedJob: notification.relatedJob ? notification.relatedJob.toString() : null,
         isRead: notification.isRead || false,
         createdAt: notification.createdAt || new Date().toISOString(),
         updatedAt: notification.updatedAt || new Date().toISOString(),
