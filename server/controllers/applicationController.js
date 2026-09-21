@@ -1,3 +1,4 @@
+const { sendNotificationToUser } = require('../utils/socket');
 const Application = require('../models/Application');
 const Job = require('../models/Job');
 const User = require('../models/User');
@@ -66,13 +67,20 @@ exports.applyJob = async (req, res, next) => {
     });
 
     // Create notification for the job poster (Employer)
-    await Notification.create({
+    const newNotif = await Notification.create({
       recipient: job.creator,
       sender: req.user.id,
       message: `${req.user.username} applied for "${job.title}" at ${job.company}`,
       type: 'new_application',
       relatedJob: job._id,
     });
+
+    try {
+      const populatedNotif = await Notification.findById(newNotif._id).populate('sender', 'username avatar');
+      sendNotificationToUser(job.creator, populatedNotif || newNotif);
+    } catch (err) {
+      console.error('Failed to emit real-time notification to employer:', err.message);
+    }
 
     res.status(201).json({
       success: true,
@@ -164,13 +172,20 @@ exports.updateApplicationStatus = async (req, res, next) => {
 
     // Send in-app notification to the candidate
     const actionMsg = status === 'accepted' ? 'ACCEPTED' : 'REJECTED';
-    await Notification.create({
+    const newNotif = await Notification.create({
       recipient: application.applicant._id,
       sender: req.user.id,
       message: `Your application status for "${application.job.title}" at ${application.job.company} was updated to: ${actionMsg}`,
       type: 'status_change',
       relatedJob: application.job._id,
     });
+
+    try {
+      const populatedNotif = await Notification.findById(newNotif._id).populate('sender', 'username avatar');
+      sendNotificationToUser(application.applicant._id, populatedNotif || newNotif);
+    } catch (err) {
+      console.error('Failed to emit real-time notification to candidate:', err.message);
+    }
 
     // Send email notification to applicant via Raffles Jobs Brevo SMTP
     const { getRafflesEmailTemplate } = require('../utils/emailTemplate');

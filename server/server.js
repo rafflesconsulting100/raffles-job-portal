@@ -1,9 +1,11 @@
+const http = require('http');
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const connectDB = require('./config/db');
 const { errorHandler } = require('./middleware/errorMiddleware');
+const { initSocket } = require('./utils/socket');
 
 // Load environment variables
 dotenv.config();
@@ -55,7 +57,11 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-const server = app.listen(PORT, () => {
+// Create HTTP server and attach Socket.IO
+const server = http.createServer(app);
+initSocket(server);
+
+server.listen(PORT, () => {
   console.log(`Server running in development mode on port ${PORT}`);
 });
 
