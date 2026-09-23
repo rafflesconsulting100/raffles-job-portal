@@ -1,4 +1,5 @@
 const Job = require('../models/Job');
+const Application = require('../models/Application');
 const User = require('../models/User');
 
 // Validate Number of Openings (whole number >= 1)
@@ -158,6 +159,16 @@ exports.getJobs = async (req, res, next) => {
       query.experienceLevel = { $in: levels };
     }
 
+
+    // If user is authenticated Job Seeker, exclude jobs they have already applied to
+    if (req.user && req.user.role === 'Job Seeker') {
+      const userApplications = await Application.find({ applicant: req.user._id || req.user.id }).select('job');
+      const appliedJobIds = userApplications.map(app => app.job).filter(Boolean);
+      if (appliedJobIds.length > 0) {
+        query._id = { $nin: appliedJobIds };
+      }
+    }
+
     const jobs = await Job.find(query)
       .populate('creator', 'username email avatar')
       .sort({ createdAt: -1 });
@@ -177,7 +188,24 @@ exports.getJobs = async (req, res, next) => {
 // @access  Private (Employer only)
 exports.getEmployerJobs = async (req, res, next) => {
   try {
-    const jobs = await Job.find({ creator: req.user.id }).sort({ createdAt: -1 });
+    const rawJobs = await Job.find({ creator: req.user.id }).sort({ createdAt: -1 }).lean();
+    const jobIds = rawJobs.map((j) => j._id);
+
+    // Aggregate real applicant counts per job
+    const appCounts = await Application.aggregate([
+      { $match: { job: { $in: jobIds } } },
+      { $group: { _id: '$job', count: { $sum: 1 } } },
+    ]);
+
+    const countMap = {};
+    appCounts.forEach((ac) => {
+      countMap[ac._id.toString()] = ac.count;
+    });
+
+    const jobs = rawJobs.map((job) => ({
+      ...job,
+      applicantCount: countMap[job._id.toString()] || 0,
+    }));
 
     res.status(200).json({
       success: true,

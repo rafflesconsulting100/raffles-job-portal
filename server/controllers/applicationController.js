@@ -262,6 +262,7 @@ exports.getDashboardStats = async (req, res, next) => {
 
     // Calculate metrics
     const totalJobs = jobs.length;
+    const activeJobs = jobs.filter(j => j.status === 'active').length;
     
     const applications = await Application.find({ job: { $in: jobIds } });
     
@@ -274,6 +275,7 @@ exports.getDashboardStats = async (req, res, next) => {
       success: true,
       stats: {
         totalJobs,
+        activeJobs,
         totalApplicants,
         pending,
         accepted,
@@ -393,6 +395,30 @@ exports.getApplicationResume = async (req, res, next) => {
         fileName: fileName,
         url: resumeUrl,
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+// @desc    Get all applications submitted to jobs posted by this employer
+// @route   GET /api/applications/employer-applications
+// @access  Private (Employer only)
+exports.getEmployerApplications = async (req, res, next) => {
+  try {
+    const jobs = await Job.find({ creator: req.user.id }).select('_id title company location salary jobType status');
+    const jobIds = jobs.map(job => job._id);
+
+    const applications = await Application.find({ job: { $in: jobIds } })
+      .populate('job', 'title company location salary jobType status')
+      .populate('applicant', 'username email avatar bio location skills contactNumber education experience projects certifications resume resumeOriginalName')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: applications.length,
+      applications,
     });
   } catch (error) {
     next(error);

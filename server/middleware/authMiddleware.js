@@ -65,4 +65,27 @@ const checkEmployerAccess = (req, res, next) => {
   next();
 };
 
-module.exports = { protect, restrictTo, checkEmployerAccess };
+
+// Optional auth: identifies user if token is provided, but does not block if not
+const optionalAuth = async (req, res, next) => {
+  let token;
+  if (req.cookies && req.cookies.token) {
+    token = req.cookies.token;
+  } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+
+  if (!token) {
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecretkey1234567890abcdefjobportal');
+    req.user = await User.findById(decoded.id).select('-password');
+  } catch (error) {
+    // Ignore invalid/expired token for optional auth
+  }
+  next();
+};
+
+module.exports = { protect, restrictTo, checkEmployerAccess, optionalAuth };

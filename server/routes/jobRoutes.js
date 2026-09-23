@@ -10,10 +10,10 @@ const {
   saveJob,
   getSavedJobs,
 } = require('../controllers/jobController');
-const { protect, restrictTo, checkEmployerAccess } = require('../middleware/authMiddleware');
+const { protect, restrictTo, checkEmployerAccess, optionalAuth } = require('../middleware/authMiddleware');
 
 router.route('/')
-  .get(getJobs)
+  .get(optionalAuth, getJobs)
   .post(protect, restrictTo('Employer'), checkEmployerAccess, createJob);
 
 router.get('/my-jobs', protect, restrictTo('Employer'), checkEmployerAccess, getEmployerJobs);
