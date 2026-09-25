@@ -12,7 +12,9 @@ const {
   updateUserRole,
   deleteUserByAdmin,
   seedAdmin,
+  getAllApplications,
 } = require('../controllers/adminController');
+const { updateApplicationStatus } = require('../controllers/applicationController');
 const { protect, restrictTo } = require('../middleware/authMiddleware');
 
 // Public Admin Login with passkey / credentials
@@ -27,6 +29,9 @@ router.use(protect, restrictTo('Admin'));
 router.get('/stats', getAdminStats);
 router.get('/employers', getAllEmployers);
 router.put('/employers/:id/access', toggleEmployerAccess);
+
+router.get('/applications', getAllApplications);
+router.patch('/applications/:id/status', updateApplicationStatus);
 
 router.get('/jobs', getAllJobs);
 router.put('/jobs/:id/status', updateJobStatus);

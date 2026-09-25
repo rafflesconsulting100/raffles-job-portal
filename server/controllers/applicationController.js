@@ -125,7 +125,7 @@ exports.getJobApplicants = async (req, res, next) => {
     }
 
     // Confirm ownership
-    if (job.creator.toString() !== req.user.id) {
+    if (req.user.role !== 'Admin' && job.creator.toString() !== req.user.id) {
       return res.status(403).json({ success: false, message: 'Unauthorized access to applicant profiles' });
     }
 
@@ -163,7 +163,7 @@ exports.updateApplicationStatus = async (req, res, next) => {
     }
 
     // Confirm job belongs to this employer
-    if (application.job.creator.toString() !== req.user.id) {
+    if (req.user.role !== 'Admin' && application.job.creator.toString() !== req.user.id) {
       return res.status(403).json({ success: false, message: 'You cannot update this application status' });
     }
 

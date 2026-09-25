@@ -36,7 +36,19 @@ const protect = async (req, res, next) => {
 // Restrict access based on user role
 const restrictTo = (...roles) => {
   return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
+    const userRole = (req.user?.role || '').trim();
+    const normalizedUserRole = userRole.toLowerCase().replace(/[\s_-]+/g, '');
+    const isAllowed = roles.some((role) => {
+      const normalizedTarget = role.trim().toLowerCase().replace(/[\s_-]+/g, '');
+      if (normalizedTarget === normalizedUserRole) return true;
+      // Admin permission automatically extends to Super Admin variants
+      if (normalizedTarget === 'admin' && (normalizedUserRole === 'admin' || normalizedUserRole === 'superadmin')) {
+        return true;
+      }
+      return false;
+    });
+
+    if (!req.user || !isAllowed) {
       return res.status(403).json({
         success: false,
         message: `Role (${req.user?.role || 'Guest'}) is not authorized to access this resource`,
@@ -56,10 +68,18 @@ const checkEmployerAccess = (req, res, next) => {
       req.user.status !== 'Pending';
       
     if (!isAccessGranted) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[DEBUG][EmployerAccessCheck] Employer ${req.user._id} status: ${req.user.status}, employerAccess: ${req.user.employerAccess}, isApproved: ${req.user.isApproved} -> DENIED`);
+      }
       return res.status(403).json({
         success: false,
-        message: 'Your employer portal access is pending admin approval or has been restricted. Please contact support.',
+        code: 'EMPLOYER_ACCESS_REQUIRED',
+        message: 'Employer access is required before posting jobs.',
       });
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[DEBUG][EmployerAccessCheck] Employer ${req.user._id} status: ${req.user.status}, employerAccess: ${req.user.employerAccess}, isApproved: ${req.user.isApproved} -> ALLOWED`);
     }
   }
   next();

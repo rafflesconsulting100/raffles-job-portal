@@ -119,6 +119,28 @@ export default function EmployerDashboard() {
         console.error("Failed to parse user session", err);
       }
     }
+
+    // Always re-validate latest employer access status directly with server on mount
+    if (storedToken) {
+      getProfile(storedToken).then((res) => {
+        if (res && res.success && res.user) {
+          localStorage.setItem("user", JSON.stringify(res.user));
+          setUser(res.user);
+          window.dispatchEvent(new Event("auth-change"));
+          if (res.user.role === "Employer") {
+            const isGranted = res.user.employerAccess !== false &&
+              res.user.isApproved !== false &&
+              res.user.status === "Active";
+            if (isGranted) {
+              loadDashboardData(storedToken);
+            }
+          }
+        }
+      }).catch((err) => {
+        console.error("Failed to refresh employer profile on mount:", err);
+      });
+    }
+
     setLoading(false);
   }, []);
 

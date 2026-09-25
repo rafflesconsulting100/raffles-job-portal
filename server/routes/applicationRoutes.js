@@ -18,10 +18,10 @@ router.get('/student-database', protect, restrictTo('Employer'), getStudentDatab
 router.post('/apply/:jobId', protect, restrictTo('Job Seeker'), upload.fields([{ name: 'resume', maxCount: 1 }]), applyJob);
 router.get('/employer-applications', protect, restrictTo('Employer'), getEmployerApplications);
 router.get('/my-applications', protect, restrictTo('Job Seeker'), getCandidateApplications);
-router.get('/job/:jobId', protect, restrictTo('Employer'), getJobApplicants);
+router.get('/job/:jobId', protect, restrictTo('Employer', 'Admin'), getJobApplicants);
 router.get('/:id/resume', protect, restrictTo('Employer', 'Admin'), getApplicationResume);
 router.get('/stats', protect, restrictTo('Employer'), getDashboardStats);
-router.patch('/:id/status', protect, restrictTo('Employer'), updateApplicationStatus);
+router.patch('/:id/status', protect, restrictTo('Employer', 'Admin'), updateApplicationStatus);
 router.delete('/:id', protect, restrictTo('Job Seeker'), withdrawApplication);
 
 module.exports = router;
