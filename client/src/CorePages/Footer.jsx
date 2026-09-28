@@ -16,8 +16,8 @@ const candidateLinks = [
   { name: "Browse All Jobs", path: "/jobs" },
   { name: "Sales Jobs", path: "/jobs/sales" },
   { name: "Customer Support Jobs", path: "/jobs/customer-support" },
-  { name: "BPO Jobs", path: "/jobs?category=BPO" },
-  { name: "Warehouse Jobs", path: "/jobs?category=Warehouse" },
+  { name: "BPO Jobs", path: "/jobs/bpo" },
+  { name: "Warehouse Jobs", path: "/jobs/warehouse" },
 ];
 
 const employerLinks = [

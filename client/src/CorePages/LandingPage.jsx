@@ -251,8 +251,8 @@ export default function LandingPage() {
         <div className="flex flex-wrap items-center justify-center gap-2">
           <Link to="/jobs/sales" className="rounded-full border border-cyan-400/30 bg-white/10 hover:bg-white/20 text-cyan-200 px-3.5 py-1.5 font-semibold transition">Sales Jobs</Link>
           <Link to="/jobs/customer-support" className="rounded-full border border-cyan-400/30 bg-white/10 hover:bg-white/20 text-cyan-200 px-3.5 py-1.5 font-semibold transition">Customer Support Jobs</Link>
-          <Link to="/jobs?category=BPO" className="rounded-full border border-cyan-400/30 bg-white/10 hover:bg-white/20 text-cyan-200 px-3.5 py-1.5 font-semibold transition">BPO Jobs</Link>
-          <Link to="/jobs?category=Warehouse" className="rounded-full border border-cyan-400/30 bg-white/10 hover:bg-white/20 text-cyan-200 px-3.5 py-1.5 font-semibold transition">Warehouse Jobs</Link>
+          <Link to="/jobs/bpo" className="rounded-full border border-cyan-400/30 bg-white/10 hover:bg-white/20 text-cyan-200 px-3.5 py-1.5 font-semibold transition">BPO Jobs</Link>
+          <Link to="/jobs/warehouse" className="rounded-full border border-cyan-400/30 bg-white/10 hover:bg-white/20 text-cyan-200 px-3.5 py-1.5 font-semibold transition">Warehouse Jobs</Link>
           <Link to="/jobs" className="rounded-full bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-3.5 py-1.5 font-bold transition shadow-sm">View All Jobs</Link>
         </div>
       </div>
