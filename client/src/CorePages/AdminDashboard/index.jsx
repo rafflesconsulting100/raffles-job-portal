@@ -10,7 +10,6 @@ import {
   fetchAdminUsers,
   updateUserRole,
   deleteUserByAdmin,
-  seedAdminAccount,
 } from "../../Service/Operation/adminApi";
 import { showSuccess, showError } from "../../Utils/toast";
 
@@ -21,29 +20,32 @@ import UsersTab from "./UsersTab";
 import EmployerDetailModal from "./EmployerDetailModal";
 
 import {
-  ShieldCheck,
   Building2,
   Briefcase,
   Users,
   LayoutDashboard,
-  LogOut,
-  Sparkles,
   Lock,
   ChevronRight,
   RefreshCw
 } from "lucide-react";
 
+import useSeo from '../../Utils/useSeo';
+
 export default function AdminDashboard() {
+  useSeo({ path: '/admin-dashboard' });
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();  const activeTab = searchParams.get("tab") || "overview";
 
-  const currentTabParam = searchParams.get("tab") || "overview";
-  const [activeTab, setActiveTab] = useState(currentTabParam);
-
-  const [token, setToken] = useState("");
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [seeding, setSeeding] = useState(false);
+  const [token] = useState(() => localStorage.getItem("token") || "");
+  const [user] = useState(() => {
+    try {
+      const u = localStorage.getItem("user");
+      return u ? JSON.parse(u) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [loading] = useState(false);
 
   // Admin Data State
   const [stats, setStats] = useState({
@@ -69,45 +71,7 @@ export default function AdminDashboard() {
   const [usersLoading, setUsersLoading] = useState(false);
 
   const [selectedEmployerModal, setSelectedEmployerModal] = useState(null);
-
-  useEffect(() => {
-    const tab = searchParams.get("tab") || "overview";
-    setActiveTab(tab);
-  }, [searchParams]);
-
-  const loadUserData = () => {
-    const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-
-    if (storedToken && storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setToken(storedToken);
-        setUser(parsedUser);
-
-        if (parsedUser.role === "Admin") {
-          loadAllAdminData(storedToken);
-        }
-      } catch (e) {
-        console.error("Error parsing user context", e);
-      }
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    loadUserData();
-  }, []);
-
-  const loadAllAdminData = async (authToken) => {
-    const tok = authToken || token;
-    if (!tok) return;
-
-    loadStats(tok);
-    loadEmployers(tok);
-    loadJobs(tok);
-    loadUsers(tok);
-  };
+  // activeTab derived directly from searchParams
 
   const loadStats = async (tok) => {
     try {
@@ -163,20 +127,37 @@ export default function AdminDashboard() {
     }
   };
 
+  const loadAllAdminData = (authToken) => {
+    const tok = authToken || token;
+    if (!tok) return;
+
+    loadStats(tok);
+    loadEmployers(tok);
+    loadJobs(tok);
+    loadUsers(tok);
+  };
+
+  useEffect(() => {
+    if (token && user?.role === "Admin") {
+      queueMicrotask(() => {
+        loadAllAdminData(token);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, user]);
+
   const handleTabSwitch = (tab) => {
-    setActiveTab(tab);
     setSearchParams({ tab });
   };
 
-  // Toggle Employer Access (Grant / Revoke)
-  const handleToggleAccess = async (employerId, newAccessState) => {
+  // Toggle Employer Access (Approve / Reject / Grant / Revoke)
+  const handleToggleAccess = async (employerId, newAccessState, decision) => {
     if (!token) return;
     try {
-      const res = await toggleEmployerAccess(
-        employerId,
-        { employerAccess: newAccessState, isApproved: newAccessState },
-        token
-      );
+      const payload = { employerAccess: newAccessState, isApproved: newAccessState };
+      if (decision) payload.status = decision;
+
+      const res = await toggleEmployerAccess(employerId, payload, token);
       if (res.success) {
         showSuccess(res.message || "Employer access status updated!");
         loadEmployers(token);
@@ -186,7 +167,8 @@ export default function AdminDashboard() {
             ...selectedEmployerModal,
             employerAccess: newAccessState,
             isApproved: newAccessState,
-            status: newAccessState ? "Active" : "Suspended",
+            status: res.employer?.status || (newAccessState ? "Active" : "Suspended"),
+            approvalStatus: res.employer?.approvalStatus,
           });
         }
       }
@@ -256,32 +238,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Seed / Self-Promote Admin button
-  const handleSeedAdmin = async () => {
-    if (!token) {
-      showError("Please sign in first to promote your account to Admin");
-      navigate("/login");
-      return;
-    }
-
-    setSeeding(true);
-    try {
-      const res = await seedAdminAccount(token);
-      if (res.success) {
-        showSuccess("Account upgraded to Admin role!");
-        const updatedUser = { ...user, role: "Admin", status: "Active" };
-        localStorage.setItem("user", JSON.stringify(updatedUser));
-        setUser(updatedUser);
-        window.dispatchEvent(new Event("auth-change"));
-        loadAllAdminData(token);
-      }
-    } catch (err) {
-      showError(err.message || "Could not grant admin status");
-    } finally {
-      setSeeding(false);
-    }
-  };
-
   // Auth Guard Screen if not Admin
   if (!loading && (!token || !user || user.role !== "Admin")) {
     return (
@@ -295,32 +251,15 @@ export default function AdminDashboard() {
             Administrator Access Required
           </h2>
           <p className="text-slate-400 text-sm mb-6 leading-relaxed">
-            You must be logged in as an <strong>Admin</strong> account to manage employer portal access, grant privileges, and view overall portal analytics.
+            You must be signed in as an <strong>Admin</strong> account to manage employer portal access, grant privileges, and view overall portal analytics. Admin accounts are created automatically the first time the administrator passkey is used on the sign-in screen.
           </p>
 
-          <div className="space-y-3">
-            {token && user && user.role !== "Admin" && (
-              <button
-                disabled={seeding}
-                onClick={handleSeedAdmin}
-                className="w-full bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 text-sm cursor-pointer"
-              >
-                {seeding ? (
-                  <RefreshCw className="animate-spin w-4 h-4" />
-                ) : (
-                  <Sparkles className="w-4 h-4 text-amber-300" />
-                )}
-                Enable Admin Access (Promote Current Account)
-              </button>
-            )}
-
-            <button
-              onClick={() => navigate("/login")}
-              className="w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 rounded-xl transition text-sm flex items-center justify-center gap-2 cursor-pointer"
-            >
-              Sign In as Admin <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+          <button
+            onClick={() => navigate("/login")}
+            className="w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 rounded-xl transition text-sm flex items-center justify-center gap-2 cursor-pointer"
+          >
+            Sign In as Admin <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
       </div>
     );

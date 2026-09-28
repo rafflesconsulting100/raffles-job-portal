@@ -1,6 +1,35 @@
 const Job = require('../models/Job');
 const Application = require('../models/Application');
 const User = require('../models/User');
+const { notifyJobUpdated, notifyJobDeleted } = require('../utils/googleIndexing');
+
+const SITE_ORIGIN = process.env.SITE_URL || 'https://www.rafflesjobs.com';
+
+// Public SEO URL of a job (used for Google Indexing API notifications).
+const publicJobUrl = (job) => (job && job.slug ? `${SITE_ORIGIN}/jobs/${job.slug}` : null);
+
+// Validate Job Title (anti-spam, reasonable length 3-100, no repeated characters or gibberish)
+const validateJobTitle = (title) => {
+  if (!title || typeof title !== 'string') {
+    return { valid: false, message: 'Job title is required.' };
+  }
+  const clean = title.trim();
+  if (clean.length < 3) {
+    return { valid: false, message: 'Job title must be at least 3 characters long.' };
+  }
+  if (clean.length > 100) {
+    return { valid: false, message: 'Job title cannot exceed 100 characters.' };
+  }
+  if (/(.)\1{4,}/.test(clean)) {
+    return { valid: false, message: 'Job title contains invalid repeated characters.' };
+  }
+  if (!/[a-zA-Z]/.test(clean)) {
+    return { valid: false, message: 'Job title must contain valid text characters.' };
+  }
+  return { valid: true, value: clean };
+};
+
+const escapeRegex = (str) => String(str || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // Validate Number of Openings (whole number >= 1)
 const validateNumberOfOpenings = (value) => {
@@ -34,6 +63,12 @@ const validatePreferredLanguages = (value) => {
 // @access  Private (Employer only)
 exports.createJob = async (req, res, next) => {
   try {
+    // Validate Title
+    const titleCheck = validateJobTitle(req.body.title);
+    if (!titleCheck.valid) {
+      return res.status(400).json({ success: false, message: titleCheck.message });
+    }
+
     const {
       title,
       company,
@@ -42,6 +77,14 @@ exports.createJob = async (req, res, next) => {
       benefits,
       skills,
       salary,
+      locations,
+      incentives,
+      allowances,
+      shift,
+      weekOff,
+      employmentRole,
+      expiresAt,
+      validThrough,
       location,
       jobType,
       experienceLevel,
@@ -92,7 +135,21 @@ exports.createJob = async (req, res, next) => {
       ? screeningQuestions.split('\n').map(q => q.trim()).filter(Boolean)
       : [];
 
+    const parsedLocations = Array.isArray(locations) && locations.length > 0
+      ? locations.map(l => String(l).trim()).filter(Boolean)
+      : (location ? String(location).split(/[|]/).map(l => l.trim()).filter(Boolean) : []);
+
+    const expiryDate = expiresAt || validThrough || null;
+
     const job = await Job.create({
+      locations: parsedLocations,
+      incentives: incentives ? String(incentives).trim() : '',
+      allowances: allowances ? String(allowances).trim() : '',
+      shift: shift ? String(shift).trim() : '',
+      weekOff: weekOff ? String(weekOff).trim() : '',
+      employmentRole: employmentRole ? String(employmentRole).trim() : 'On-Roll',
+      expiresAt: expiryDate ? new Date(expiryDate) : null,
+      validThrough: expiryDate ? new Date(expiryDate) : null,
       title,
       company,
       description,
@@ -114,6 +171,9 @@ exports.createJob = async (req, res, next) => {
       creator: req.user.id,
     });
 
+    const jobUrl = publicJobUrl(job);
+    if (jobUrl) notifyJobUpdated(jobUrl);
+
     res.status(201).json({
       success: true,
       message: 'Job posted successfully',
@@ -129,22 +189,44 @@ exports.createJob = async (req, res, next) => {
 // @access  Public
 exports.getJobs = async (req, res, next) => {
   try {
-    const { keyword, location, jobType, experienceLevel } = req.query;
+    const { keyword, location, jobType, experienceLevel, category } = req.query;
 
     const query = { status: 'active' };
 
-    // Keyword search (title, company, description)
-    if (keyword) {
+    // Category filter (exact value stored on the job document, e.g. "Sales")
+    if (category) {
+      query.category = category;
+    }
+
+    // Keyword search (title, company, description, category, skills) with escaped regex
+    if (keyword && String(keyword).trim()) {
+      const safeKeyword = escapeRegex(String(keyword).trim());
       query.$or = [
-        { title: { $regex: keyword, $options: 'i' } },
-        { company: { $regex: keyword, $options: 'i' } },
-        { description: { $regex: keyword, $options: 'i' } },
+        { title: { $regex: safeKeyword, $options: 'i' } },
+        { company: { $regex: safeKeyword, $options: 'i' } },
+        { description: { $regex: safeKeyword, $options: 'i' } },
+        { category: { $regex: safeKeyword, $options: 'i' } },
+        { skills: { $regex: safeKeyword, $options: 'i' } },
       ];
     }
 
-    // Location search
-    if (location) {
-      query.location = { $regex: location, $options: 'i' };
+    // Location search (matches location or locations array) with escaped regex
+    if (location && String(location).trim()) {
+      const safeLocation = escapeRegex(String(location).trim());
+      const locCondition = {
+        $or: [
+          { location: { $regex: safeLocation, $options: 'i' } },
+          { locations: { $regex: safeLocation, $options: 'i' } },
+        ],
+      };
+      if (query.$and) {
+        query.$and.push(locCondition);
+      } else if (query.$or) {
+        query.$and = [{ $or: query.$or }, locCondition];
+        delete query.$or;
+      } else {
+        query.$or = locCondition.$or;
+      }
     }
 
     // Job Type search
@@ -236,6 +318,29 @@ exports.getJobById = async (req, res, next) => {
   }
 };
 
+// @desc    Get a single job by its public SEO slug (closed jobs included so the
+//          page can render a "no longer accepting applications" notice)
+// @route   GET /api/jobs/slug/:slug
+// @access  Public
+exports.getJobBySlug = async (req, res, next) => {
+  try {
+    const job = await Job.findOne({ slug: req.params.slug }).populate(
+      'creator',
+      'username email avatar company bio'
+    );
+    if (!job) {
+      return res.status(404).json({ success: false, message: 'Job not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      job,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Update a job details
 // @route   PUT /api/jobs/:id
 // @access  Private (Employer only - owner)
@@ -273,7 +378,23 @@ exports.updateJob = async (req, res, next) => {
       preferredLanguages,
     } = req.body;
 
-    if (title) job.title = title;
+    if (title !== undefined) {
+      const titleCheck = validateJobTitle(title);
+      if (!titleCheck.valid) {
+        return res.status(400).json({ success: false, message: titleCheck.message });
+      }
+      job.title = titleCheck.value;
+    }
+    if (req.body.locations !== undefined && Array.isArray(req.body.locations)) {
+      job.locations = req.body.locations.map(l => String(l).trim()).filter(Boolean);
+    }
+    if (req.body.incentives !== undefined) job.incentives = String(req.body.incentives).trim();
+    if (req.body.allowances !== undefined) job.allowances = String(req.body.allowances).trim();
+    if (req.body.shift !== undefined) job.shift = String(req.body.shift).trim();
+    if (req.body.weekOff !== undefined) job.weekOff = String(req.body.weekOff).trim();
+    if (req.body.employmentRole !== undefined) job.employmentRole = String(req.body.employmentRole).trim();
+    if (req.body.expiresAt !== undefined) job.expiresAt = req.body.expiresAt ? new Date(req.body.expiresAt) : null;
+    if (req.body.validThrough !== undefined) job.validThrough = req.body.validThrough ? new Date(req.body.validThrough) : null;
     if (company) job.company = company;
     if (description) job.description = description;
     if (salary !== undefined) job.salary = salary;
@@ -329,6 +450,9 @@ exports.updateJob = async (req, res, next) => {
 
     await job.save();
 
+    const updatedUrl = publicJobUrl(job);
+    if (updatedUrl) notifyJobUpdated(updatedUrl);
+
     res.status(200).json({
       success: true,
       message: 'Job updated successfully',
@@ -354,7 +478,10 @@ exports.deleteJob = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'You are not authorized to delete this job' });
     }
 
+    const deletedUrl = publicJobUrl(job);
     await job.deleteOne();
+
+    if (deletedUrl) notifyJobDeleted(deletedUrl);
 
     res.status(200).json({
       success: true,

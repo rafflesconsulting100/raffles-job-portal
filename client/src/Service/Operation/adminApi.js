@@ -12,7 +12,6 @@ const {
   ADMIN_USERS_API,
   UPDATE_USER_ROLE_API,
   DELETE_USER_API,
-  SEED_ADMIN_API,
 } = endpoints;
 
 export const adminLogin = async (credentials) => {
@@ -20,7 +19,7 @@ export const adminLogin = async (credentials) => {
     const response = await apiConnector("POST", ADMIN_LOGIN_API, credentials);
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Admin authentication failed");
+    throw new Error(error.response?.data?.message || "Admin authentication failed", { cause: error });
   }
 };
 
@@ -31,7 +30,7 @@ export const fetchAdminStats = async (token) => {
     });
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to fetch admin stats");
+    throw new Error(error.response?.data?.message || "Failed to fetch admin stats", { cause: error });
   }
 };
 
@@ -42,7 +41,7 @@ export const fetchAdminEmployers = async (token) => {
     });
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to fetch employers list");
+    throw new Error(error.response?.data?.message || "Failed to fetch employers list", { cause: error });
   }
 };
 
@@ -58,7 +57,7 @@ export const toggleEmployerAccess = async (employerId, accessPayload, token) => 
     );
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to update employer access");
+    throw new Error(error.response?.data?.message || "Failed to update employer access", { cause: error });
   }
 };
 
@@ -69,7 +68,7 @@ export const fetchAdminJobs = async (token) => {
     });
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to fetch job postings");
+    throw new Error(error.response?.data?.message || "Failed to fetch job postings", { cause: error });
   }
 };
 
@@ -85,7 +84,7 @@ export const updateAdminJobStatus = async (jobId, status, token) => {
     );
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to update job status");
+    throw new Error(error.response?.data?.message || "Failed to update job status", { cause: error });
   }
 };
 
@@ -101,7 +100,7 @@ export const deleteAdminJob = async (jobId, token) => {
     );
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to delete job");
+    throw new Error(error.response?.data?.message || "Failed to delete job", { cause: error });
   }
 };
 
@@ -112,7 +111,7 @@ export const fetchAdminUsers = async (token) => {
     });
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to fetch users");
+    throw new Error(error.response?.data?.message || "Failed to fetch users", { cause: error });
   }
 };
 
@@ -128,7 +127,7 @@ export const updateUserRole = async (userId, role, token) => {
     );
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to update user role");
+    throw new Error(error.response?.data?.message || "Failed to update user role", { cause: error });
   }
 };
 
@@ -144,17 +143,6 @@ export const deleteUserByAdmin = async (userId, token) => {
     );
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to delete user");
-  }
-};
-
-export const seedAdminAccount = async (token) => {
-  try {
-    const response = await apiConnector("POST", SEED_ADMIN_API, null, {
-      Authorization: `Bearer ${token}`,
-    });
-    return response.data;
-  } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to enable admin access");
+    throw new Error(error.response?.data?.message || "Failed to delete user", { cause: error });
   }
 };

@@ -24,11 +24,11 @@ export default function GoogleLoginButton({ mode = 'login' }) {
     setTermsError('');
 
     try {
-      const { user } = await signInWithGooglePopup();
+      const { idToken } = await signInWithGooglePopup();
 
       const data = isRegister
-        ? await googleRegister(user.uid, user.email, user.displayName, user.photoURL, user.emailVerified)
-        : await googleLogin(user.uid, user.email, user.displayName, user.photoURL, user.emailVerified);
+        ? await googleRegister(idToken)
+        : await googleLogin(idToken);
 
       if (data.success) {
         localStorage.setItem('token', data.token);

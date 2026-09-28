@@ -1,55 +1,51 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   User,
-  Mail,
   Phone,
   MapPin,
-  Calendar,
   FileText,
   Upload,
   Plus,
   X,
   Save,
   CheckCircle2,
-  AlertCircle,
   Camera,
   GraduationCap,
   Briefcase,
   FolderGit2,
   Award,
   Trash2,
-  ExternalLink,
-  ChevronDown
+  ExternalLink
 } from "lucide-react";
 import { showSuccess, showError } from "../../Utils/toast";
 
 export default function ProfileTab({
   user,
-  token,
+  token: _token,
   onProfileUpdated
 }) {
-  // Basic Details State
-  const [formData, setFormData] = useState({
-    username: "",
-    email: "",
-    bio: "",
-    location: "",
-    contactNumber: "",
-    gender: "",
-    dob: "",
-    skills: [],
-  });
+  // Basic Details State initialized directly from user
+  const [formData, setFormData] = useState(() => ({
+    username: user?.username || "",
+    email: user?.email || "",
+    bio: user?.bio || "",
+    location: user?.location || "",
+    contactNumber: user?.contactNumber || "",
+    gender: user?.gender || "",
+    dob: user?.dob || "",
+    skills: Array.isArray(user?.skills) ? user.skills : [],
+  }));
 
   // Dynamic Array States
-  const [educationList, setEducationList] = useState([]);
-  const [experienceList, setExperienceList] = useState([]);
-  const [projectsList, setProjectsList] = useState([]);
-  const [certificationsList, setCertificationsList] = useState([]);
+  const [educationList, setEducationList] = useState(() => Array.isArray(user?.education) ? user.education : []);
+  const [experienceList, setExperienceList] = useState(() => Array.isArray(user?.experience) ? user.experience : []);
+  const [projectsList, setProjectsList] = useState(() => Array.isArray(user?.projects) ? user.projects : []);
+  const [certificationsList, setCertificationsList] = useState(() => Array.isArray(user?.certifications) ? user.certifications : []);
 
   // Form toggles & inputs
   const [skillInput, setSkillInput] = useState("");
   const [avatarFile, setAvatarFile] = useState(null);
-  const [avatarPreview, setAvatarPreview] = useState("");
+  const [avatarPreview, setAvatarPreview] = useState(() => user?.avatar || "");
   const [resumeFile, setResumeFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -91,26 +87,27 @@ export default function ProfileTab({
     credentialUrl: ""
   });
 
-  // Populate data when user object is available
-  useEffect(() => {
-    if (user) {
-      setFormData({
-        username: user.username || "",
-        email: user.email || "",
-        bio: user.bio || "",
-        location: user.location || "",
-        contactNumber: user.contactNumber || "",
-        gender: user.gender || "",
-        dob: user.dob || "",
-        skills: Array.isArray(user.skills) ? user.skills : [],
-      });
-      if (user.avatar) setAvatarPreview(user.avatar);
-      if (Array.isArray(user.education)) setEducationList(user.education);
-      if (Array.isArray(user.experience)) setExperienceList(user.experience);
-      if (Array.isArray(user.projects)) setProjectsList(user.projects);
-      if (Array.isArray(user.certifications)) setCertificationsList(user.certifications);
-    }
-  }, [user]);
+  // Adjust state during render if user prop updates (e.g., after save/refresh)
+  const [prevUserId, setPrevUserId] = useState(() => user?._id || user?.id);
+  const currentUserId = user?._id || user?.id;
+  if (currentUserId && currentUserId !== prevUserId) {
+    setPrevUserId(currentUserId);
+    setFormData({
+      username: user.username || "",
+      email: user.email || "",
+      bio: user.bio || "",
+      location: user.location || "",
+      contactNumber: user.contactNumber || "",
+      gender: user.gender || "",
+      dob: user.dob || "",
+      skills: Array.isArray(user.skills) ? user.skills : [],
+    });
+    if (user.avatar) setAvatarPreview(user.avatar);
+    if (Array.isArray(user.education)) setEducationList(user.education);
+    if (Array.isArray(user.experience)) setExperienceList(user.experience);
+    if (Array.isArray(user.projects)) setProjectsList(user.projects);
+    if (Array.isArray(user.certifications)) setCertificationsList(user.certifications);
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;

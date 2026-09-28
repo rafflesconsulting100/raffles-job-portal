@@ -1,5 +1,5 @@
 import React from 'react';
-import { Filter, LayoutGrid, List, SlidersHorizontal } from 'lucide-react';
+import {  LayoutGrid, List, SlidersHorizontal } from 'lucide-react';
 
 export default function JobStatsBar({
   totalJobs,
@@ -29,13 +29,13 @@ export default function JobStatsBar({
       </div>
 
       <div className="flex items-center justify-between sm:justify-end gap-3 flex-wrap sm:flex-nowrap pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100">
-        {/* Mobile Filter Toggle */}
+        {/* Mobile Toggle */}
         <button
           className="lg:hidden flex items-center gap-2 px-3.5 py-2 border border-gray-200 bg-gray-50/80 hover:bg-gray-100 rounded-xl text-xs font-bold text-[#1e293b] active:scale-95 transition cursor-pointer"
           onClick={() => setMobileFiltersOpen(true)}
         >
           <SlidersHorizontal className="w-3.5 h-3.5 text-[#2B2A8C]" />
-          Filters
+          s
         </button>
 
         {/* View Mode Switcher (Grid vs List) */}

@@ -9,11 +9,7 @@ import {
   ArrowUpRight,
   Building2,
   MapPin,
-  Calendar,
-  Sparkles,
-  Search,
-  ExternalLink,
-  Trash2
+  Sparkles, Search
 } from "lucide-react";
 
 export default function OverviewTab({
@@ -22,8 +18,8 @@ export default function OverviewTab({
   savedJobs = [],
   handleTabSwitch,
   setViewingApplicationModal,
-  setWithdrawingAppId,
-  toggleSaveJob,
+  setWithdrawingAppId: _setWithdrawingAppId,
+  toggleSaveJob: _toggleSaveJob,
   profileCompletion
 }) {
   const recentApplications = applications.slice(0, 4);

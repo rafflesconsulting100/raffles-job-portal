@@ -14,7 +14,8 @@ import {
   RefreshCw,
   X,
   Mail,
-  MapPin
+  MapPin,
+  Phone
 } from "lucide-react";
 
 export default function EmployersTab({
@@ -30,36 +31,54 @@ export default function EmployersTab({
   const [togglingId, setTogglingId] = useState(null);
 
   const getEmployerState = (emp) => {
-    if (emp.status === "Pending" || (emp.isApproved === false && emp.status !== "Suspended")) {
+    const raw = (emp.approvalStatus || emp.status || "").toLowerCase();
+    if (raw === "rejected") {
+      return "rejected";
+    }
+    if (raw === "pending" || (emp.isApproved === false && emp.status !== "Suspended")) {
       return "pending";
     }
-    if (emp.status === "Suspended" || emp.employerAccess === false || emp.isApproved === false) {
+    if (raw === "suspended" || raw === "revoked" || emp.status === "Suspended" || emp.employerAccess === false || emp.isApproved === false) {
       return "revoked";
     }
     return "granted";
   };
+
+  const getMobile = (emp) => emp.mobileNumber || emp.contactNumber || "";
 
   const filteredEmployers = employers.filter((emp) => {
     const state = getEmployerState(emp);
     const matchesSearch =
       emp.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       emp.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.location?.toLowerCase().includes(searchTerm.toLowerCase());
+      emp.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      getMobile(emp).toLowerCase().includes(searchTerm.toLowerCase());
 
     if (statusFilter === "pending") return matchesSearch && state === "pending";
     if (statusFilter === "granted") return matchesSearch && state === "granted";
     if (statusFilter === "revoked") return matchesSearch && state === "revoked";
+    if (statusFilter === "rejected") return matchesSearch && state === "rejected";
     return matchesSearch;
   });
 
   const pendingCount = employers.filter((e) => getEmployerState(e) === "pending").length;
   const grantedCount = employers.filter((e) => getEmployerState(e) === "granted").length;
   const revokedCount = employers.filter((e) => getEmployerState(e) === "revoked").length;
+  const rejectedCount = employers.filter((e) => getEmployerState(e) === "rejected").length;
 
   const handleAccessToggle = async (empId, currentGranted) => {
     setTogglingId(empId);
     try {
       await onToggleAccess(empId, !currentGranted);
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const handleReject = async (empId) => {
+    setTogglingId(empId);
+    try {
+      await onToggleAccess(empId, false, "Rejected");
     } finally {
       setTogglingId(null);
     }
@@ -99,7 +118,7 @@ export default function EmployersTab({
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by name, email or location..."
+            placeholder="Search by name, email, mobile or location..."
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition shadow-2xs"
           />
           {searchTerm && (
@@ -154,6 +173,16 @@ export default function EmployersTab({
           >
             <XCircle size={14} /> Access Revoked ({revokedCount})
           </button>
+          <button
+            onClick={() => setStatusFilter("rejected")}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+              statusFilter === "rejected"
+                ? "bg-rose-700 text-white shadow-xs"
+                : "bg-white border border-rose-200 text-rose-700 hover:bg-rose-50"
+            }`}
+          >
+            <XCircle size={14} /> Rejected ({rejectedCount})
+          </button>
         </div>
       </div>
 
@@ -182,6 +211,7 @@ export default function EmployersTab({
                   const state = getEmployerState(emp);
                   const isGranted = state === "granted";
                   const isPending = state === "pending";
+                  const isRejected = state === "rejected";
                   const isBusy = togglingId === emp._id;
 
                   return (
@@ -193,10 +223,15 @@ export default function EmployersTab({
                             {emp.username?.charAt(0).toUpperCase() || "E"}
                           </div>
                           <div>
-                            <p className="font-bold text-slate-900 text-base">{emp.username}</p>
+                            <p className="font-bold text-slate-900 text-base">{emp.companyName || emp.username}</p>
                             <p className="text-xs text-slate-500 flex items-center gap-1">
                               <Mail size={12} /> {emp.email}
                             </p>
+                            {getMobile(emp) && (
+                              <p className="text-xs text-slate-600 font-semibold flex items-center gap-1 mt-0.5">
+                                <Phone size={12} /> {getMobile(emp)}
+                              </p>
+                            )}
                             {emp.location && (
                               <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
                                 <MapPin size={12} /> {emp.location}
@@ -213,6 +248,11 @@ export default function EmployersTab({
                             <Clock size={14} className="text-amber-700" />
                             <span>PENDING APPROVAL</span>
                           </div>
+                        ) : isRejected ? (
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-900 border border-rose-400 shadow-2xs">
+                            <XCircle size={14} className="text-rose-700" />
+                            <span>REGISTRATION REJECTED</span>
+                          </div>
                         ) : isGranted ? (
                           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-2xs">
                             <ShieldCheck size={14} className="text-emerald-600" />
@@ -227,6 +267,8 @@ export default function EmployersTab({
                         <p className="text-[11px] text-slate-400 mt-1">
                           {isPending
                             ? "Awaiting Admin approval to use portal"
+                            : isRejected
+                            ? "Registration was not approved"
                             : isGranted
                             ? "Authorized to post & manage jobs"
                             : "Dashboard access suspended"}
@@ -267,34 +309,61 @@ export default function EmployersTab({
                       {/* Action Controls */}
                       <td className="py-4 px-6 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          {/* Approve / Grant or Revoke Access Button */}
-                          <button
-                            disabled={isBusy}
-                            onClick={() => handleAccessToggle(emp._id, isGranted)}
-                            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                              isGranted
-                                ? "bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200"
-                                : isPending
-                                ? "bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-500/20"
-                                : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20"
-                            }`}
-                          >
-                            {isBusy ? (
-                              <RefreshCw size={14} className="animate-spin" />
-                            ) : isGranted ? (
-                              <>
-                                <XCircle size={14} /> Revoke Access
-                              </>
-                            ) : isPending ? (
-                              <>
-                                <CheckCircle2 size={14} /> Approve Recruiter
-                              </>
-                            ) : (
-                              <>
-                                <CheckCircle2 size={14} /> Re-Grant Access
-                              </>
-                            )}
-                          </button>
+                          {isPending ? (
+                            <>
+                              {/* Approve pending employer registration */}
+                              <button
+                                disabled={isBusy}
+                                onClick={() => handleAccessToggle(emp._id, false)}
+                                className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20"
+                              >
+                                {isBusy ? (
+                                  <RefreshCw size={14} className="animate-spin" />
+                                ) : (
+                                  <>
+                                    <CheckCircle2 size={14} /> Approve
+                                  </>
+                                )}
+                              </button>
+
+                              {/* Reject pending employer registration */}
+                              <button
+                                disabled={isBusy}
+                                onClick={() => handleReject(emp._id)}
+                                className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20"
+                              >
+                                {isBusy ? (
+                                  <RefreshCw size={14} className="animate-spin" />
+                                ) : (
+                                  <>
+                                    <XCircle size={14} /> Reject
+                                  </>
+                                )}
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              disabled={isBusy}
+                              onClick={() => handleAccessToggle(emp._id, isGranted)}
+                              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                                isGranted
+                                  ? "bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200"
+                                  : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20"
+                              }`}
+                            >
+                              {isBusy ? (
+                                <RefreshCw size={14} className="animate-spin" />
+                              ) : isGranted ? (
+                                <>
+                                  <XCircle size={14} /> Revoke Access
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle2 size={14} /> Re-Grant Access
+                                </>
+                              )}
+                            </button>
+                          )}
 
                           {/* View Modal */}
                           <button

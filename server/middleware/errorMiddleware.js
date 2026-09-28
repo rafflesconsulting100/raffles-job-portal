@@ -1,6 +1,17 @@
 const errorHandler = (err, req, res, next) => {
   let statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  if (Number.isInteger(err.statusCode) && err.statusCode >= 400 && err.statusCode < 600) {
+    statusCode = err.statusCode;
+  }
   let message = err.message;
+
+  // Handle Multer upload errors (file too large / unexpected field ...)
+  if (err.name === 'MulterError') {
+    statusCode = err.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
+    message = err.code === 'LIMIT_FILE_SIZE'
+      ? 'File is too large. Please upload a smaller file.'
+      : `Upload error: ${err.message}`;
+  }
 
   // Handle Mongoose Cast Error (Invalid ID)
   if (err.name === 'CastError' && err.kind === 'ObjectId') {

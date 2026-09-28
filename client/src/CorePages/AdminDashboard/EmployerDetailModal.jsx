@@ -1,8 +1,7 @@
 import React from "react";
 import {
   X,
-  Building2,
-  Mail,
+    Mail,
   MapPin,
   Phone,
   Calendar,
@@ -22,14 +21,24 @@ export default function EmployerDetailModal({
 }) {
   if (!employer) return null;
 
+  const approval = (employer.approvalStatus || employer.status || "").toLowerCase();
+  const isRejected = approval === "rejected" || employer.status === "Rejected";
+
   const isPending =
-    employer.status === "Pending" ||
-    (employer.isApproved === false && employer.status !== "Suspended");
+    !isRejected &&
+    (approval === "pending" ||
+      employer.status === "Pending" ||
+      (employer.isApproved === false && employer.status !== "Suspended"));
 
   const isGranted =
-    employer.employerAccess !== false &&
-    employer.isApproved !== false &&
-    employer.status === "Active";
+    !isRejected &&
+    !isPending &&
+    (approval === "approved" ||
+      (employer.employerAccess !== false &&
+        employer.isApproved !== false &&
+        employer.status === "Active"));
+
+  const mobileNumber = employer.mobileNumber || employer.contactNumber || "";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
@@ -42,7 +51,7 @@ export default function EmployerDetailModal({
             </div>
             <div>
               <h3 className="text-xl font-bold text-white leading-tight">
-                {employer.username}
+                {employer.companyName || employer.username}
               </h3>
               <p className="text-xs text-slate-300 font-medium flex items-center gap-1 mt-0.5">
                 <Mail size={12} /> {employer.email}
@@ -83,6 +92,8 @@ export default function EmployerDetailModal({
                     ? "Portal Access: PENDING APPROVAL"
                     : isGranted
                     ? "Portal Access: GRANTED"
+                    : isRejected
+                    ? "Portal Access: REGISTRATION REJECTED"
                     : "Portal Access: REVOKED"}
                 </p>
                 <p className="text-xs text-slate-600">
@@ -90,31 +101,41 @@ export default function EmployerDetailModal({
                     ? "Employer is waiting for administrator approval before accessing the dashboard."
                     : isGranted
                     ? "Employer has active permission to post and manage jobs."
-                    : "Employer access to recruiter tools is suspended."}
+                    : isRejected
+                    ? "Employer account registration was not approved."
+                    : "Employer access to recruiter tools has been revoked."}
                 </p>
               </div>
             </div>
 
-            <button
-              onClick={() => onToggleAccess(employer._id, !isGranted)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0 ${
-                isGranted
-                  ? "bg-rose-600 hover:bg-rose-700 text-white"
-                  : isPending
-                  ? "bg-amber-500 hover:bg-amber-600 text-white shadow-sm"
-                  : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
-              }`}
-            >
-              {isGranted ? (
-                <>
-                  <XCircle size={14} /> Revoke
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 size={14} /> Approve & Grant
-                </>
+            <div className="flex items-center gap-2 shrink-0">
+              {isPending && (
+                <button
+                  onClick={() => onToggleAccess(employer._id, false, "Rejected")}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer bg-rose-600 hover:bg-rose-700 text-white shadow-sm"
+                >
+                  <XCircle size={14} /> Reject
+                </button>
               )}
-            </button>
+              <button
+                onClick={() => onToggleAccess(employer._id, !isGranted)}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                  isGranted
+                    ? "bg-rose-600 hover:bg-rose-700 text-white"
+                    : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                }`}
+              >
+                {isGranted ? (
+                  <>
+                    <XCircle size={14} /> Revoke
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={14} /> Approve & Grant
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* INFORMATION GRID */}
@@ -148,15 +169,39 @@ export default function EmployerDetailModal({
                 <span>Location: <strong>{employer.location}</strong></span>
               </div>
             )}
-            {employer.contactNumber && (
+            {mobileNumber ? (
               <div className="flex items-center gap-2">
                 <Phone size={16} className="text-slate-400 shrink-0" />
-                <span>Contact: <strong>{employer.contactNumber}</strong></span>
+                <span>Mobile: <strong>{mobileNumber}</strong></span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Phone size={16} className="text-slate-400 shrink-0" />
+                <span>Mobile: <strong className="text-slate-400">Not provided</strong></span>
               </div>
             )}
             <div className="flex items-center gap-2">
               <Calendar size={16} className="text-slate-400 shrink-0" />
-              <span>Registered on: <strong>{new Date(employer.createdAt).toLocaleDateString()}</strong></span>
+              <span>
+                Registered on:{" "}
+                <strong>{new Date(employer.createdAt).toLocaleDateString()}</strong>
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock size={16} className="text-slate-400 shrink-0" />
+              <span>
+                Approval Status:{" "}
+                <strong>
+                  {employer.approvalStatus ||
+                    (isPending
+                      ? "Pending"
+                      : isGranted
+                      ? "Approved"
+                      : isRejected
+                      ? "Rejected"
+                      : "Revoked")}
+                </strong>
+              </span>
             </div>
           </div>
         </div>

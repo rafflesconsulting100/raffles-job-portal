@@ -2,12 +2,15 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Job = require('../models/Job');
 const Application = require('../models/Application');
+const Notification = require('../models/Notification');
+const { sendNotificationToUser } = require('../utils/socket');
+const { getJwtSecret, getAdminPasskey, getAdminEmail } = require('../config/auth');
 
 // Helper to generate Admin token response
 const generateAdminToken = (adminUser) => {
   return jwt.sign(
     { id: adminUser._id },
-    process.env.JWT_SECRET || 'supersecretkey1234567890abcdefjobportal',
+    getJwtSecret(),
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
 };
@@ -20,84 +23,108 @@ exports.adminLoginPasskey = async (req, res, next) => {
     const { email, password, passkey } = req.body;
     const providedPasskey = passkey || password;
 
-    const envPasskey = process.env.ADMIN_PASSKEY || 'RafflesAdmin@2026';
-    const envEmail = process.env.ADMIN_EMAIL || 'admin@rafflesconsulting.in';
+    const envPasskey = getAdminPasskey();
+    const envEmail = getAdminEmail();
 
-    if (!providedPasskey) {
+    if (!envPasskey || !envEmail) {
+      return res.status(503).json({
+        success: false,
+        message: 'Admin login is not configured on this server. Set ADMIN_PASSKEY and ADMIN_EMAIL.',
+      });
+    }
+
+    if (!providedPasskey || typeof providedPasskey !== 'string') {
       return res.status(400).json({ success: false, message: 'Please provide administrator passkey/password' });
     }
 
-    const targetEmail = (email && email.trim().length > 0) ? email.trim().toLowerCase() : envEmail.toLowerCase();
+    const requestedEmail = (email && email.trim().length > 0) ? email.trim().toLowerCase() : envEmail;
 
     // Check if provided passkey matches the ENV passkey
     const isMasterPasskeyMatch = providedPasskey === envPasskey;
 
     // Check if user already exists in DB
-    let adminUser = await User.findOne({ email: targetEmail }).select('+password');
+    const adminUser = await User.findOne({ email: requestedEmail }).select('+password');
 
-    if (adminUser) {
-      let isPasswordMatch = false;
-      if (adminUser.password) {
-        try {
-          isPasswordMatch = await adminUser.comparePassword(providedPasskey);
-        } catch (e) {
-          isPasswordMatch = false;
-        }
+    let isPasswordMatch = false;
+    if (adminUser && adminUser.password) {
+      try {
+        isPasswordMatch = await adminUser.comparePassword(providedPasskey);
+      } catch (e) {
+        isPasswordMatch = false;
       }
+    }
 
-      if (!isMasterPasskeyMatch && !isPasswordMatch) {
-        return res.status(401).json({ success: false, message: 'Invalid admin credentials or passkey' });
-      }
+    if (!isMasterPasskeyMatch && !isPasswordMatch) {
+      return res.status(401).json({ success: false, message: 'Invalid admin credentials or passkey' });
+    }
 
-      // Upgrade/Ensure role is Admin
-      if (adminUser.role !== 'Admin' || adminUser.status !== 'Active') {
-        adminUser.role = 'Admin';
-        adminUser.status = 'Active';
-        adminUser.isApproved = true;
-        adminUser.employerAccess = true;
-        await adminUser.save();
-      }
-    } else {
-      // If passkey matches master passkey, auto-create Admin user
+    // SECURITY: the passkey only authenticates the configured admin mailbox.
+    // It must never be able to promote an arbitrary account to Admin.
+    if (adminUser && adminUser.role !== 'Admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'This account is not an administrator. Use the configured ADMIN_EMAIL account.',
+      });
+    }
+
+    if (!adminUser) {
       if (!isMasterPasskeyMatch) {
         return res.status(401).json({ success: false, message: 'Invalid admin credentials or passkey' });
       }
+      if (requestedEmail !== envEmail) {
+        return res.status(403).json({
+          success: false,
+          message: 'Administrator accounts can only be created for the configured ADMIN_EMAIL.',
+        });
+      }
 
-      adminUser = await User.create({
+      const created = await User.create({
         username: 'Raffles Super Admin',
-        email: targetEmail,
+        email: envEmail,
         password: providedPasskey,
         role: 'Admin',
         status: 'Active',
         isApproved: true,
         employerAccess: true,
       });
+      return sendAdminTokenResponse(created, res);
     }
 
-    const token = generateAdminToken(adminUser);
+    // Already an Admin: keep the legacy status flags consistent, never role.
+    let needsSave = false;
+    if (adminUser.status !== 'Active') { adminUser.status = 'Active'; needsSave = true; }
+    if (adminUser.isApproved !== true) { adminUser.isApproved = true; needsSave = true; }
+    if (adminUser.employerAccess !== true) { adminUser.employerAccess = true; needsSave = true; }
+    if (needsSave) await adminUser.save();
 
-    res.cookie('token', token, {
-      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-    }).status(200).json({
-      success: true,
-      message: 'Admin authorization successful',
-      token,
-      user: {
-        _id: adminUser._id,
-        username: adminUser.username,
-        email: adminUser.email,
-        role: adminUser.role,
-        status: adminUser.status,
-        isApproved: adminUser.isApproved,
-        employerAccess: adminUser.employerAccess,
-      },
-    });
+    return sendAdminTokenResponse(adminUser, res);
   } catch (error) {
     next(error);
   }
+};
+
+const sendAdminTokenResponse = (adminUser, res) => {
+  const token = generateAdminToken(adminUser);
+
+  res.cookie('token', token, {
+    expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+  }).status(200).json({
+    success: true,
+    message: 'Admin authorization successful',
+    token,
+    user: {
+      _id: adminUser._id,
+      username: adminUser.username,
+      email: adminUser.email,
+      role: adminUser.role,
+      status: adminUser.status,
+      isApproved: adminUser.isApproved,
+      employerAccess: adminUser.employerAccess,
+    },
+  });
 };
 
 // @desc    Get Overall Platform Statistics
@@ -111,7 +138,7 @@ exports.getAdminStats = async (req, res, next) => {
     
     const pendingEmployers = await User.countDocuments({
       role: 'Employer',
-      $or: [{ status: 'Pending' }, { isApproved: false, status: { $ne: 'Suspended' } }]
+      $or: [{ status: 'Pending' }, { isApproved: false, status: { $nin: ['Suspended', 'Rejected'] } }]
     });
 
     const grantedEmployers = await User.countDocuments({
@@ -123,7 +150,7 @@ exports.getAdminStats = async (req, res, next) => {
 
     const suspendedEmployers = await User.countDocuments({
       role: 'Employer',
-      $or: [{ status: 'Suspended' }, { employerAccess: false }]
+      $or: [{ status: 'Suspended' }, { status: 'Rejected' }, { employerAccess: false }]
     });
 
     const totalJobs = await Job.countDocuments();
@@ -179,16 +206,27 @@ exports.getAllEmployers = async (req, res, next) => {
         const applicantCount = await Application.countDocuments({ job: { $in: jobIds } });
 
         const isGranted = emp.employerAccess !== false && emp.isApproved !== false && emp.status === 'Active';
-        const isPending = emp.status === 'Pending' || (emp.isApproved === false && emp.status !== 'Suspended');
+        const isRejected = emp.status === 'Rejected';
+        const isPending = !isRejected && (emp.status === 'Pending' || (emp.isApproved === false && emp.status !== 'Suspended'));
 
         return {
           ...empObj,
+          companyName: empObj.companyName || empObj.username,
+          mobileNumber: empObj.mobileNumber || empObj.contactNumber || '',
+          contactNumber: empObj.contactNumber || empObj.mobileNumber || '',
           jobCount,
           activeJobCount,
           applicantCount,
-          isApproved: emp.isApproved !== undefined ? emp.isApproved : isGranted,
+          isApproved: isGranted,
           employerAccess: isGranted,
-          approvalStatus: isPending ? 'Pending' : isGranted ? 'Approved' : 'Suspended',
+          status: emp.status,
+          approvalStatus: isRejected
+            ? 'rejected'
+            : isPending
+            ? 'pending'
+            : isGranted
+            ? 'approved'
+            : 'revoked',
         };
       })
     );
@@ -203,13 +241,17 @@ exports.getAllEmployers = async (req, res, next) => {
   }
 };
 
-// @desc    Grant, Approve or Revoke Employer Portal Access
+// @desc    Grant, Approve, Reject or Revoke Employer Portal Access
 // @route   PUT /api/admin/employers/:id/access
 // @access  Private (Admin)
 exports.toggleEmployerAccess = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { employerAccess, isApproved, status } = req.body;
+    const { employerAccess, isApproved, status, approvalStatus } = req.body;
+
+    if (status !== undefined && !['Active', 'Pending', 'Suspended', 'Rejected'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid approval status' });
+    }
 
     const employer = await User.findById(id);
     if (!employer) {
@@ -220,34 +262,83 @@ exports.toggleEmployerAccess = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Target user is not an Employer' });
     }
 
-    if (employerAccess !== undefined) employer.employerAccess = employerAccess;
-    if (isApproved !== undefined) employer.isApproved = isApproved;
-    if (status !== undefined) employer.status = status;
+    const previousStatus = employer.status;
+    const rawApproval = (approvalStatus || '').toLowerCase();
 
-    // Handle access granting/approving vs revoking
-    if (employerAccess === false || isApproved === false || status === 'Suspended') {
-      employer.status = 'Suspended';
+    if (rawApproval === 'rejected' || status === 'Rejected') {
+      // Admin rejected the employer registration — account is kept, access denied
+      employer.approvalStatus = 'rejected';
+      employer.status = 'Rejected';
       employer.employerAccess = false;
       employer.isApproved = false;
-    } else if (employerAccess === true || isApproved === true || status === 'Active') {
+    } else if (rawApproval === 'approved' || status === 'Active' || employerAccess === true) {
+      employer.approvalStatus = 'approved';
       employer.status = 'Active';
       employer.employerAccess = true;
       employer.isApproved = true;
+    } else if (rawApproval === 'revoked' || status === 'Suspended' || employerAccess === false) {
+      employer.approvalStatus = 'revoked';
+      employer.status = 'Suspended';
+      employer.employerAccess = false;
+      employer.isApproved = false;
+    } else if (rawApproval === 'pending' || status === 'Pending') {
+      employer.approvalStatus = 'pending';
+      employer.status = 'Pending';
+      employer.employerAccess = false;
+      employer.isApproved = false;
+    } else {
+      if (employerAccess !== undefined) employer.employerAccess = employerAccess;
+      if (isApproved !== undefined) employer.isApproved = isApproved;
+      if (status !== undefined) employer.status = status;
     }
 
     await employer.save();
 
+    const isGranted = !!(employer.employerAccess && employer.isApproved && employer.status === 'Active');
+
+    // Notify the employer whenever the approval state changes
+    if (employer.status !== previousStatus) {
+      try {
+        const notification = await Notification.create({
+          recipient: employer._id,
+          message: isGranted
+            ? 'Your RafflesJobs employer account has been approved.'
+            : employer.status === 'Rejected'
+            ? 'Your employer account registration was not approved.'
+            : 'Your employer access has been revoked. Please contact RafflesJobs support.',
+          type: 'status_change',
+        });
+        sendNotificationToUser(employer._id, notification);
+      } catch (err) {
+        console.error('Failed to notify employer of approval change:', err.message);
+      }
+    }
+
     res.status(200).json({
       success: true,
-      message: `Employer access updated to ${employer.isApproved && employer.employerAccess ? 'APPROVED & GRANTED' : 'SUSPENDED/REVOKED'}`,
+      message: isGranted
+        ? 'Employer access updated to APPROVED & GRANTED'
+        : employer.status === 'Rejected'
+        ? 'Employer registration REJECTED'
+        : 'Employer access updated to SUSPENDED/REVOKED',
       employer: {
         _id: employer._id,
         username: employer.username,
+        companyName: employer.companyName || employer.username,
         email: employer.email,
         role: employer.role,
+        contactNumber: employer.contactNumber,
+        mobileNumber: employer.mobileNumber || employer.contactNumber || '',
         isApproved: employer.isApproved,
         employerAccess: employer.employerAccess,
         status: employer.status,
+        approvalStatus: employer.approvalStatus || (isGranted
+          ? 'approved'
+          : employer.status === 'Rejected'
+          ? 'rejected'
+          : employer.status === 'Pending'
+          ? 'pending'
+          : 'revoked'),
       },
     });
   } catch (error) {
@@ -421,90 +512,29 @@ exports.deleteUserByAdmin = async (req, res, next) => {
   }
 };
 
-// @desc    Promote Current User to Admin (For quick access / testing)
-// @route   POST /api/admin/seed
-// @access  Private (Authenticated user)
-exports.seedAdmin = async (req, res, next) => {
-  try {
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
 
-    user.role = 'Admin';
-    user.status = 'Active';
-    user.isApproved = true;
-    user.employerAccess = true;
-    await user.save();
 
-    res.status(200).json({
-      success: true,
-      message: 'Your account has been granted Admin role successfully!',
-      user: {
-        _id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        status: user.status,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
+
+// @desc    Approve Employer Registration
+// @route   PUT /api/admin/employers/:id/approve, PUT /api/admin/approve/:id
+// @access  Private (Admin)
+exports.approveEmployer = async (req, res, next) => {
+  req.body = { ...req.body, approvalStatus: 'approved', status: 'Active', employerAccess: true, isApproved: true };
+  return exports.toggleEmployerAccess(req, res, next);
 };
 
-// @desc    Get student database for employers
-// @route   GET /api/applications/student-database
-// @access  Private (Employer only)
-exports.getStudentDatabase = async (req, res, next) => {
-  try {
-    // 1. Get all Job Seekers
-    const jobSeekers = await User.find({ role: 'Job Seeker' })
-      .select('-password -__v')
-      .lean();
-
-    // 2. Find jobs posted by this employer
-    const employerJobs = await Job.find({ creator: req.user.id }).select('_id');
-    const employerJobIds = employerJobs.map(job => job._id);
-
-    // 3. Find all applications made to this employer's jobs
-    const applicationsToEmployer = await Application.find({
-      job: { $in: employerJobIds }
-    }).select('applicant status').lean();
-
-    // Create a Set of applicant IDs that have applied to this employer
-    const applicantIds = new Set(applicationsToEmployer.map(app => app.applicant.toString()));
-
-    // 4. Map students and add hasAppliedToMe flag
-    const students = jobSeekers.map(student => ({
-      ...student,
-      hasAppliedToMe: applicantIds.has(student._id.toString())
-    }));
-
-    // Calculate quick stats
-    let totalApplied = 0;
-    const locationCounts = {};
-
-    students.forEach(student => {
-      if (student.hasAppliedToMe) totalApplied++;
-      
-      const loc = student.location || 'Not Specified';
-      locationCounts[loc] = (locationCounts[loc] || 0) + 1;
-    });
-
-    res.status(200).json({
-      success: true,
-      count: students.length,
-      stats: {
-        total: students.length,
-        appliedToYou: totalApplied,
-        notApplied: students.length - totalApplied,
-        locationCounts
-      },
-      students
-    });
-  } catch (error) {
-    next(error);
-  }
+// @desc    Reject Employer Registration
+// @route   PUT /api/admin/employers/:id/reject, PUT /api/admin/reject/:id
+// @access  Private (Admin)
+exports.rejectEmployer = async (req, res, next) => {
+  req.body = { ...req.body, approvalStatus: 'rejected', status: 'Rejected', employerAccess: false, isApproved: false };
+  return exports.toggleEmployerAccess(req, res, next);
 };
 
+// @desc    Revoke Employer Access
+// @route   PUT /api/admin/employers/:id/revoke, PUT /api/admin/revoke/:id
+// @access  Private (Admin)
+exports.revokeEmployer = async (req, res, next) => {
+  req.body = { ...req.body, approvalStatus: 'revoked', status: 'Suspended', employerAccess: false, isApproved: false };
+  return exports.toggleEmployerAccess(req, res, next);
+};

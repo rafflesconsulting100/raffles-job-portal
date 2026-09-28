@@ -1,11 +1,14 @@
-import React from 'react';
+﻿import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ExternalLink, ArrowRight, CheckCircle2 } from 'lucide-react';
 import logo from '../assets/rafflelogo-dark.png';
 import boyImg from '../assets/boy.png';
 import hr from '../assets/hr.png';
 
+import useSeo from '../Utils/useSeo';
+
 export default function RoleSelectionPage() {
+  useSeo({ path: '/get-started' });
   const navigate = useNavigate();
 
   const handleJobSeekerClick = () => {
@@ -26,7 +29,7 @@ export default function RoleSelectionPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
           
           {/* Logo Brand */}
-          <Link to="/home" className="flex flex-col items-center shrink-0 group">
+          <Link to="/" className="flex flex-col items-center shrink-0 group">
             <img 
               src={logo} 
               alt="RAFFLES JOBS" 
@@ -77,9 +80,9 @@ export default function RoleSelectionPage() {
             <p className="text-sm sm:text-base font-semibold text-blue-600 tracking-wide">
               Before you get started, tell us
             </p>
-            <h2 className="text-2xl sm:text-4xl md:text-5xl font-black text-[#0F172A] tracking-tight">
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-[#0F172A] tracking-tight">
               What are you looking for?
-            </h2>
+            </h1>
           </div>
 
           {/* Selection Cards Grid */}
@@ -94,9 +97,9 @@ export default function RoleSelectionPage() {
 
               <div className="flex items-center justify-between gap-4">
                 <div className="space-y-3 flex-1">
-                  <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 leading-tight">
+                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 leading-tight">
                     I want a Job for FREE
-                  </h3>
+                  </h2>
                   <p className="text-lg sm:text-xl font-extrabold text-blue-600 tracking-wide">
                     मुझे नौकरी चाहिए
                   </p>
@@ -145,9 +148,9 @@ export default function RoleSelectionPage() {
 
               <div className="flex items-center justify-between gap-4">
                 <div className="space-y-3 flex-1">
-                  <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 leading-tight">
+                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 leading-tight">
                     I want to hire for FREE
-                  </h3>
+                  </h2>
                   <p className="text-lg sm:text-xl font-extrabold text-[#2B2A8C] tracking-wide">
                     मुझे स्टाफ चाहिए
                   </p>

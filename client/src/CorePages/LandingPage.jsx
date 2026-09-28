@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { 
   BriefcaseIcon, 
   MapPinIcon, 
@@ -7,16 +7,18 @@ import {
   SearchIcon,
   ArrowRightIcon
 } from 'lucide-react';
-import Navbar from './Navbar';
-import Footer from './Footer';
 
 // Subcomponents for Sections 3, 4, and 5
 import TrustedPartnersSection from './LandingSections/TrustedPartnersSection';
 import ActiveJobsSection from './LandingSections/ActiveJobsSection';
 import HowItWorksSection from './LandingSections/HowItWorksSection';
 
+import useSeo from '../Utils/useSeo';
+
 export default function LandingPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  useSeo({ path: location.pathname });
   const [searchTitle, setSearchTitle] = useState('');
   const [searchSkill, setSearchSkill] = useState('');
   const [searchLocation, setSearchLocation] = useState('');
@@ -32,11 +34,8 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 selection:bg-blue-500 selection:text-white">
-      
-      {/* 1. HEADER NAVIGATION */}
-      <Navbar />
 
-      {/* 2. CORE HERO SECTION BLOCK */}
+        {/* CORE HERO SECTION */}
       {/* <header className="relative w-full overflow-hidden bg-linear-to-b from-slate-900 via-slate-900 to-[#0F172A] px-4 sm:px-6 lg:px-16 pt-28 md:pt-32 pb-20 md:pb-28 text-center text-white shadow-2xl"> */}
         {/* Background Decorative Glow Blobs */}
         {/* <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-87.5 bg-cyan-500/10 blur-[120px] rounded-full pointer-events-none" />
@@ -177,15 +176,15 @@ export default function LandingPage() {
       <div className="mx-auto w-full max-w-5xl px-2 sm:px-4">
 
         <h1 className="mx-auto max-w-4xl text-4xl font-black leading-[1.08] tracking-[-0.03em] sm:text-5xl md:text-6xl lg:text-7xl">
-          Find the right opportunity.
+          Find Your Next Job with
           <span className="mt-1 block bg-linear-to-r from-cyan-400 via-sky-300 to-blue-400 bg-clip-text pb-1 text-transparent">
-            Build your future.
+            RafflesJobs
           </span>
         </h1>
 
         <p className="mx-auto mt-5 max-w-2xl px-2 text-sm font-normal leading-6 text-slate-300/90 sm:mt-6 sm:text-base sm:leading-7 md:text-lg">
-          Discover meaningful opportunities, showcase your skills, and connect
-          with companies that value what you bring.
+          Explore BPO, sales, warehouse, support and other job opportunities from employers.
+          Search live openings, compare locations and salaries, and apply online — free for job seekers.
         </p>
 
       </div>
@@ -246,10 +245,20 @@ export default function LandingPage() {
 
       </form>
 
-      {/* Supporting Context */}
-      <div className="mt-5 flex w-full flex-col items-center justify-center gap-3 text-xs font-medium text-slate-400 sm:mt-6 sm:flex-row sm:flex-wrap sm:gap-x-6 sm:gap-y-2">
+      {/* Popular Job Categories Links */}
+      <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-2 text-xs">
+        <span className="font-bold text-slate-300">Popular Opportunities:</span>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Link to="/jobs/sales" className="rounded-full border border-cyan-400/30 bg-white/10 hover:bg-white/20 text-cyan-200 px-3.5 py-1.5 font-semibold transition">Sales Jobs</Link>
+          <Link to="/jobs/customer-support" className="rounded-full border border-cyan-400/30 bg-white/10 hover:bg-white/20 text-cyan-200 px-3.5 py-1.5 font-semibold transition">Customer Support Jobs</Link>
+          <Link to="/jobs?category=BPO" className="rounded-full border border-cyan-400/30 bg-white/10 hover:bg-white/20 text-cyan-200 px-3.5 py-1.5 font-semibold transition">BPO Jobs</Link>
+          <Link to="/jobs?category=Warehouse" className="rounded-full border border-cyan-400/30 bg-white/10 hover:bg-white/20 text-cyan-200 px-3.5 py-1.5 font-semibold transition">Warehouse Jobs</Link>
+          <Link to="/jobs" className="rounded-full bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-3.5 py-1.5 font-bold transition shadow-sm">View All Jobs</Link>
+        </div>
+      </div>
 
-        <span className="hidden h-4 w-px bg-white/10 sm:block" />
+      {/* Supporting Context */}
+      <div className="mt-6 flex w-full flex-col items-center justify-center gap-3 text-xs font-medium text-slate-400 sm:flex-row sm:flex-wrap sm:gap-x-6 sm:gap-y-2">
 
         <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/6 px-3 py-1.5">
           <span className="text-cyan-400">✓</span>
@@ -262,10 +271,10 @@ export default function LandingPage() {
       <div className="mt-8 max-w-xl border-t border-white/10 pt-5 sm:mt-10 sm:pt-6">
         <p className="text-xs leading-5 text-slate-400 sm:text-sm">
           <span className="font-semibold text-slate-300">
-            More than a job portal.
+            A job portal built for hiring.
           </span>{" "}
-          Raffle helps professionals and businesses make smarter career and
-          talent decisions through technology, opportunities, and consulting.
+          RafflesJobs connects job seekers with employers — search live
+          openings, apply in minutes, and post vacancies that reach candidates.
         </p>
       </div>
 
@@ -317,7 +326,7 @@ export default function LandingPage() {
       {/* Description */}
       <p className="mt-5 mx-auto max-w-xl text-sm sm:text-base text-slate-300 leading-7">
         Whether you're looking for your next opportunity or the right talent,
-        <span className="text-white font-medium"> Raffles </span>
+        <span className="text-white font-medium"> RafflesJobs </span>
         makes the connection simple.
       </p>
 
@@ -353,7 +362,7 @@ export default function LandingPage() {
 
         <span className="flex items-center gap-1.5">
           <span className="text-emerald-400">✓</span>
-          GDPR Compliant
+          Free for job seekers
         </span>
 
         <span className="hidden sm:block text-white/20">•</span>

@@ -5,21 +5,17 @@ import {
   MapPin,
   Briefcase,
   IndianRupee,
-  Calendar,
-  Users,
+    Users,
   CheckCircle2,
   XCircle,
   Trash2,
   Layers,
   Sparkles,
   Award,
-  Languages,
-  GraduationCap,
+    GraduationCap,
   Mail,
   Phone,
-  UserCheck,
-  ShieldCheck,
-  Building
+      Building
 } from "lucide-react";
 
 export default function AdminJobDetailModal({

@@ -1,21 +1,12 @@
+import { CATEGORY_FILTER_OPTIONS } from '../Utils/seoConfig';
+
 export const mockJobs = [
 ];
 
 export const filterOptions = {
-  categories: [
-    "All",
-    "Marketing",
-    "Finance",
-    "HR & Recruitment",
-    "Product Management",
-    "Product Advisor",
-    "Sales",
-    "Telecalling",
-    "Customer Service",
-    "Business Development",
-    "Operations",
-    "Management"
-  ],
+  // Kept in sync with the categories offered in the job posting form and with
+  // the real categories stored on Job documents (SEO: /jobs/<category> pages).
+  categories: CATEGORY_FILTER_OPTIONS,
 
   experienceLevels: [
     "All",

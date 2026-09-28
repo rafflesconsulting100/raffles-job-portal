@@ -1,5 +1,5 @@
 import React from "react";
-import { Bell, CheckCheck, Clock, Briefcase, CheckCircle2, XCircle, Info } from "lucide-react";
+import { Bell, CheckCheck, Clock, CheckCircle2, XCircle } from "lucide-react";
 
 export default function NotificationsTab({
   notifications = [],
@@ -60,7 +60,6 @@ export default function NotificationsTab({
                 })
               : "Recently";
 
-            const isStatusChange = notif.type === "status_change";
             const isAccepted = notif.message?.toLowerCase().includes("accepted");
             const isRejected = notif.message?.toLowerCase().includes("rejected");
 

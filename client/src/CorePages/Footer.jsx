@@ -1,24 +1,23 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  BriefcaseBusiness,
-  Building2,
-  Mail,
+      Mail,
   Phone,
   MapPin,
   ArrowUp,
   Send,
   ShieldCheck,
 } from "lucide-react";
-import { FaFacebook, FaInstagram, FaLinkedin, FaTwitter } from "react-icons/fa";
+import { FaFacebook, FaInstagram, FaLinkedin } from "react-icons/fa";
 import logo from "../assets/rafflelogo-light.png";
 import AdminLoginModal from "./Footer/AdminLoginModal";
 
 const candidateLinks = [
-  { name: "Browse Jobs", path: "/jobs" },
-  { name: "Companies", path: "/jobs" },
-  { name: "Career Advice", path: "/about" },
-  { name: "Job Alerts", path: "/jobs" },
+  { name: "Browse All Jobs", path: "/jobs" },
+  { name: "Sales Jobs", path: "/jobs/sales" },
+  { name: "Customer Support Jobs", path: "/jobs/customer-support" },
+  { name: "BPO Jobs", path: "/jobs?category=BPO" },
+  { name: "Warehouse Jobs", path: "/jobs?category=Warehouse" },
 ];
 
 const employerLinks = [
@@ -117,9 +116,9 @@ export default function Footer() {
               </Link>
 
               <p className="mt-6 text-gray-400 leading-8 max-w-md">
-                Connecting talented professionals with top employers across
-                India and beyond. We help candidates find dream careers while
-                enabling companies to hire exceptional talent faster.
+                RafflesJobs connects job seekers with employers across India.
+                Search live openings, apply online for free, and post vacancies
+                that reach candidates.
               </p>
 
               <div className="mt-8 space-y-4">
@@ -276,7 +275,7 @@ export default function Footer() {
                 </Link>
 
                 <Link to="/about" className="hover:text-blue-400 transition">
-                  Terms
+                  About
                 </Link>
 
                 <Link to="/contact" className="hover:text-blue-400 transition">

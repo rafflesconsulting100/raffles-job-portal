@@ -25,6 +25,23 @@ const userSchema = new mongoose.Schema(
       enum: ['Job Seeker', 'Employer', 'Admin'],
       default: 'Job Seeker',
     },
+    companyName: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    mobileNumber: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    approvalStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected', 'revoked'],
+      default: function () {
+        return this.role === 'Employer' ? 'pending' : 'approved';
+      },
+    },
     isApproved: {
       type: Boolean,
       default: true,
@@ -35,17 +52,19 @@ const userSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['Active', 'Pending', 'Suspended'],
+      enum: ['Active', 'Pending', 'Suspended', 'Rejected'],
       default: 'Active',
     },
     avatar: {
       type: String,
       default: '',
     },
+    // NOTE: no `default: null` here on purpose. A sparse unique index still
+    // indexes an explicit null, so writing null on every insert would make the
+    // second user registration fail with E11000. The field stays absent unless
+    // a Google sign-in actually provides a UID.
     firebaseUid: {
       type: String,
-      default: null,
-      sparse: true,
       trim: true,
     },
     authProvider: {
@@ -155,8 +174,61 @@ const userSchema = new mongoose.Schema(
 
 userSchema.index({ firebaseUid: 1 }, { unique: true, sparse: true });
 
-// Hash password before saving
+// Hash password before saving & synchronize employer fields
 userSchema.pre('save', async function (next) {
+  if (this.role === 'Employer') {
+    if (this.companyName && !this.username) {
+      this.username = this.companyName;
+    } else if (this.username && !this.companyName) {
+      this.companyName = this.username;
+    }
+
+    if (this.mobileNumber && !this.contactNumber) {
+      this.contactNumber = this.mobileNumber;
+    } else if (this.contactNumber && !this.mobileNumber) {
+      this.mobileNumber = this.contactNumber;
+    }
+
+    // Keep approvalStatus in sync with status / isApproved / employerAccess
+    if (this.isModified('approvalStatus')) {
+      const appr = (this.approvalStatus || '').toLowerCase();
+      if (appr === 'pending') {
+        this.status = 'Pending';
+        this.isApproved = false;
+        this.employerAccess = false;
+      } else if (appr === 'approved') {
+        this.status = 'Active';
+        this.isApproved = true;
+        this.employerAccess = true;
+      } else if (appr === 'rejected') {
+        this.status = 'Rejected';
+        this.isApproved = false;
+        this.employerAccess = false;
+      } else if (appr === 'revoked') {
+        this.status = 'Suspended';
+        this.isApproved = false;
+        this.employerAccess = false;
+      }
+    } else if (
+      this.isModified('status') ||
+      this.isModified('isApproved') ||
+      this.isModified('employerAccess')
+    ) {
+      if (this.status === 'Rejected') {
+        this.approvalStatus = 'rejected';
+      } else if (this.status === 'Suspended' || this.employerAccess === false) {
+        this.approvalStatus = 'revoked';
+      } else if (
+        this.status === 'Pending' ||
+        (this.isApproved === false && this.status !== 'Suspended' && this.status !== 'Rejected')
+      ) {
+        this.approvalStatus = 'pending';
+      } else if (this.status === 'Active' && this.isApproved !== false && this.employerAccess !== false) {
+        this.approvalStatus = 'approved';
+      }
+    }
+  }
+
   if (!this.isModified('password')) return next();
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);

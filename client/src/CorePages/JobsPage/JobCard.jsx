@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import {
   Building,
   Bookmark,
@@ -14,6 +15,7 @@ import {
   Languages
 } from 'lucide-react';
 import { showSuccess } from '../../Utils/toast';
+import { categoryPath, jobPath } from '../../Utils/seoConfig';
 
 export default function JobCard({
   job,
@@ -25,30 +27,27 @@ export default function JobCard({
   onApplyClick
 }) {
   const jobId = job._id || job.id;
+  // Public job page URL (used for crawlable links and sharing).
+  const jobUrlPath = job.slug ? jobPath(job.slug) : null;
+  const categoryUrlPath = job.category ? categoryPath(job.category) : null;
 
-  // Format relative posted date text
-  const getPostedText = () => {
-    if (job.postedAgo) return job.postedAgo;
-    if (!job.postedDate) return 'Recently';
-    const date = new Date(job.postedDate);
-    if (isNaN(date.getTime())) return 'Recently';
-    const diffMs = Date.now() - date.getTime();
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    if (diffHours < 1) return 'Just now';
-    if (diffHours < 24) return `${diffHours}h ago`;
-    const diffDays = Math.floor(diffHours / 24);
-    if (diffDays === 1) return '1d ago';
-    if (diffDays < 30) return `${diffDays}d ago`;
-    const diffMonths = Math.floor(diffDays / 30);
-    return `${diffMonths}mo ago`;
+  // Open the details modal, but keep a real href so crawlers can discover
+  // /jobs/<slug> and users can open the page in a new tab.
+  const handleTitleClick = (event) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    onCardClick(job);
   };
 
-  const postedText = getPostedText();
+  const postedText = job.postedAgo || 'Recently';
 
-  // Share job handler
+  // Share job handler (prefers the permanent /jobs/<slug> page URL)
   const handleShareClick = (e) => {
     e.stopPropagation();
-    const shareUrl = `${window.location.origin}/jobs?jobId=${jobId}`;
+    const shareUrl = `${window.location.origin}${jobUrlPath || `/jobs?jobId=${jobId}`}`;
 
     if (navigator.share) {
       navigator.share({
@@ -98,19 +97,40 @@ export default function JobCard({
             </div>
 
             <div className="min-w-0 flex-1">
-              <h4 className="text-base sm:text-lg font-bold text-[#1e293b] group-hover:text-[#2B2A8C] transition-colors leading-tight truncate">
-                {job.title}
-              </h4>
+              <h3 className="text-base sm:text-lg font-bold text-[#1e293b] leading-tight">
+                {jobUrlPath ? (
+                  <Link
+                    to={jobUrlPath}
+                    onClick={handleTitleClick}
+                    className="block truncate hover:text-[#2B2A8C] transition-colors"
+                  >
+                    {job.title}
+                  </Link>
+                ) : (
+                  <span className="block truncate group-hover:text-[#2B2A8C] transition-colors">
+                    {job.title}
+                  </span>
+                )}
+              </h3>
               <div className="flex flex-wrap items-center gap-2 mt-1 text-xs font-semibold text-gray-500">
                 <span className="flex items-center gap-1 truncate text-gray-700 font-bold">
                   <Building className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                   {job.company}
                 </span>
-                {job.category && (
-                  <span className="bg-blue-50 text-[#2B2A8C] text-[11px] font-bold px-2.5 py-0.5 rounded-md border border-blue-100 shrink-0">
-                    {job.category}
-                  </span>
-                )}
+                {job.category &&
+                  (categoryUrlPath ? (
+                    <Link
+                      to={categoryUrlPath}
+                      onClick={(e) => e.stopPropagation()}
+                      className="bg-blue-50 text-[#2B2A8C] text-[11px] font-bold px-2.5 py-0.5 rounded-md border border-blue-100 shrink-0 hover:border-blue-300"
+                    >
+                      {job.category}
+                    </Link>
+                  ) : (
+                    <span className="bg-blue-50 text-[#2B2A8C] text-[11px] font-bold px-2.5 py-0.5 rounded-md border border-blue-100 shrink-0">
+                      {job.category}
+                    </span>
+                  ))}
               </div>
             </div>
           </div>
@@ -206,16 +226,14 @@ export default function JobCard({
 
         {/* Card End Actions */}
         <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onCardClick(job);
-            }}
+          <Link
+            to={jobUrlPath || `/jobs?jobId=${jobId}`}
+            onClick={handleTitleClick}
             className="px-3 py-1.5 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 text-gray-700 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
           >
             <Eye className="w-3.5 h-3.5 text-[#2B2A8C]" />
             <span className="hidden xs:inline">Details</span>
-          </button>
+          </Link>
 
           <button
             onClick={(e) => {

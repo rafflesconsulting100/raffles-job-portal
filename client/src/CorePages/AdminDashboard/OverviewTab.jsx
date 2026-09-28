@@ -13,7 +13,7 @@ import {
   UserPlus
 } from "lucide-react";
 
-export default function OverviewTab({ stats, recentUsers, handleTabSwitch, onGrantAccessClick }) {
+export default function OverviewTab({ stats, recentUsers, handleTabSwitch, onGrantAccessClick: _onGrantAccessClick }) {
   const statCards = [
     {
       title: "Total Employers",

@@ -1,5 +1,6 @@
 const socketIO = require('socket.io');
 const jwt = require('jsonwebtoken');
+const { getJwtSecret } = require('../config/auth');
 
 let io = null;
 
@@ -7,11 +8,25 @@ let io = null;
  * Initialize Socket.IO with HTTP server
  */
 const initSocket = (server) => {
+  // Allow the same origins as the Express HTTP API (CLIENT_URL, comma-separated).
+  const allowedOrigins = (process.env.CLIENT_URL || '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+
   io = socketIO(server, {
     cors: {
-      origin: '*',
-      methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
-      credentials: true,
+      origin: (origin, callback) => {
+        // Native/mobile clients send no Origin header; browsers always do.
+        if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+        console.warn(`[Socket.IO] Rejected handshake from non-allowlisted origin: ${origin}`);
+        return callback(new Error('Not allowed by CORS'));
+      },
+      // Handshakes only ever need GET (polling) and POST (polling payloads).
+      methods: ['GET', 'POST'],
+      credentials: false,
     },
     pingTimeout: 30000,
     pingInterval: 25000,
@@ -33,7 +48,7 @@ const initSocket = (server) => {
 
       const decoded = jwt.verify(
         token,
-        process.env.JWT_SECRET || 'supersecretkey1234567890abcdefjobportal'
+        getJwtSecret()
       );
 
       if (!decoded || !decoded.id) {

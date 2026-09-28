@@ -1,4 +1,9 @@
 User-agent: *
 Allow: /
+Disallow: /admin-dashboard
+Disallow: /employer-dashboard
+Disallow: /jobseeker-dashboard
+Disallow: /job-seeker-dashboard
+Disallow: /verify-otp
 
 Sitemap: https://www.rafflesjobs.com/sitemap.xml

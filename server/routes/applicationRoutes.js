@@ -11,17 +11,17 @@ const {
   getStudentDatabase,
   getApplicationResume,
 } = require('../controllers/applicationController');
-const { protect, restrictTo } = require('../middleware/authMiddleware');
+const { protect, restrictTo, checkEmployerAccess } = require('../middleware/authMiddleware');
 const upload = require('../middleware/multerMiddleware');
 
-router.get('/student-database', protect, restrictTo('Employer'), getStudentDatabase);
+router.get('/student-database', protect, restrictTo('Employer'), checkEmployerAccess, getStudentDatabase);
 router.post('/apply/:jobId', protect, restrictTo('Job Seeker'), upload.fields([{ name: 'resume', maxCount: 1 }]), applyJob);
-router.get('/employer-applications', protect, restrictTo('Employer'), getEmployerApplications);
+router.get('/employer-applications', protect, restrictTo('Employer'), checkEmployerAccess, getEmployerApplications);
 router.get('/my-applications', protect, restrictTo('Job Seeker'), getCandidateApplications);
-router.get('/job/:jobId', protect, restrictTo('Employer'), getJobApplicants);
-router.get('/:id/resume', protect, restrictTo('Employer', 'Admin'), getApplicationResume);
-router.get('/stats', protect, restrictTo('Employer'), getDashboardStats);
-router.patch('/:id/status', protect, restrictTo('Employer'), updateApplicationStatus);
+router.get('/job/:jobId', protect, restrictTo('Employer'), checkEmployerAccess, getJobApplicants);
+router.get('/:id/resume', protect, restrictTo('Employer', 'Admin'), checkEmployerAccess, getApplicationResume);
+router.get('/stats', protect, restrictTo('Employer'), checkEmployerAccess, getDashboardStats);
+router.patch('/:id/status', protect, restrictTo('Employer'), checkEmployerAccess, updateApplicationStatus);
 router.delete('/:id', protect, restrictTo('Job Seeker'), withdrawApplication);
 
 module.exports = router;

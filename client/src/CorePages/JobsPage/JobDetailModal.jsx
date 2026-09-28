@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Bookmark,
   X,
@@ -14,13 +15,13 @@ import {
   Star,
   ShieldCheck,
   ShieldAlert,
-  Clock,
   Users,
   Share2,
   Layers,
   Sparkles,
   Award,
-  Languages
+  Languages,
+  ExternalLink
 } from 'lucide-react';
 import { showSuccess } from '../../Utils/toast';
 
@@ -32,7 +33,7 @@ export default function JobDetailModal({
   onSaveClick,
   onApplyClick
 }) {
-  const [copied, setCopied] = useState(false);
+  const [, setCopied] = useState(false);
 
   if (!job) return null;
   const jobId = job._id || job.id;
@@ -54,6 +55,18 @@ export default function JobDetailModal({
             Job Details Overview
           </span>
           <div className="flex items-center gap-2">
+            {job.slug && (
+              <Link
+                to={`/jobs/${job.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-[#2B2A8C] hover:text-[#1E1D66] bg-blue-50 border border-blue-100 hover:border-blue-200 px-2.5 py-1.5 rounded-xl transition"
+                title="Open Dedicated Job Page"
+              >
+                <span>View Full Page</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </Link>
+            )}
             <button
               onClick={() => onSaveClick(jobId, job.title)}
               className={`p-2 rounded-xl border transition-all cursor-pointer ${

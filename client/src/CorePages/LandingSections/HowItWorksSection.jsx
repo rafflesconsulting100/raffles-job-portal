@@ -1,25 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { 
   SearchIcon, 
-  UserPlusIcon, 
   CheckCircle2Icon, 
   SparklesIcon, 
-  ArrowRightIcon,
-  Building2Icon,
-  CalendarIcon,
-  AwardIcon,
-  FileTextIcon,
-  ZapIcon,
-  CheckIcon,
-  BriefcaseIcon
+  ArrowRightIcon, 
+  CalendarIcon, 
+  AwardIcon, 
+  FileTextIcon, 
+  ZapIcon 
 } from 'lucide-react';
 import boy from '../../assets/boy.png';
 import search from '../../assets/search.png';
 import approved from '../../assets/approved.png';
-import { useNavigate } from 'react-router-dom';
+
 
 export default function HowItWorksSection() {
-  const navigate = useNavigate();
+  // navigate omitted (using Links)
   const [activeStep, setActiveStep] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
@@ -209,7 +205,7 @@ export default function HowItWorksSection() {
           </div>
 
           {steps.map((step, idx) => {
-            const Icon = step.icon;
+            // Icon rendered via step styling
             const isActive = activeStep === idx;
 
             return (

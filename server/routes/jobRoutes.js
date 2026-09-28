@@ -5,6 +5,7 @@ const {
   getJobs,
   getEmployerJobs,
   getJobById,
+  getJobBySlug,
   updateJob,
   deleteJob,
   saveJob,
@@ -18,6 +19,9 @@ router.route('/')
 
 router.get('/my-jobs', protect, restrictTo('Employer'), checkEmployerAccess, getEmployerJobs);
 router.get('/saved', protect, restrictTo('Job Seeker'), getSavedJobs);
+
+// Public SEO route: /api/jobs/slug/:slug (two segments, never shadows /:id)
+router.get('/slug/:slug', getJobBySlug);
 
 router.route('/:id')
   .get(getJobById)

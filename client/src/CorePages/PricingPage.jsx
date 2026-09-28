@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   CheckCircle2,
@@ -8,17 +8,18 @@ import {
   ArrowRight,
   Star,
   Sparkles,
-  ChevronRight
 } from 'lucide-react';
-import { showSuccess, showError } from '../Utils/toast';
+import { showSuccess } from '../Utils/toast';
+import useSeo from '../Utils/useSeo';
 
 import paytmLogo from '../assets/paytm.png';
 import phonepeLogo from '../assets/phonepe.png';
 import transcomLogo from '../assets/transcom.png';
 import iciciLogo from '../assets/icici.png';
-import hdbLogo from '../assets/hdb.png';
 
 export default function PricingPage() {
+  useSeo({ path: '/pricing' });
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -31,7 +32,7 @@ export default function PricingPage() {
   };
 
   const handleRequestCallback = () => {
-    showSuccess('Callback request received! Our hiring team will contact you within 30 minutes.');
+    showSuccess('Callback request received! Our hiring team will contact you shortly.');
   };
 
   return (
@@ -62,7 +63,7 @@ export default function PricingPage() {
           </h1>
 
           <p className="text-sm sm:text-base text-blue-100 max-w-2xl mx-auto leading-relaxed">
-            Choose a flexible single hire plan or customize your hiring volume. Find perfect matching candidates quickly with our automated screening.
+            Choose a flexible single hire plan or customize your hiring volume. Post jobs, review applications, and choose a plan that fits your hiring volume.
           </p>
 
           {/* TOGGLE TAB CONTROL */}
@@ -433,7 +434,7 @@ export default function PricingPage() {
               What recruiters think about us
             </h2>
             <p className="text-xs sm:text-sm text-[#0052CC] font-semibold">
-              37 Lakh recruiters have trusted RafflesJobs since 2015. Hear from their own words below.
+              Hear from recruiters who have hired through RafflesJobs.
             </p>
           </div>
 

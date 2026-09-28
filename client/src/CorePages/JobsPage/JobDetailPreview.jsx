@@ -19,7 +19,6 @@ import {
   Sparkles,
   Award,
   Layers,
-  ChevronRight,
   Languages
 } from 'lucide-react';
 import { showSuccess } from '../../Utils/toast';
@@ -32,7 +31,7 @@ export default function JobDetailPreview({
   onApplyClick,
   className = ''
 }) {
-  const [copied, setCopied] = useState(false);
+  const [, setCopied] = useState(false);
 
   if (!job) {
     return (

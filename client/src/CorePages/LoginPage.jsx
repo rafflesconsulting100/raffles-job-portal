@@ -1,11 +1,14 @@
-import React, { useState,useEffect } from 'react';
+﻿import React, { useState,useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { MailIcon, LockIcon, ArrowRightIcon } from 'lucide-react';
 import { login } from '../Service/Operation/authApi';
 import { showSuccess, showError } from '../Utils/toast';
 import { AuthTemplate, RoleSelector, AuthInput, GoogleLoginButton } from '../Template';
 
+import useSeo from '../Utils/useSeo';
+
 export default function SignIn() {
+  useSeo({ path: '/login' });
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -51,10 +54,27 @@ export default function SignIn() {
         localStorage.setItem('user', JSON.stringify(data.user));
         window.dispatchEvent(new Event('auth-change'));
 
-        showSuccess('Login Successful!');
         if (data.user.role === 'Employer') {
+          const approval = (data.user.approvalStatus || '').toLowerCase();
+          const isPending =
+            approval === 'pending' ||
+            data.user.status === 'Pending' ||
+            (data.user.isApproved === false && data.user.status !== 'Suspended' && data.user.status !== 'Rejected');
+          const isRejected = approval === 'rejected' || data.user.status === 'Rejected';
+          const isRevoked = approval === 'revoked' || data.user.status === 'Suspended' || data.user.employerAccess === false;
+
+          if (isPending) {
+            showError('Your employer account is pending Admin approval.');
+          } else if (isRejected) {
+            showError('Your employer account registration was not approved.');
+          } else if (isRevoked) {
+            showError('Your employer access has been revoked. Please contact RafflesJobs support.');
+          } else {
+            showSuccess('Login Successful!');
+          }
           navigate('/employer-dashboard');
         } else {
+          showSuccess('Login Successful!');
           navigate('/jobseeker-dashboard');
         }
       } else {

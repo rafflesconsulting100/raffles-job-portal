@@ -3,7 +3,6 @@ import { useLocation, useNavigate, Link } from 'react-router-dom';
 import {
   CheckCircle2,
   ShieldCheck,
-  FileText,
   UploadCloud,
   ArrowRight,
   ArrowLeft,
@@ -13,21 +12,31 @@ import {
   FileCheck,
   Sparkles,
   AlertCircle,
-  Building2,
-  Briefcase
 } from 'lucide-react';
 import { sendOtp, register } from '../Service/Operation/authApi';
 import { updateUserProfile } from '../Service/Operation/seekerApi';
 import { showSuccess, showError } from '../Utils/toast';
 import logo from '../assets/rafflelogo.png';
 
+import useSeo from '../Utils/useSeo';
+
 export default function OtpPage() {
+  useSeo({ path: '/verify-otp' });
   const location = useLocation();
   const navigate = useNavigate();
 
   // Get registration data passed from RegisterPage
   const registrationData = location.state || {};
-  const { username, email, password, role = 'Job Seeker' } = registrationData;
+  const {
+    username,
+    companyName = '',
+    email,
+    password,
+    confirmPassword = '',
+    mobileNumber = '',
+    acceptedTerms = false,
+    role = 'Job Seeker',
+  } = registrationData;
 
   // Flow Step: 2 = Email OTP Verification, 3 = Resume Upload (Job Seeker only)
   const [currentStep, setCurrentStep] = useState(2);
@@ -42,7 +51,6 @@ export default function OtpPage() {
 
   // Auth Session State (populated after OTP verification)
   const [authToken, setAuthToken] = useState('');
-  const [authenticatedUser, setAuthenticatedUser] = useState(null);
 
   // Resume Upload State for Step 3
   const [resumeFile, setResumeFile] = useState(null);
@@ -154,7 +162,12 @@ export default function OtpPage() {
     setError('');
 
     try {
-      const data = await register(username, email, password, role, otpCode);
+      const data = await register(username, email, password, role, otpCode, {
+        companyName: companyName || (role === 'Employer' ? username : ''),
+        confirmPassword,
+        mobileNumber,
+        acceptedTerms,
+      });
 
       if (data.success) {
         // Store authenticated session
@@ -163,7 +176,6 @@ export default function OtpPage() {
         window.dispatchEvent(new Event('auth-change'));
 
         setAuthToken(data.token);
-        setAuthenticatedUser(data.user);
 
         showSuccess('Email verified & account created successfully!');
 
@@ -172,6 +184,7 @@ export default function OtpPage() {
         if (role === 'Job Seeker' || role === 'job seeker') {
           setCurrentStep(3);
         } else {
+          showSuccess('Your employer account is pending Admin approval.');
           navigate('/employer-dashboard');
         }
       } else {
@@ -269,7 +282,7 @@ export default function OtpPage() {
       
       {/* 1. TOP BRAND HEADER */}
       <header className="max-w-4xl w-full mx-auto flex items-center justify-between">
-        <Link to="/home" className="flex items-center gap-2 group">
+        <Link to="/" className="flex items-center gap-2 group">
           <img
             src={logo}
             alt="Raffles Consulting"

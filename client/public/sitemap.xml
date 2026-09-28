@@ -1,66 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset
-  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-  xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-
-  <!-- RafflesJobs main entry / role selection -->
-  <url>
-    <loc>https://www.rafflesjobs.com/</loc>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-    <image:image>
-      <image:loc>https://www.rafflesjobs.com/favicon.jpg</image:loc>
-      <image:title>RafflesJobs</image:title>
-      <image:caption>RafflesJobs - Jobs, Talent and Careers</image:caption>
-    </image:image>
-  </url>
-
-  <!-- RafflesJobs home page -->
-  <url>
-    <loc>https://www.rafflesjobs.com/home</loc>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-    <image:image>
-      <image:loc>https://www.rafflesjobs.com/favicon.jpg</image:loc>
-      <image:title>RafflesJobs Home</image:title>
-      <image:caption>Find jobs and connect with employers on RafflesJobs</image:caption>
-    </image:image>
-  </url>
-
-  <!-- Public jobs listing -->
-  <url>
-    <loc>https://www.rafflesjobs.com/jobs</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
-    <image:image>
-      <image:loc>https://www.rafflesjobs.com/favicon.jpg</image:loc>
-      <image:title>RafflesJobs Jobs</image:title>
-      <image:caption>Browse the latest job opportunities on RafflesJobs</image:caption>
-    </image:image>
-  </url>
-
-  <!-- About RafflesJobs -->
-  <url>
-    <loc>https://www.rafflesjobs.com/about</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-    <image:image>
-      <image:loc>https://www.rafflesjobs.com/favicon.jpg</image:loc>
-      <image:title>About RafflesJobs</image:title>
-      <image:caption>Learn more about RafflesJobs</image:caption>
-    </image:image>
-  </url>
-
-  <!-- Contact RafflesJobs -->
-  <url>
-    <loc>https://www.rafflesjobs.com/contact</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-    <image:image>
-      <image:loc>https://www.rafflesjobs.com/favicon.jpg</image:loc>
-      <image:title>Contact RafflesJobs</image:title>
-      <image:caption>Contact the RafflesJobs team</image:caption>
-    </image:image>
-  </url>
-
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://www.rafflesjobs.com/</loc></url>
+  <url><loc>https://www.rafflesjobs.com/jobs</loc></url>
+  <url><loc>https://www.rafflesjobs.com/about</loc></url>
+  <url><loc>https://www.rafflesjobs.com/contact</loc></url>
+  <url><loc>https://www.rafflesjobs.com/pricing</loc></url>
+  <url><loc>https://www.rafflesjobs.com/privacy</loc></url>
+  <url><loc>https://www.rafflesjobs.com/jobs/sales</loc></url>
+  <url><loc>https://www.rafflesjobs.com/jobs/premium-account-executive-hubali</loc><lastmod>2026-09-28T06:18:23.210Z</lastmod></url>
+  <url><loc>https://www.rafflesjobs.com/jobs/premium-account-executive-mysore</loc><lastmod>2026-09-28T06:18:23.087Z</lastmod></url>
+  <url><loc>https://www.rafflesjobs.com/jobs/premium-account-executive-bengaluru</loc><lastmod>2026-09-28T06:18:22.959Z</lastmod></url>
+  <url><loc>https://www.rafflesjobs.com/jobs/premium-account-executive-velore</loc><lastmod>2026-09-28T06:18:22.827Z</lastmod></url>
+  <url><loc>https://www.rafflesjobs.com/jobs/business-development-executive-delhi</loc><lastmod>2026-09-28T06:18:22.711Z</lastmod></url>
+  <url><loc>https://www.rafflesjobs.com/jobs/premium-account-executive-kochi</loc><lastmod>2026-09-28T06:18:22.587Z</lastmod></url>
+  <url><loc>https://www.rafflesjobs.com/jobs/business-development-executive-noida</loc><lastmod>2026-09-28T06:18:22.467Z</lastmod></url>
+  <url><loc>https://www.rafflesjobs.com/jobs/premium-account-executive-malapuram</loc><lastmod>2026-09-28T06:18:22.346Z</lastmod></url>
+  <url><loc>https://www.rafflesjobs.com/jobs/business-development-executive-haryana</loc><lastmod>2026-09-28T06:18:22.231Z</lastmod></url>
+  <url><loc>https://www.rafflesjobs.com/jobs/premium-account-executive-thrissur</loc><lastmod>2026-09-28T06:18:22.109Z</lastmod></url>
+  <url><loc>https://www.rafflesjobs.com/jobs/premium-account-executive-trivandrum</loc><lastmod>2026-09-28T06:18:21.976Z</lastmod></url>
+  <url><loc>https://www.rafflesjobs.com/jobs/premium-account-executive-tirunveli</loc><lastmod>2026-09-28T06:18:21.857Z</lastmod></url>
+  <url><loc>https://www.rafflesjobs.com/jobs/premium-account-executive-chennai</loc><lastmod>2026-09-28T06:18:21.737Z</lastmod></url>
+  <url><loc>https://www.rafflesjobs.com/jobs/business-development-executive-pan-india-location</loc><lastmod>2026-09-28T06:18:21.622Z</lastmod></url>
+  <url><loc>https://www.rafflesjobs.com/jobs/customer-success-associate-outbound-sales-health-life-insurance-pune-maharashtra</loc><lastmod>2026-09-28T06:18:21.486Z</lastmod></url>
+  <url><loc>https://www.rafflesjobs.com/jobs/customer-service-renewals-bangalore</loc><lastmod>2026-09-28T06:18:21.369Z</lastmod></url>
+  <url><loc>https://www.rafflesjobs.com/jobs/product-advisor-telecalling-sales-bangalore-india</loc><lastmod>2026-09-28T06:18:21.226Z</lastmod></url>
 </urlset>

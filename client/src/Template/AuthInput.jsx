@@ -12,7 +12,9 @@ export default function AuthInput({
   onChange,
   required = false,
   className = '',
-  inputClassName = ''
+  inputClassName = '',
+  prefix = '',
+  error = ''
 }) {
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === 'password';
@@ -30,8 +32,15 @@ export default function AuthInput({
           {rightLabelAction && <div>{rightLabelAction}</div>}
         </div>
       )}
-      <div className="flex items-center border border-gray-300 rounded-xl px-4 h-12 bg-white focus-within:border-[#2B2A8C] transition">
+      <div
+        className={`flex items-center border rounded-xl px-4 h-12 bg-white transition ${
+          error ? 'border-red-400 focus-within:border-red-500' : 'border-gray-300 focus-within:border-[#2B2A8C]'
+        }`}
+      >
         {Icon && <Icon className="text-gray-400 w-4 h-4 mr-2 shrink-0" />}
+        {prefix && (
+          <span className="text-sm font-bold text-gray-500 mr-2 shrink-0 select-none">{prefix}</span>
+        )}
         <input
           type={inputType}
           name={name}
@@ -51,6 +60,9 @@ export default function AuthInput({
           </button>
         )}
       </div>
+      {error && (
+        <p className="text-xs font-semibold text-red-500 mt-1.5">{error}</p>
+      )}
     </div>
   );
 }

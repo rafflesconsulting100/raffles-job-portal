@@ -22,7 +22,7 @@ export const fetchEmployerStats = async (token) => {
     const response = await apiConnector("GET", EMPLOYER_STATS_API, null, getAuthHeaders(token));
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to fetch employer stats");
+    throw new Error(error.response?.data?.message || "Failed to fetch employer stats", { cause: error });
   }
 };
 
@@ -32,7 +32,7 @@ export const fetchEmployerJobs = async (token) => {
     const response = await apiConnector("GET", GET_EMPLOYER_JOBS_API, null, getAuthHeaders(token));
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to fetch employer jobs");
+    throw new Error(error.response?.data?.message || "Failed to fetch employer jobs", { cause: error });
   }
 };
 
@@ -42,7 +42,7 @@ export const createEmployerJob = async (jobData, token) => {
     const response = await apiConnector("POST", CREATE_JOB_API, jobData, getAuthHeaders(token));
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to post new job");
+    throw new Error(error.response?.data?.message || "Failed to post new job", { cause: error });
   }
 };
 
@@ -52,7 +52,7 @@ export const updateEmployerJob = async (jobId, jobData, token) => {
     const response = await apiConnector("PUT", UPDATE_JOB_API(jobId), jobData, getAuthHeaders(token));
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to update job posting");
+    throw new Error(error.response?.data?.message || "Failed to update job posting", { cause: error });
   }
 };
 
@@ -62,7 +62,7 @@ export const deleteEmployerJob = async (jobId, token) => {
     const response = await apiConnector("DELETE", DELETE_JOB_API(jobId), null, getAuthHeaders(token));
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to delete job posting");
+    throw new Error(error.response?.data?.message || "Failed to delete job posting", { cause: error });
   }
 };
 
@@ -72,7 +72,7 @@ export const fetchJobApplicants = async (jobId, token) => {
     const response = await apiConnector("GET", GET_JOB_APPLICANTS_API(jobId), null, getAuthHeaders(token));
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to fetch job applicants");
+    throw new Error(error.response?.data?.message || "Failed to fetch job applicants", { cause: error });
   }
 };
 
@@ -87,7 +87,7 @@ export const updateCandidateStatus = async (applicationId, status, token) => {
     );
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to update application status");
+    throw new Error(error.response?.data?.message || "Failed to update application status", { cause: error });
   }
 };
 
@@ -97,7 +97,7 @@ export const fetchStudentDatabase = async (token) => {
     const response = await apiConnector("GET", GET_STUDENT_DATABASE_API, null, getAuthHeaders(token));
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to fetch student database");
+    throw new Error(error.response?.data?.message || "Failed to fetch student database", { cause: error });
   }
 };
 

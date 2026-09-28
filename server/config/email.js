@@ -106,8 +106,11 @@ const sendViaNodemailerSmtpWithFallback = async (sender, options, htmlContent) =
         connectionTimeout: 3500, // Fast 3.5s connection timeout so Render never hangs
         greetingTimeout: 3500,
         socketTimeout: 5000,
+        // Verify the mail server certificate by default so MITM / hostname
+        // failures fail loudly. Set SMTP_INSECURE_TLS=1 only on networks that
+        // break TLS verification.
         tls: {
-          rejectUnauthorized: false,
+          rejectUnauthorized: process.env.SMTP_INSECURE_TLS !== '1',
         },
       });
 
@@ -142,8 +145,9 @@ const sendEmail = async (options) => {
   const rawKey = process.env.BREVO_API_KEY || process.env.BREVO_SMTP_PASS || '';
 
 
-  // 🔑 For testing only: log OTP if present
-  if (options.otp || options.otpCode) {
+  // TESTING convenience: only ever print OTP codes outside production.
+  // In production logs this would hand a live credential to anyone with log access.
+  if (process.env.NODE_ENV !== 'production' && (options.otp || options.otpCode)) {
     console.log(`[TESTING] OTP for ${options.to}: ${options.otp || options.otpCode}`);
   }
 
@@ -186,7 +190,12 @@ const sendEmail = async (options) => {
     }
   }
 
-  // Tier 3: Local Dev / Simulation Fallback (Ensures server never hangs or crashes)
+  // Tier 3: local-dev simulation only. In production a silent success would
+  // tell the caller the email was sent when it was not, so fail loudly and
+  // let the controller return an honest error to the user.
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('Email provider unavailable: no email backend is configured.');
+  }
   console.log('----------------------------------------------------');
   console.log('--- EMAIL SIMULATION / DEV FALLBACK ---');
   console.log(`From: ${sender.raw}`);

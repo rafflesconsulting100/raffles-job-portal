@@ -1,14 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import {
-  Sparkles,
-  RefreshCw,
-  Search,
-  User,
+    RefreshCw,
+    User,
   FileText,
-  CheckCircle2,
-  AlertCircle,
-  Briefcase
+  CheckCircle2,Briefcase
 } from "lucide-react";
 
 export default function HeaderBar({

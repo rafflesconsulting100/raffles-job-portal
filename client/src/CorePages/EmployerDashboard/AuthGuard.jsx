@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { Lock, ChevronRight, ShieldAlert, Clock, Mail, RefreshCw, CheckCircle2 } from "lucide-react";
+import { Lock, ChevronRight, ShieldAlert, Clock, Mail, RefreshCw, CheckCircle2, XCircle } from "lucide-react";
 
-export default function AuthGuard({ navigate, isPending, isRestricted, onRefreshStatus }) {
+export default function AuthGuard({ navigate, isPending, isRejected, isRestricted, onRefreshStatus }) {
   const [checking, setChecking] = useState(false);
 
   const handleCheckStatus = async () => {
@@ -31,7 +31,8 @@ export default function AuthGuard({ navigate, isPending, isRestricted, onRefresh
             Admin Approval Pending
           </h2>
           <p className="text-slate-600 text-sm mb-6 leading-relaxed">
-            Thank you for registering your organization! Your employer account has been submitted and is currently <strong>awaiting approval from the Raffles Administrator</strong>.
+            Your employer account is pending Admin approval. Thank you for registering your organization!
+            Your account is currently <strong>awaiting approval from the Raffles Administrator</strong>.
           </p>
 
           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6 text-left text-xs text-slate-600 space-y-2">
@@ -67,6 +68,42 @@ export default function AuthGuard({ navigate, isPending, isRestricted, onRefresh
     );
   }
 
+  if (isRejected) {
+    return (
+      <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col items-center justify-center p-6 pt-24 font-sans">
+        <div className="max-w-md w-full bg-white border border-rose-200 rounded-3xl p-8 text-center shadow-xl">
+          <div className="w-16 h-16 bg-rose-50 border border-rose-200 rounded-2xl flex items-center justify-center text-rose-600 mx-auto mb-6 shadow-sm">
+            <XCircle className="w-8 h-8" />
+          </div>
+          <span className="px-3 py-1 rounded-full bg-rose-100 text-rose-800 border border-rose-200 text-xs font-bold uppercase tracking-wider mb-3 inline-block">
+            Registration Not Approved
+          </span>
+          <h2 className="text-2xl font-black text-slate-900 mb-2">
+            Employer Registration Rejected
+          </h2>
+          <p className="text-slate-600 text-sm mb-6 leading-relaxed">
+            Your employer account registration was not approved. Please reach out to RafflesJobs
+            support if you believe this is a mistake or need further assistance.
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={() => navigate("/contact")}
+              className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3.5 rounded-xl transition shadow-md flex items-center justify-center gap-2 text-sm cursor-pointer"
+            >
+              <Mail className="w-4 h-4" /> Contact RafflesJobs Support
+            </button>
+            <button
+              onClick={() => navigate("/")}
+              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl transition text-sm cursor-pointer"
+            >
+              Return to Home Page
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (isRestricted) {
     return (
       <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col items-center justify-center p-6 pt-24 font-sans">
@@ -74,9 +111,9 @@ export default function AuthGuard({ navigate, isPending, isRestricted, onRefresh
           <div className="w-16 h-16 bg-rose-50 border border-rose-200 rounded-2xl flex items-center justify-center text-rose-600 mx-auto mb-6 shadow-sm">
             <ShieldAlert className="w-8 h-8" />
           </div>
-          <h2 className="text-2xl font-black text-slate-900 mb-2">Employer Access Restricted</h2>
+          <h2 className="text-2xl font-black text-slate-900 mb-2">Employer Access Revoked</h2>
           <p className="text-slate-600 text-sm mb-6 leading-relaxed">
-            Your employer portal privileges have been <strong>suspended by Administrator</strong>. Please reach out to system support for assistance.
+            Your employer access has been revoked. Please contact RafflesJobs support.
           </p>
           <div className="space-y-3">
             <button

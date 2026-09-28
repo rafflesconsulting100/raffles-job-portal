@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   fetchEmployerStats,
@@ -24,18 +24,27 @@ import CandidateModal from "./CandidateModal";
 import DeleteJobModal from "./DeleteJobModal";
 import StudentDatabaseTab from "./StudentDatabaseTab";
 
+import useSeo from '../../Utils/useSeo';
+
 export default function EmployerDashboard() {
+  useSeo({ path: '/employer-dashboard' });
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Active Tab from query param or default 'overview'
-  const currentTabParam = searchParams.get("tab") || "overview";
+  const activeTab = searchParams.get("tab") || "overview";
   const selectedJobIdParam = searchParams.get("jobId") || "";
 
-  const [activeTab, setActiveTab] = useState(currentTabParam);
-  const [token, setToken] = useState("");
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [token] = useState(() => localStorage.getItem("token") || "");
+  const [user, setUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem("user");
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [loading] = useState(false);
 
   // Stats state
   const [stats, setStats] = useState({
@@ -60,7 +69,7 @@ export default function EmployerDashboard() {
   const [jobForm, setJobForm] = useState({
     title: "",
     company: "",
-    category: "Software Engineering",
+    category: "BPO",
     minEducation: "Bachelor's Degree",
     companyLogo: "",
     location: "",
@@ -74,7 +83,8 @@ export default function EmployerDashboard() {
     requirements: "",
     benefits: "",
     screeningQuestions: "",
-    status: "active"
+    status: "active",
+    expiresAt: ""
   });
 
   const [formSubmitting, setFormSubmitting] = useState(false);
@@ -92,35 +102,6 @@ export default function EmployerDashboard() {
   const [students, setStudents] = useState([]);
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [studentStats, setStudentStats] = useState(null);
-
-  // Sync tab with search params
-  useEffect(() => {
-    const tab = searchParams.get("tab") || "overview";
-    setActiveTab(tab);
-    const jId = searchParams.get("jobId") || "";
-    if (jId) setSelectedJobId(jId);
-  }, [searchParams]);
-
-  // Handle user auth check
-  useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-
-    if (storedToken && storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setToken(storedToken);
-        setUser(parsedUser);
-
-        if (parsedUser.role === "Employer") {
-          loadDashboardData(storedToken);
-        }
-      } catch (err) {
-        console.error("Failed to parse user session", err);
-      }
-    }
-    setLoading(false);
-  }, []);
 
   // Load overall dashboard data
   const loadDashboardData = async (authToken) => {
@@ -142,8 +123,29 @@ export default function EmployerDashboard() {
     }
   };
 
+  // Handle user auth check on mount
+  useEffect(() => {
+    if (token && user) {
+      const approval = (user.approvalStatus || "").toLowerCase();
+      const isApprovedEmployer =
+        (approval ? approval === "approved" : true) &&
+        user.isApproved !== false &&
+        user.employerAccess !== false &&
+        user.status !== "Pending" &&
+        user.status !== "Suspended" &&
+        user.status !== "Rejected";
+
+      // Restricted employers never call employer-only APIs (enforced by the backend too)
+      if (user.role === "Employer" && isApprovedEmployer) {
+        queueMicrotask(() => {
+          loadDashboardData(token);
+        });
+      }
+    }
+  }, [token, user]);
+
   // Load Applicants for ATS view
-  const loadApplicantsForJob = async (jobId, authToken) => {
+  const loadApplicantsForJob = useCallback(async (jobId, authToken) => {
     if (!jobId) {
       setApplicants([]);
       return;
@@ -160,23 +162,30 @@ export default function EmployerDashboard() {
     } finally {
       setApplicantsLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     if (activeTab === "applicants" && token) {
       if (selectedJobId) {
-        loadApplicantsForJob(selectedJobId, token);
+        queueMicrotask(() => {
+          loadApplicantsForJob(selectedJobId, token);
+        });
       } else if (jobs.length > 0) {
-        setSelectedJobId(jobs[0]._id);
-        loadApplicantsForJob(jobs[0]._id, token);
+        const firstJobId = jobs[0]._id;
+        queueMicrotask(() => {
+          setSelectedJobId(firstJobId);
+          loadApplicantsForJob(firstJobId, token);
+        });
       } else {
-        setApplicants([]);
+        queueMicrotask(() => {
+          setApplicants([]);
+        });
       }
     }
-  }, [activeTab, selectedJobId, token, jobs]);
+  }, [activeTab, selectedJobId, token, jobs, loadApplicantsForJob]);
 
   // Load Student Database
-  const loadStudentDatabase = async (authToken) => {
+  const loadStudentDatabase = useCallback(async (authToken) => {
     setStudentsLoading(true);
     try {
       const res = await fetchStudentDatabase(authToken || token);
@@ -190,18 +199,19 @@ export default function EmployerDashboard() {
     } finally {
       setStudentsLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     if (activeTab === "student-database" && token) {
       if (students.length === 0) {
-        loadStudentDatabase(token);
+        queueMicrotask(() => {
+          loadStudentDatabase(token);
+        });
       }
     }
-  }, [activeTab, token]);
+  }, [activeTab, token, students.length, loadStudentDatabase]);
 
   const handleTabSwitch = (tab, jobId = "") => {
-    setActiveTab(tab);
     if (jobId) {
       setSelectedJobId(jobId);
       setSearchParams({ tab, jobId });
@@ -216,7 +226,7 @@ export default function EmployerDashboard() {
     setJobForm({
       title: "",
       company: user?.username ? `${user.username} Inc` : "",
-      category: "Software Engineering",
+      category: "Marketing",
       minEducation: "Bachelor's Degree",
       companyLogo: "",
       location: "",
@@ -230,7 +240,8 @@ export default function EmployerDashboard() {
       requirements: "",
       benefits: "",
       screeningQuestions: "",
-      status: "active"
+      status: "active",
+      expiresAt: ""
     });
   };
 
@@ -240,7 +251,7 @@ export default function EmployerDashboard() {
     setJobForm({
       title: job.title || "",
       company: job.company || "",
-      category: job.category || "Software Engineering",
+      category: job.category || "Marketing",
       minEducation: job.minEducation || "Bachelor's Degree",
       companyLogo: job.companyLogo || "",
       location: job.location || "",
@@ -254,7 +265,8 @@ export default function EmployerDashboard() {
       requirements: Array.isArray(job.requirements) ? job.requirements.join("\n") : job.requirements || "",
       benefits: Array.isArray(job.benefits) ? job.benefits.join("\n") : job.benefits || "",
       screeningQuestions: Array.isArray(job.screeningQuestions) ? job.screeningQuestions.join("\n") : job.screeningQuestions || "",
-      status: job.status || "active"
+      status: job.status || "active",
+      expiresAt: job.expiresAt ? new Date(job.expiresAt).toISOString().split('T')[0] : ""
     });
     handleTabSwitch("post-job");
   };
@@ -372,11 +384,21 @@ export default function EmployerDashboard() {
         localStorage.setItem("user", JSON.stringify(res.user));
         setUser(res.user);
         window.dispatchEvent(new Event("auth-change"));
-        if (res.user.isApproved && res.user.employerAccess && res.user.status === "Active") {
+        const appr = (res.user.approvalStatus || "").toLowerCase();
+        const isApproved =
+          (appr ? appr === "approved" : true) &&
+          res.user.isApproved &&
+          res.user.employerAccess &&
+          res.user.status === "Active";
+        if (isApproved) {
           showSuccess("Your account is approved! Loading your dashboard.");
           loadDashboardData(token);
+        } else if (appr === "rejected" || res.user.status === "Rejected") {
+          showError("Your employer account registration was not approved.");
+        } else if (appr === "revoked" || res.user.status === "Suspended" || res.user.employerAccess === false) {
+          showError("Your employer access has been revoked. Please contact RafflesJobs support.");
         } else {
-          showError("Account is still awaiting administrator approval.");
+          showError("Your employer account is pending Admin approval.");
         }
       }
     } catch (e) {
@@ -389,15 +411,35 @@ export default function EmployerDashboard() {
     return <AuthGuard navigate={navigate} />;
   }
 
+  const approval = (user?.approvalStatus || "").toLowerCase();
+
+  // Check if the employer registration was rejected by Admin
+  const isEmployerRejected = approval === "rejected" || user?.status === "Rejected";
+
   // Check if employer access is pending admin approval
   const isEmployerPending =
-    user?.status === "Pending" ||
-    (user?.isApproved === false && user?.status !== "Suspended");
+    !isEmployerRejected &&
+    (approval === "pending" ||
+      user?.status === "Pending" ||
+      (user?.isApproved === false && user?.status !== "Suspended"));
 
   // Check if employer access is revoked or suspended by Admin
   const isEmployerRestricted =
-    user?.employerAccess === false ||
-    user?.status === "Suspended";
+    !isEmployerRejected &&
+    !isEmployerPending &&
+    (approval === "revoked" ||
+      user?.employerAccess === false ||
+      user?.status === "Suspended");
+
+  if (!loading && isEmployerRejected) {
+    return (
+      <AuthGuard
+        navigate={navigate}
+        isRejected={true}
+        onRefreshStatus={handleRefreshStatus}
+      />
+    );
+  }
 
   if (!loading && isEmployerPending) {
     return (

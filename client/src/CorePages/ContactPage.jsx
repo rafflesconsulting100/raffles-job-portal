@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Mail,
@@ -16,11 +16,13 @@ import {
   ExternalLink,
   Copy,
   Check,
-  Headphones,
   MapPin
 } from 'lucide-react';
 import { showSuccess, showError } from '../Utils/toast';
 import logo from '../assets/rafflelogo.png';
+import useSeo from '../Utils/useSeo';
+import { CONTACT_FAQS } from '../Utils/seoConfig';
+import { faqSchema } from '../Utils/seoSchema';
 
 export default function ContactPage() {
   useEffect(() => {
@@ -63,7 +65,7 @@ export default function ContactPage() {
     setSubmitting(true);
     setTimeout(() => {
       setSubmitting(false);
-      showSuccess('Thank you for contacting Raffles Jobs! Our team will get back to you within 24 hours.');
+      showSuccess('Thank you for contacting Raffles Jobs! Our team will get back to you shortly.');
       setFormData({
         fullName: '',
         email: '',
@@ -89,7 +91,7 @@ export default function ContactPage() {
     {
       title: "Email Assistance",
       desc: "hr@rafflesconsulting.in",
-      subdesc: "Average response under 24 hours",
+      subdesc: "Replies during business hours",
       icon: Mail,
       badge: "Write Us",
       color: "bg-emerald-50 text-emerald-700 border-emerald-100",
@@ -108,24 +110,9 @@ export default function ContactPage() {
     }
   ];
 
-  const faqs = [
-    {
-      q: "Does Raffles Jobs charge job seekers for placement services?",
-      a: "No. Raffles Jobs never charges job seekers or candidates any fees for job placement, resume review, or interview scheduling. Our placement services are 100% free for candidates."
-    },
-    {
-      q: "How quickly can Raffles Jobs source tech & leadership candidates?",
-      a: "Our specialized talent acquisition team presents pre-screened candidate shortlists within 48 to 72 hours for tech, engineering, and executive search mandates."
-    },
-    {
-      q: "What industries does Raffles Jobs specialize in?",
-      a: "We specialize in IT & Software Development, Global Capability Centers (GCCs), BFSI & Fintech, Healthcare & Life Sciences, E-Commerce, and Corporate Executive Search."
-    },
-    {
-      q: "How can corporate employers partner with Raffles Jobs?",
-      a: "Employers can submit a query using the contact form on this page or email us directly at hr@rafflesconsulting.in. A dedicated Account Manager will connect with you immediately."
-    }
-  ];
+  const faqs = CONTACT_FAQS.map((faq) => ({ q: faq.question, a: faq.answer }));
+
+  useSeo({ path: '/contact', jsonLd: [faqSchema(CONTACT_FAQS)].filter(Boolean) });
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#1e293b] pt-15 pb-16">
@@ -149,11 +136,12 @@ export default function ContactPage() {
           </span>
 
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
-            We Are Here to Help You <span className="bg-linear-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent">Succeed</span>
+            Contact <span className="bg-linear-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent">RafflesJobs</span>
           </h1>
 
           <p className="text-sm sm:text-base text-blue-100 max-w-2xl mx-auto leading-relaxed">
-            Have questions about open career opportunities, executive hiring, or strategic workforce consulting? Reach out to our team of recruitment experts today.
+            Questions about a job application, your account, or posting a vacancy?
+            Reach out to the RafflesJobs team — we are happy to help.
           </p>
         </div>
       </section>
@@ -240,7 +228,7 @@ export default function ContactPage() {
                 Send Us a Message
               </h2>
               <p className="text-xs text-gray-500">
-                Fill out the form below and our recruitment consultants will respond promptly within 24 hours.
+                Fill out the form below and our team will respond as soon as we can.
               </p>
             </div>
 
@@ -433,7 +421,7 @@ export default function ContactPage() {
                 Prompt Response Guarantee
               </h4>
               <p className="text-xs text-emerald-700 leading-relaxed font-medium">
-                Our Job representatives respond to candidate inquiries and corporate hiring requirements within 24 business hours.
+                Our team responds to candidate inquiries and employer hiring requirements during business hours.
               </p>
             </div>
           </div>
@@ -451,7 +439,7 @@ export default function ContactPage() {
             Frequently Asked Questions
           </h2>
           <p className="text-xs sm:text-base text-gray-500 max-w-xl mx-auto">
-            Find answers to common questions regarding candidate placement, employer mandates, and Job services.
+            Find answers to common questions about searching jobs, applying online, and posting vacancies.
           </p>
         </div>
 
@@ -482,11 +470,13 @@ export default function ContactPage() {
                   />
                 </button>
 
-                {isOpen && (
-                  <div className="px-5 pb-5 pt-1 text-xs text-gray-600 leading-relaxed border-t border-gray-100 bg-gray-50/50">
-                    <p className="pl-9 font-medium">{faq.a}</p>
-                  </div>
-                )}
+                <div
+                  className={`px-5 pb-5 pt-1 text-xs text-gray-600 leading-relaxed border-t border-gray-100 bg-gray-50/50 ${
+                    isOpen ? '' : 'hidden'
+                  }`}
+                >
+                  <p className="pl-9 font-medium">{faq.a}</p>
+                </div>
               </div>
             );
           })}

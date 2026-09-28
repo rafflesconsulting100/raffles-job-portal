@@ -2,19 +2,15 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Search,
-  Filter,
-  Briefcase,
+    Briefcase,
   Building2,
   MapPin,
   Calendar,
   Clock,
   CheckCircle2,
   XCircle,
-  FileText,
-  Trash2,
-  ExternalLink,
-  HelpCircle
-} from "lucide-react";
+    Trash2,
+    } from "lucide-react";
 
 export default function ApplicationsTab({
   applications = [],

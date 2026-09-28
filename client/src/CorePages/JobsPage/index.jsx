@@ -19,14 +19,17 @@ import JobCard from './JobCard';
 import JobDetailModal from './JobDetailModal';
 import JobApplyModal from './JobApplyModal';
 
+import useSeo from '../../Utils/useSeo';
+
 export default function JobsPage() {
+  useSeo({ path: '/jobs' });
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const urlJobId = searchParams.get('jobId');
 
   // Auth & User State from localStorage
-  const [token, setToken] = useState(() => localStorage.getItem('token') || '');
-  const [user, setUser] = useState(() => {
+  const [token] = useState(() => localStorage.getItem('token') || '');
+  const [user] = useState(() => {
     try {
       const u = localStorage.getItem('user');
       return u ? JSON.parse(u) : null;
@@ -44,8 +47,8 @@ export default function JobsPage() {
   const [searchTerm, setSearchTerm] = useState(() => searchParams.get('q') || searchParams.get('title') || searchParams.get('skill') || '');
   const [locationSearch, setLocationSearch] = useState(() => searchParams.get('location') || '');
 
-  // Filter states
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  // Filter states (category can be deep-linked via ?category=)
+  const [selectedCategory, setSelectedCategory] = useState(() => searchParams.get('category') || 'All');
   const [selectedExperience, setSelectedExperience] = useState('All');
   const [selectedWorkModes, setSelectedWorkModes] = useState([]);
   const [selectedJobTypes, setSelectedJobTypes] = useState([]);
@@ -143,10 +146,11 @@ export default function JobsPage() {
   // Sync selected job ID from URL query param if present
   useEffect(() => {
     if (urlJobId) {
-      setSelectedJobId(urlJobId);
       const targetJob = allJobsList.find(j => (j.id || j._id) === urlJobId);
       if (targetJob) {
-        setViewingJobDetails(targetJob);
+        queueMicrotask(() => {
+          setViewingJobDetails(targetJob);
+        });
       }
     }
   }, [urlJobId, allJobsList]);
@@ -362,7 +366,7 @@ export default function JobsPage() {
         if (selectedDatePosted !== 'all') {
           const postedTime = new Date(job.postedDate).getTime();
           const daysAgo = parseInt(selectedDatePosted);
-          const limitTime = Date.now() - daysAgo * 24 * 60 * 60 * 1000;
+          const nowTime = new Date().getTime(); const limitTime = nowTime - daysAgo * 24 * 60 * 60 * 1000;
           matchDate = postedTime >= limitTime;
         }
 

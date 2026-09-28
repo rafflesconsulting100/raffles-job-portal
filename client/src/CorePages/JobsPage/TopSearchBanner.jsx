@@ -18,9 +18,11 @@ export default function TopSearchBanner({
           <div>
             <h1 className="text-lg sm:text-xl font-extrabold text-[#1e293b] flex items-center gap-2">
               <Briefcase className="w-5 h-5 text-[#2B2A8C]" />
-              Explore & Filter Jobs
+              Find Jobs
             </h1>
-            <p className="text-xs text-gray-500 font-medium">Search by job title, company, skill, or location</p>
+            <p className="text-xs text-gray-500 font-medium">
+              Search live job openings by title, company, skill, category, or location
+            </p>
           </div>
           {hasActiveFilters && (
             <button

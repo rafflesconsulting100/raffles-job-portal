@@ -5,21 +5,21 @@ const {
   getAdminStats,
   getAllEmployers,
   toggleEmployerAccess,
+  approveEmployer,
+  rejectEmployer,
+  revokeEmployer,
   getAllJobs,
   updateJobStatus,
   deleteJobByAdmin,
   getAllUsers,
   updateUserRole,
   deleteUserByAdmin,
-  seedAdmin,
 } = require('../controllers/adminController');
 const { protect, restrictTo } = require('../middleware/authMiddleware');
+const { adminLoginLimiter } = require('../middleware/rateLimitMiddleware');
 
 // Public Admin Login with passkey / credentials
-router.post('/login', adminLoginPasskey);
-
-// Route for self-promoting/seeding admin access (protected by login)
-router.post('/seed', protect, seedAdmin);
+router.post('/login', adminLoginLimiter, adminLoginPasskey);
 
 // All following routes require Admin role
 router.use(protect, restrictTo('Admin'));
@@ -27,6 +27,14 @@ router.use(protect, restrictTo('Admin'));
 router.get('/stats', getAdminStats);
 router.get('/employers', getAllEmployers);
 router.put('/employers/:id/access', toggleEmployerAccess);
+router.put('/employers/:id/approve', approveEmployer);
+router.put('/employers/:id/reject', rejectEmployer);
+router.put('/employers/:id/revoke', revokeEmployer);
+
+// Convenience aliases for admin approval/rejection/revocation
+router.put('/approve/:id', approveEmployer);
+router.put('/reject/:id', rejectEmployer);
+router.put('/revoke/:id', revokeEmployer);
 
 router.get('/jobs', getAllJobs);
 router.put('/jobs/:id/status', updateJobStatus);

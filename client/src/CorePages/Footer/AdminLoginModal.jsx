@@ -2,15 +2,13 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ShieldCheck,
-  Lock,
-  Mail,
+    Mail,
   KeyRound,
   Eye,
   EyeOff,
   X,
   ArrowRight,
-  Sparkles
-} from "lucide-react";
+  } from "lucide-react";
 import { adminLogin } from "../../Service/Operation/adminApi";
 import { showSuccess, showError } from "../../Utils/toast";
 
@@ -59,10 +57,7 @@ export default function AdminLoginModal({ isOpen, onClose }) {
     }
   };
 
-  const handleQuickFillEnvPasskey = () => {
-   // setPasskey("RafflesAdmin@2026");
-    setError("");
-  };
+  
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">

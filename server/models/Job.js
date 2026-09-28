@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { buildJobSlug, isReservedSlug } = require('../utils/slug');
 
 const jobSchema = new mongoose.Schema(
   {
@@ -59,7 +60,10 @@ const jobSchema = new mongoose.Schema(
     ],
     category: {
       type: String,
-      default: 'Software Engineering',
+      // Default matches the first option in the job posting form. Categories
+      // drive the /jobs/<category> SEO landing pages, so keep this in sync
+      // with client/src/Utils/seoConfig.js JOB_CATEGORIES.
+      default: 'BPO',
       trim: true,
     },
     minEducation: {
@@ -91,6 +95,45 @@ const jobSchema = new mongoose.Schema(
     preferredLanguages: {
       type: [String],
     },
+    locations: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+    incentives: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    allowances: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    shift: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    weekOff: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    employmentRole: {
+      type: String,
+      trim: true,
+      default: 'On-Roll',
+    },
+    expiresAt: {
+      type: Date,
+      default: null,
+    },
+    validThrough: {
+      type: Date,
+      default: null,
+    },
     creator: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -101,10 +144,49 @@ const jobSchema = new mongoose.Schema(
       enum: ['active', 'closed'],
       default: 'active',
     },
+    // Public SEO URL segment: /jobs/<slug>. Generated once and then kept stable
+    // so shared/indexed job links never break when a title is edited.
+    slug: {
+      type: String,
+      trim: true,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
   },
   {
     timestamps: true,
   }
 );
+
+// Assign a unique slug the first time a job is persisted.
+jobSchema.pre('save', async function assignSlugIfMissing(next) {
+  try {
+    if (this.slug && !isReservedSlug(this.slug)) return next();
+
+    const base = buildJobSlug(this);
+    const suffix = this._id ? this._id.toString().slice(-6) : '';
+    let candidate = base;
+
+    // Never let a job slug shadow a reserved /jobs/:slug route segment.
+    if (isReservedSlug(candidate)) {
+      candidate = suffix ? `${base}-${suffix}` : `${base}-job`;
+    }
+
+    const exists = await this.constructor
+      .findOne({ slug: candidate, _id: { $ne: this._id } })
+      .select('_id')
+      .lean();
+
+    if (exists) {
+      candidate = suffix ? `${candidate}-${suffix}` : `${candidate}-${this._id}`;
+    }
+
+    this.slug = candidate;
+    return next();
+  } catch (err) {
+    return next(err);
+  }
+});
 
 module.exports = mongoose.model('Job', jobSchema);

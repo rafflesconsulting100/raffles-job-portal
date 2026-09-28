@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { getJwtSecret } = require('../config/auth');
 
 const protect = async (req, res, next) => {
   let token;
@@ -18,7 +19,7 @@ const protect = async (req, res, next) => {
 
   try {
     // 2. Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecretkey1234567890abcdefjobportal');
+    const decoded = jwt.verify(token, getJwtSecret());
 
     // 3. Find user and attach to request
     req.user = await User.findById(decoded.id).select('-password');
@@ -49,16 +50,33 @@ const restrictTo = (...roles) => {
 // Check if employer access is active & approved by admin
 const checkEmployerAccess = (req, res, next) => {
   if (req.user && req.user.role === 'Employer') {
+    const approval = (req.user.approvalStatus || '').toLowerCase();
     const isAccessGranted = 
+      (approval ? approval === 'approved' : true) &&
       req.user.employerAccess !== false && 
       req.user.isApproved !== false && 
       req.user.status !== 'Suspended' &&
+      req.user.status !== 'Rejected' &&
       req.user.status !== 'Pending';
       
     if (!isAccessGranted) {
+      let message = 'Your employer portal access is pending admin approval or has been restricted. Please contact support.';
+
+      if (
+        approval === 'pending' ||
+        req.user.status === 'Pending' ||
+        (req.user.isApproved === false && req.user.status !== 'Suspended' && req.user.status !== 'Rejected')
+      ) {
+        message = 'Your employer account is pending Admin approval.';
+      } else if (approval === 'rejected' || req.user.status === 'Rejected') {
+        message = 'Your employer account registration was not approved.';
+      } else if (approval === 'revoked' || req.user.status === 'Suspended' || req.user.employerAccess === false) {
+        message = 'Your employer access has been revoked. Please contact RafflesJobs support.';
+      }
+
       return res.status(403).json({
         success: false,
-        message: 'Your employer portal access is pending admin approval or has been restricted. Please contact support.',
+        message,
       });
     }
   }
@@ -80,7 +98,7 @@ const optionalAuth = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecretkey1234567890abcdefjobportal');
+    const decoded = jwt.verify(token, getJwtSecret());
     req.user = await User.findById(decoded.id).select('-password');
   } catch (error) {
     // Ignore invalid/expired token for optional auth

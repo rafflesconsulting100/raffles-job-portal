@@ -1,39 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
-  MapPinIcon,
-  BriefcaseIcon,
-  ArrowRightIcon,
-  SparklesIcon,
-  BookmarkIcon,
-  ClockIcon,
-  IndianRupeeIcon,
-  Building2Icon,
-  GraduationCapIcon,
-  CheckCircle2Icon,IndianRupee
+import { useNavigate, Link } from 'react-router-dom';
+import { 
+  MapPinIcon, 
+  BriefcaseIcon, 
+  ArrowRightIcon, 
+  SparklesIcon, 
+  BookmarkIcon, 
+  ClockIcon, 
+  Building2Icon, 
+  IndianRupee
 } from 'lucide-react';
-import { isJobSaved, saveJobToMemory, removeSavedJobFromMemory } from '../../Utils/memoryStore';
+import { saveJobToMemory, removeSavedJobFromMemory } from '../../Utils/memoryStore';
 import { showSuccess } from '../../Utils/toast';
 import { fetchAllJobs, formatBackendJob } from '../../Service/Operation/jobApi';
+import { jobPath, categoryPath } from '../../Utils/seoConfig';
+
+const staticFallbackJobs = [];
 
 export default function ActiveJobsSection() {
   const navigate = useNavigate();
-  const [savedJobs, setSavedJobs] = useState([]);
+  const [savedJobs, setSavedJobs] = useState(() => {
+    try {
+      const stored = localStorage.getItem('savedJobs');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
   const [activeJobs, setActiveJobs] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // High quality sample job cards for rich visual demonstration
-  const staticFallbackJobs = [
-  ];
-
   useEffect(() => {
-    // Sync memory saved state
-    try {
-      const stored = localStorage.getItem('savedJobs');
-      setSavedJobs(stored ? JSON.parse(stored) : []);
-    } catch (e) {
-      setSavedJobs([]);
-    }
+    // Sync memory saved state initialized in useState
 
     // Fetch jobs from backend API
     const loadJobs = async () => {
@@ -87,7 +85,7 @@ export default function ActiveJobsSection() {
             Active Job Opportunities
           </h2>
           <p className="text-slate-500 text-sm sm:text-base mt-2 max-w-xl leading-relaxed">
-            Explore verified openings from top companies actively hiring Business & Management, finance, and growth talent.
+            Explore verified openings in BPO, sales, warehouse, support and other job roles from employers actively hiring.
           </p>
         </div>
 
@@ -116,11 +114,22 @@ export default function ActiveJobsSection() {
           {activeJobs.map((job) => {
             const jobId = job.id || job._id;
             const isSaved = savedJobs.includes(jobId);
+            const detailPath = job.slug ? jobPath(job.slug) : `/jobs?jobId=${jobId}`;
+            const categoryLinkPath = job.category ? categoryPath(job.category) : null;
+
+            const openJob = (event) => {
+              if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+                return;
+              }
+              event.preventDefault();
+              event.stopPropagation();
+              navigate(detailPath);
+            };
 
             return (
               <div
                 key={jobId}
-                onClick={() => navigate(`/jobs?jobId=${jobId}`)}
+                onClick={() => navigate(detailPath)}
                 className="group relative bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-7 shadow-xs hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col justify-between cursor-pointer hover:-translate-y-1.5"
               >
                 <div className="space-y-4">
@@ -181,13 +190,25 @@ export default function ActiveJobsSection() {
                   {/* Title & Category Badge */}
                   <div>
                     <h3 className="text-base sm:text-lg font-black text-slate-900 group-hover:text-[#2B2A8C] transition-colors leading-snug">
-                      {job.title}
+                      <Link to={detailPath} onClick={openJob} className="hover:text-[#2B2A8C]">
+                        {job.title}
+                      </Link>
                     </h3>
 
                     {job.category && (
-                      <span className="inline-block mt-2 px-2.5 py-0.5 bg-blue-50 text-[#2B2A8C] border border-blue-100 rounded-md text-[10px] font-extrabold uppercase tracking-wider">
-                        {job.category}
-                      </span>
+                      categoryLinkPath ? (
+                        <Link
+                          to={categoryLinkPath}
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-block mt-2 px-2.5 py-0.5 bg-blue-50 text-[#2B2A8C] border border-blue-100 rounded-md text-[10px] font-extrabold uppercase tracking-wider hover:border-blue-300"
+                        >
+                          {job.category}
+                        </Link>
+                      ) : (
+                        <span className="inline-block mt-2 px-2.5 py-0.5 bg-blue-50 text-[#2B2A8C] border border-blue-100 rounded-md text-[10px] font-extrabold uppercase tracking-wider">
+                          {job.category}
+                        </span>
+                      )
                     )}
                   </div>
 
@@ -245,7 +266,10 @@ export default function ActiveJobsSection() {
                   </span> */}
                   <button
                     type="button"
-                    onClick={() => navigate(`/jobs/${job._id}`)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(detailPath);
+                    }}
                     className="
     inline-flex items-center justify-center gap-1.5
     px-4 py-2

@@ -1,76 +1,147 @@
-import React, { useState,useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowRightIcon, LockIcon, MailIcon, UserIcon } from 'lucide-react';
+import { ArrowRightIcon, LockIcon, MailIcon, PhoneIcon, UserIcon } from 'lucide-react';
 import { sendOtp } from '../Service/Operation/authApi';
 import { showSuccess, showError } from '../Utils/toast';
+import { normalizeMobileNumber } from '../Utils/validation';
 import { AuthTemplate, RoleSelector, AuthInput, GoogleLoginButton } from '../Template';
 
+import useSeo from '../Utils/useSeo';
 
 export default function Register() {
+  useSeo({ path: '/register' });
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
   const navigate = useNavigate();
   const [role, setRole] = useState('Job Seeker');
-  
+  const isEmployerRole = role === 'Employer';
+
   // Form States
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    mobileNumber: '',
     password: '',
+    confirmPassword: '',
     agreeTerms: false,
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   // Handle Input Changes
   const handleTextChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (fieldErrors[e.target.name]) {
+      setFieldErrors({ ...fieldErrors, [e.target.name]: '' });
+    }
   };
 
   const handleCheckboxChange = (e) => {
     setFormData({ ...formData, agreeTerms: e.target.checked });
+    if (fieldErrors.agreeTerms) {
+      setFieldErrors({ ...fieldErrors, agreeTerms: '' });
+    }
+  };
+
+  const handleRoleChange = (newRole) => {
+    setRole(newRole);
+    setFieldErrors({});
+    setError('');
   };
 
   const handleContinue = async (e) => {
     e.preventDefault();
 
-    if (!formData.name.trim() || !formData.email.trim() || !formData.password.trim()) {
-      const msg = 'Please fill in all fields.';
-      setError(msg);
-      showError(msg);
-      return;
-    }
+    if (isEmployerRole) {
+      // Field-level validation for Employer registration
+      const errs = {};
 
-    if (formData.password.length < 6) {
-      const msg = 'Password must be at least 6 characters.';
-      setError(msg);
-      showError(msg);
-      return;
-    }
+      if (!formData.name || !formData.name.trim()) {
+        errs.name = 'Company name is required.';
+      }
 
-    if (!formData.agreeTerms) {
-      const msg = 'You must agree to the Terms of Service and Privacy Guidelines.';
-      setError(msg);
-      showError(msg);
-      return;
+      if (!formData.mobileNumber || !formData.mobileNumber.trim()) {
+        errs.mobileNumber = 'Mobile number is required.';
+      } else if (!normalizeMobileNumber(formData.mobileNumber)) {
+        errs.mobileNumber = 'Enter a valid 10-digit mobile number or +91XXXXXXXXXX.';
+      }
+
+      if (!formData.email || !formData.email.trim()) {
+        errs.email = 'Email is required.';
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+        errs.email = 'Please enter a valid email address.';
+      }
+
+      if (!formData.password) {
+        errs.password = 'Password is required.';
+      } else if (formData.password.length < 6) {
+        errs.password = 'Password must be at least 6 characters.';
+      }
+
+      if (!formData.confirmPassword) {
+        errs.confirmPassword = 'Please confirm your password.';
+      } else if (formData.confirmPassword !== formData.password) {
+        errs.confirmPassword = 'Passwords do not match.';
+      }
+
+      if (!formData.agreeTerms) {
+        errs.agreeTerms = 'You must agree to the Terms & Conditions and Privacy Policy.';
+      }
+
+      setFieldErrors(errs);
+
+      if (Object.keys(errs).length > 0) {
+        const firstMessage = Object.values(errs)[0];
+        setError(firstMessage);
+        showError(firstMessage);
+        return;
+      }
+
+      setError('');
+    } else {
+      if (!formData.name.trim() || !formData.email.trim() || !formData.password.trim()) {
+        const msg = 'Please fill in all fields.';
+        setError(msg);
+        showError(msg);
+        return;
+      }
+
+      if (formData.password.length < 6) {
+        const msg = 'Password must be at least 6 characters.';
+        setError(msg);
+        showError(msg);
+        return;
+      }
+
+      if (!formData.agreeTerms) {
+        const msg = 'You must agree to the Terms & Conditions and Privacy Policy.';
+        setError(msg);
+        showError(msg);
+        return;
+      }
     }
 
     setLoading(true);
     setError('');
 
     try {
-      const data = await sendOtp(formData.email);
+      const data = await sendOtp(formData.email.trim());
 
       if (data.success) {
         showSuccess('OTP sent successfully!');
         // Redirect to separate verification page, passing the register form data in router state
         navigate('/verify-otp', {
           state: {
-            username: formData.name,
-            email: formData.email,
+            username: formData.name.trim(),
+            companyName: formData.name.trim(),
+            email: formData.email.trim(),
             password: formData.password,
+            confirmPassword: formData.confirmPassword,
+            mobileNumber: formData.mobileNumber.trim(),
+            acceptedTerms: formData.agreeTerms,
             role: role
           }
         });
@@ -87,7 +158,7 @@ export default function Register() {
   };
 
   return (
-    <AuthTemplate role={role} onRoleChange={(newRole) => setRole(newRole)}>
+    <AuthTemplate role={role} onRoleChange={handleRoleChange}>
       <div className="max-w-lg w-full mx-auto space-y-6">
         <div>
           <h2 className="text-3xl font-bold text-[#1A1A1A]">Create Account</h2>
@@ -97,7 +168,7 @@ export default function Register() {
         {/* Dynamic Role Selector Component */}
         <RoleSelector 
           selectedRole={role} 
-          onSelectRole={(newRole) => setRole(newRole)} 
+          onSelectRole={handleRoleChange} 
         />
 
         {error && (
@@ -109,26 +180,57 @@ export default function Register() {
         <form onSubmit={handleContinue} className="space-y-4">
           {/* Input Interactive Fields */}
           <AuthInput
-            label="Full Name"
+            label={isEmployerRole ? 'Company Name' : 'Full Name'}
             icon={UserIcon}
             type="text"
             name="name"
-            placeholder="Enter your full name"
+            placeholder={isEmployerRole ? 'Enter your company name' : 'Enter your full name'}
             value={formData.name}
             onChange={handleTextChange}
+            error={fieldErrors.name}
             required
           />
 
-          <AuthInput
-            label={role === 'Job Seeker' ? 'Personal Email' : 'Corporate Email ID'}
-            icon={MailIcon}
-            type="email"
-            name="email"
-            placeholder={role === 'Job Seeker' ? "name@gmail.com" : "name@company.com"}
-            value={formData.email}
-            onChange={handleTextChange}
-            required
-          />
+          {isEmployerRole ? (
+            <>
+              <AuthInput
+                label="Mobile Number"
+                icon={PhoneIcon}
+                type="tel"
+                name="mobileNumber"
+                prefix="+91"
+                placeholder="Enter mobile number"
+                value={formData.mobileNumber}
+                onChange={handleTextChange}
+                error={fieldErrors.mobileNumber}
+                required
+              />
+
+              <AuthInput
+                label="Corporate Email ID"
+                icon={MailIcon}
+                type="email"
+                name="email"
+                placeholder="name@company.com"
+                value={formData.email}
+                onChange={handleTextChange}
+                error={fieldErrors.email}
+                required
+              />
+            </>
+          ) : (
+            <AuthInput
+              label="Personal Email"
+              icon={MailIcon}
+              type="email"
+              name="email"
+              placeholder="name@gmail.com"
+              value={formData.email}
+              onChange={handleTextChange}
+              error={fieldErrors.email}
+              required
+            />
+          )}
 
           <AuthInput
             label="Password"
@@ -138,18 +240,40 @@ export default function Register() {
             placeholder="Create a secure password"
             value={formData.password}
             onChange={handleTextChange}
+            error={fieldErrors.password}
             required
           />
 
-          <div className="flex items-center gap-2 text-xs text-gray-500 font-medium pt-2">
-            <input 
-              type="checkbox" 
-              id="terms" 
-              checked={formData.agreeTerms}
-              onChange={handleCheckboxChange}
-              className="rounded text-[#2B2A8C] focus:ring-[#2B2A8C] w-4 h-4" 
+          {isEmployerRole && (
+            <AuthInput
+              label="Confirm Password"
+              icon={LockIcon}
+              type="password"
+              name="confirmPassword"
+              placeholder="Re-enter your password"
+              value={formData.confirmPassword}
+              onChange={handleTextChange}
+              error={fieldErrors.confirmPassword}
+              required
             />
-            <label htmlFor="terms">I agree to the Terms of Service and Privacy Guidelines.</label>
+          )}
+
+          <div className="pt-2">
+            <div className="flex items-start gap-2 text-xs text-gray-500 font-medium">
+              <input 
+                type="checkbox" 
+                id="terms" 
+                checked={formData.agreeTerms}
+                onChange={handleCheckboxChange}
+                className="rounded text-[#2B2A8C] focus:ring-[#2B2A8C] w-4 h-4 mt-0.5 cursor-pointer" 
+              />
+              <label htmlFor="terms" className="cursor-pointer">
+                I agree to the Terms &amp; Conditions and Privacy Policy.
+              </label>
+            </div>
+            {fieldErrors.agreeTerms && (
+              <p className="text-xs font-semibold text-red-500 mt-1.5 ml-6">{fieldErrors.agreeTerms}</p>
+            )}
           </div>
 
           <button 
@@ -157,7 +281,7 @@ export default function Register() {
             disabled={loading}
             className="w-full bg-[#2B2A8C] hover:bg-[#1E1D66] disabled:bg-gray-300 text-white font-bold text-sm py-3.5 rounded-lg transition shadow-md flex items-center justify-center gap-2 mt-4 cursor-pointer"
           >
-            {loading ? 'Sending OTP...' : 'Continue Registration'} <ArrowRightIcon className="w-4 h-4" />
+            {loading ? 'Sending OTP...' : (isEmployerRole ? 'Register' : 'Continue Registration')} <ArrowRightIcon className="w-4 h-4" />
           </button>
         </form>
 

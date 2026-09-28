@@ -3,7 +3,7 @@ const Application = require('../models/Application');
 const Job = require('../models/Job');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
-const { uploadToCloudinaryOrLocal, uploadResume } = require('../config/cloudinary');
+const { uploadResume } = require('../config/cloudinary');
 const sendEmail = require('../config/email');
 
 // @desc    Apply for a job
@@ -92,9 +92,7 @@ exports.applyJob = async (req, res, next) => {
   }
 };
 
-// @desc    Get candidate's job applications
-// @route   GET /api/applications/my-applications
-// @access  Private (Job Seeker only)
+
 exports.getCandidateApplications = async (req, res, next) => {
   try {
     const applications = await Application.find({ applicant: req.user.id })
@@ -113,10 +111,6 @@ exports.getCandidateApplications = async (req, res, next) => {
     next(error);
   }
 };
-
-// @desc    Get all applicants for a specific job post
-// @route   GET /api/applications/job/:jobId
-// @access  Private (Employer only)
 exports.getJobApplicants = async (req, res, next) => {
   try {
     const job = await Job.findById(req.params.jobId);
@@ -143,12 +137,10 @@ exports.getJobApplicants = async (req, res, next) => {
   }
 };
 
-// @desc    Update application status (Accept / Reject)
-// @route   PATCH /api/applications/:id/status
-// @access  Private (Employer only)
+
 exports.updateApplicationStatus = async (req, res, next) => {
   try {
-    const { status } = req.body; // 'accepted' or 'rejected'
+    const { status } = req.body;
 
     if (!['accepted', 'rejected'].includes(status)) {
       return res.status(400).json({ success: false, message: 'Please provide valid status (accepted or rejected)' });
@@ -263,9 +255,9 @@ exports.getDashboardStats = async (req, res, next) => {
     // Calculate metrics
     const totalJobs = jobs.length;
     const activeJobs = jobs.filter(j => j.status === 'active').length;
-    
+
     const applications = await Application.find({ job: { $in: jobIds } });
-    
+
     const totalApplicants = applications.length;
     const pending = applications.filter(app => app.status === 'pending').length;
     const accepted = applications.filter(app => app.status === 'accepted').length;
@@ -321,7 +313,7 @@ exports.getStudentDatabase = async (req, res, next) => {
 
     students.forEach(student => {
       if (student.hasAppliedToMe) totalApplied++;
-      
+
       const loc = student.location || 'Not Specified';
       locationCounts[loc] = (locationCounts[loc] || 0) + 1;
     });

@@ -23,7 +23,7 @@ export const fetchCandidateApplications = async (token) => {
     const response = await apiConnector("GET", GET_MY_APPLICATIONS_API, null, getAuthHeaders(token));
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to fetch candidate applications");
+    throw new Error(error.response?.data?.message || "Failed to fetch candidate applications", { cause: error });
   }
 };
 
@@ -33,7 +33,7 @@ export const withdrawCandidateApplication = async (applicationId, token) => {
     const response = await apiConnector("DELETE", WITHDRAW_APPLICATION_API(applicationId), null, getAuthHeaders(token));
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to withdraw job application");
+    throw new Error(error.response?.data?.message || "Failed to withdraw job application", { cause: error });
   }
 };
 
@@ -43,7 +43,7 @@ export const fetchSavedJobs = async (token) => {
     const response = await apiConnector("GET", GET_SAVED_JOBS_API, null, getAuthHeaders(token));
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to fetch saved jobs");
+    throw new Error(error.response?.data?.message || "Failed to fetch saved jobs", { cause: error });
   }
 };
 
@@ -53,7 +53,7 @@ export const toggleSaveJobBackend = async (jobId, token) => {
     const response = await apiConnector("POST", TOGGLE_SAVE_JOB_API(jobId), null, getAuthHeaders(token));
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to toggle saved status for job");
+    throw new Error(error.response?.data?.message || "Failed to toggle saved status for job", { cause: error });
   }
 };
 
@@ -63,7 +63,7 @@ export const fetchUserProfile = async (token) => {
     const response = await apiConnector("GET", GET_PROFILE_API, null, getAuthHeaders(token));
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to fetch user profile");
+    throw new Error(error.response?.data?.message || "Failed to fetch user profile", { cause: error });
   }
 };
 
@@ -73,7 +73,7 @@ export const updateUserProfile = async (formData, token) => {
     const response = await apiConnector("PUT", UPDATE_PROFILE_API, formData, getAuthHeaders(token));
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to update profile details");
+    throw new Error(error.response?.data?.message || "Failed to update profile details", { cause: error });
   }
 };
 
@@ -83,7 +83,7 @@ export const fetchNotifications = async (token) => {
     const response = await apiConnector("GET", GET_NOTIFICATIONS_API, null, getAuthHeaders(token));
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to fetch notifications");
+    throw new Error(error.response?.data?.message || "Failed to fetch notifications", { cause: error });
   }
 };
 
@@ -93,7 +93,7 @@ export const markNotificationAsRead = async (notificationId, token) => {
     const response = await apiConnector("PATCH", MARK_READ_NOTIFICATION_API(notificationId), null, getAuthHeaders(token));
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to mark notification as read");
+    throw new Error(error.response?.data?.message || "Failed to mark notification as read", { cause: error });
   }
 };
 
@@ -103,6 +103,6 @@ export const markAllNotificationsAsRead = async (token) => {
     const response = await apiConnector("PATCH", MARK_ALL_READ_NOTIFICATIONS_API, null, getAuthHeaders(token));
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to mark all notifications as read");
+    throw new Error(error.response?.data?.message || "Failed to mark all notifications as read", { cause: error });
   }
 };

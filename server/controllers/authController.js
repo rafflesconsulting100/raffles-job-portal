@@ -3,13 +3,16 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const OTP = require('../models/OTP');
 const sendEmail = require('../config/email');
-const { uploadToCloudinaryOrLocal, uploadAvatar, uploadResume } = require('../config/cloudinary');
+const { uploadAvatar, uploadResume } = require('../config/cloudinary');
+const { normalizeMobileNumber, mobileSearchValues } = require('../utils/validation');
+const { verifyFirebaseIdToken } = require('../utils/firebaseAuth');
+const { getJwtSecret } = require('../config/auth');
 
 // Create token helper
 const sendTokenResponse = (user, statusCode, res) => {
   const token = jwt.sign(
     { id: user._id },
-    process.env.JWT_SECRET || 'supersecretkey1234567890abcdefjobportal',
+    getJwtSecret(),
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
 
@@ -26,16 +29,27 @@ const sendTokenResponse = (user, statusCode, res) => {
     user: {
       _id: user._id,
       username: user.username,
+      companyName: user.companyName || (user.role === 'Employer' ? user.username : ''),
       email: user.email,
       role: user.role,
+      approvalStatus: user.approvalStatus || (
+        user.status === 'Rejected'
+          ? 'rejected'
+          : user.status === 'Pending' || user.isApproved === false
+          ? 'pending'
+          : user.status === 'Suspended' || user.employerAccess === false
+          ? 'revoked'
+          : 'approved'
+      ),
       isApproved: user.isApproved !== undefined ? user.isApproved : true,
       employerAccess: user.employerAccess !== undefined ? user.employerAccess : true,
       status: user.status || 'Active',
+      mobileNumber: user.mobileNumber || user.contactNumber || '',
+      contactNumber: user.contactNumber || user.mobileNumber || '',
       avatar: user.avatar,
       bio: user.bio,
       skills: user.skills,
       location: user.location,
-      contactNumber: user.contactNumber,
       gender: user.gender,
       dob: user.dob,
       education: user.education,
@@ -54,11 +68,14 @@ const sendTokenResponse = (user, statusCode, res) => {
 // @access  Public
 exports.googleRegister = async (req, res, next) => {
   try {
-    const { firebaseUid, email, displayName, photoURL, emailVerified, acceptedTerms } = req.body;
+    const { idToken, acceptedTerms } = req.body;
 
-    if (!firebaseUid || !email) {
-      return res.status(400).json({ success: false, message: 'Missing required Google authentication data' });
+    const googleUser = await verifyFirebaseIdToken(idToken);
+    if (!googleUser.valid) {
+      return res.status(401).json({ success: false, message: googleUser.message });
     }
+
+    const { firebaseUid, email, displayName, photoURL } = googleUser;
 
     if (!acceptedTerms) {
       return res.status(400).json({ success: false, message: 'You must agree to the Terms & Conditions and Privacy Policy.' });
@@ -100,7 +117,7 @@ exports.googleRegister = async (req, res, next) => {
       firebaseUid,
       authProvider: 'google',
       avatar: photoURL || '',
-      isEmailVerified: !!emailVerified,
+      isEmailVerified: true,
       role: 'Job Seeker',
       isApproved: true,
       employerAccess: true,
@@ -123,19 +140,21 @@ exports.googleRegister = async (req, res, next) => {
 // @desc    Login existing Job Seeker via Google
 // @route   POST /api/auth/job-seeker/google
 // @access  Public
-// SECURITY NOTE: This endpoint receives Firebase user info from the frontend.
-// Without Firebase Admin SDK, the backend cannot cryptographically verify
-// the Firebase ID token. The frontend sends user data after Firebase Client SDK
-// authentication. This is a known limitation.
+// SECURITY: the frontend sends a Firebase ID token; the server verifies it with
+// Google's Identity Toolkit lookup API and only trusts the verified claims
+// (email, uid, name, photo). Raw profile fields from the request body are
+// ignored, so a caller cannot sign in as someone else.
 // Google Sign-In is LOGIN ONLY — it never creates new accounts.
 exports.googleLogin = async (req, res, next) => {
   try {
-    const { firebaseUid, email, displayName, photoURL, emailVerified } = req.body;
+    const { idToken } = req.body;
 
-    if (!firebaseUid || !email) {
-      return res.status(400).json({ success: false, message: 'Missing required Google authentication data' });
+    const googleUser = await verifyFirebaseIdToken(idToken);
+    if (!googleUser.valid) {
+      return res.status(401).json({ success: false, message: googleUser.message });
     }
 
+    const { firebaseUid, email, displayName, photoURL } = googleUser;
     const normalizedEmail = email.toLowerCase().trim();
 
     // Find existing user by email
@@ -162,7 +181,7 @@ exports.googleLogin = async (req, res, next) => {
       user.authProvider = 'google';
     }
     if (!user.avatar && photoURL) user.avatar = photoURL;
-    user.isEmailVerified = user.isEmailVerified || !!emailVerified;
+    user.isEmailVerified = true;
     await user.save();
 
     return sendTokenResponse(user, 200, res);
@@ -178,17 +197,17 @@ exports.googleLogin = async (req, res, next) => {
 // @desc    Send OTP via Email
 // @route   POST /api/auth/send-otp
 // @access  Public
+// ANTI-ENUMERATION: callers must not learn whether an email is registered.
+// This endpoint always stores an OTP and always answers 200, so a registered
+// and an unregistered address are indistinguishable from the outside.
 exports.sendOtp = async (req, res, next) => {
   try {
     const { email } = req.body;
     if (!email) {
       return res.status(400).json({ success: false, message: 'Please provide an email' });
     }
-
-    // Check if user already exists
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ success: false, message: 'Email is already registered' });
+    if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      return res.status(400).json({ success: false, message: 'Please provide a valid email address' });
     }
 
     // Generate a random 6-digit OTP
@@ -209,12 +228,20 @@ exports.sendOtp = async (req, res, next) => {
       footerNote: 'This OTP is valid for 5 minutes. If you did not request this verification, please ignore this email.',
     });
 
-    await sendEmail({
-      to: email,
-      subject: `[RAFFLES JOBS] Your Verification OTP (${otpCode})`,
-      text: `Your OTP verification code for Raffles Jobs is ${otpCode}. It is valid for 5 minutes.`,
-      html: emailHtml,
-    });
+    try {
+      await sendEmail({
+        to: email,
+        subject: `[RAFFLES JOBS] Your Verification OTP (${otpCode})`,
+        text: `Your OTP verification code for Raffles Jobs is ${otpCode}. It is valid for 5 minutes.`,
+        html: emailHtml,
+      });
+    } catch (emailError) {
+      console.error('Failed to send OTP email:', emailError.message);
+      return res.status(500).json({
+        success: false,
+        message: 'We could not send the verification email right now. Please try again.',
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -230,19 +257,81 @@ exports.sendOtp = async (req, res, next) => {
 // @access  Public
 exports.register = async (req, res, next) => {
   try {
-    const { username, email, password, role, otp } = req.body;
+    const {
+      username,
+      companyName: bodyCompanyName,
+      email,
+      password,
+      confirmPassword,
+      role,
+      otp,
+      mobileNumber: bodyMobileNumber,
+      contactNumber: bodyContactNumber,
+      acceptedTerms,
+    } = req.body;
 
     if (!otp) {
       return res.status(400).json({ success: false, message: 'Please provide OTP' });
     }
 
-    // Check if user exists
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ success: false, message: 'Email is already registered' });
+    // The backend decides the account role. Only Job Seeker / Employer
+    // registrations are accepted — registration input can never grant Admin.
+    const requestedRole = typeof role === 'string' ? role.trim() : '';
+    const roleKey = requestedRole.toLowerCase();
+    if (requestedRole && roleKey !== 'job seeker' && roleKey !== 'employer') {
+      return res.status(400).json({ success: false, message: 'Invalid registration role' });
+    }
+    const isEmployer = roleKey === 'employer';
+    const accountRole = isEmployer ? 'Employer' : 'Job Seeker';
+
+    const companyName = typeof (bodyCompanyName || username) === 'string' ? (bodyCompanyName || username).trim() : '';
+    const termsAccepted = acceptedTerms === true || acceptedTerms === 'true';
+
+    // Employer registration validations
+    let employerMobile = '';
+    if (isEmployer) {
+      if (!companyName) {
+        return res.status(400).json({ success: false, message: 'Company name is required' });
+      }
+
+      const rawMobile = typeof (bodyMobileNumber || bodyContactNumber) === 'string' ? (bodyMobileNumber || bodyContactNumber).trim() : '';
+      if (!rawMobile) {
+        return res.status(400).json({ success: false, message: 'Mobile number is required' });
+      }
+
+      const normalizedMobile = normalizeMobileNumber(rawMobile);
+      if (!normalizedMobile) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please provide a valid mobile number (10-digit mobile number or +91XXXXXXXXXX).',
+        });
+      }
+
+      if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+        return res.status(400).json({ success: false, message: 'Please provide a valid email address' });
+      }
+
+      if (!password || String(password).length < 6) {
+        return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+      }
+
+      if (!confirmPassword || confirmPassword !== password) {
+        return res.status(400).json({ success: false, message: 'Passwords do not match' });
+      }
+
+      if (!termsAccepted) {
+        return res.status(400).json({
+          success: false,
+          message: 'You must agree to the Terms & Conditions and Privacy Policy.',
+        });
+      }
+
+      employerMobile = normalizedMobile;
     }
 
-    // Verify OTP
+    // Verify OTP first. Account-existence checks only run after the caller
+    // proves control of the inbox, so outsiders cannot probe for registered
+    // emails or mobiles through registration errors.
     const otpRecord = await OTP.findOne({ email }).sort({ createdAt: -1 });
     if (!otpRecord) {
       return res.status(400).json({ success: false, message: 'OTP has expired or does not exist. Please request a new one.' });
@@ -254,22 +343,40 @@ exports.register = async (req, res, next) => {
     // Delete verified OTP
     await OTP.deleteMany({ email });
 
-    // let avatarUrl = '';
-    // if (req.files && req.files.avatar) {
-    //   avatarUrl = await uploadToCloudinaryOrLocal(req.files.avatar[0], 'avatars');
-    // }
+    // Check if user exists
+    const userExists = await User.findOne({ email: email.toLowerCase().trim() });
+    if (userExists) {
+      return res.status(400).json({ success: false, message: 'Email is already registered' });
+    }
 
-    // Create user
-    const isEmployer = (role === 'Employer');
+    if (isEmployer) {
+      const existingMobile = await User.findOne({
+        $or: [
+          { contactNumber: { $in: mobileSearchValues(employerMobile) } },
+          { mobileNumber: { $in: mobileSearchValues(employerMobile) } },
+        ]
+      });
+      if (existingMobile) {
+        return res.status(400).json({ success: false, message: 'This mobile number is already registered.' });
+      }
+    }
+
+    // Create user — new Employers always start as Pending awaiting Admin approval
     const user = await User.create({
-      username,
-      email,
+      username: isEmployer ? companyName : username,
+      companyName: isEmployer ? companyName : '',
+      email: email.toLowerCase().trim(),
       password,
-      role: role || 'Job Seeker',
+      role: accountRole,
+      contactNumber: employerMobile,
+      mobileNumber: employerMobile,
+      approvalStatus: isEmployer ? 'pending' : 'approved',
       isApproved: !isEmployer,
       employerAccess: !isEmployer,
       status: isEmployer ? 'Pending' : 'Active',
-      // avatar: avatarUrl,
+      acceptedTerms: termsAccepted,
+      termsAcceptedAt: termsAccepted ? new Date() : null,
+      termsVersion: termsAccepted ? '1.0' : '',
     });
 
     sendTokenResponse(user, 201, res);
@@ -350,10 +457,12 @@ exports.updateProfile = async (req, res, next) => {
 
     const {
       username,
+      companyName,
       bio,
       skills,
       location,
       contactNumber,
+      mobileNumber,
       gender,
       dob,
       education,
@@ -362,10 +471,29 @@ exports.updateProfile = async (req, res, next) => {
       certifications
     } = req.body;
 
-    if (username) user.username = username;
+    // Protected fields: role, approvalStatus, isApproved, employerAccess, status cannot be changed by user
+    if (user.role === 'Employer') {
+      if (companyName) {
+        user.companyName = companyName.trim();
+        user.username = companyName.trim();
+      } else if (username) {
+        user.username = username.trim();
+        user.companyName = username.trim();
+      }
+    } else if (username) {
+      user.username = username.trim();
+    }
+
+    if (mobileNumber !== undefined) {
+      user.mobileNumber = mobileNumber;
+      user.contactNumber = mobileNumber;
+    } else if (contactNumber !== undefined) {
+      user.contactNumber = contactNumber;
+      user.mobileNumber = contactNumber;
+    }
+
     if (bio !== undefined) user.bio = bio;
     if (location !== undefined) user.location = location;
-    if (contactNumber !== undefined) user.contactNumber = contactNumber;
     if (gender !== undefined) user.gender = gender;
     if (dob !== undefined) user.dob = dob;
 

@@ -9,8 +9,7 @@ import {
   Users,
   Languages,
   HelpCircle,
-  CheckCircle2,
-  FileCheck
+    FileCheck
 } from 'lucide-react';
 
 export default function JobApplyModal({

@@ -9,14 +9,13 @@ import {
   Briefcase,
   Trash2,
   ArrowRight,
-  ExternalLink
 } from "lucide-react";
 
 export default function SavedJobsTab({
   savedJobs = [],
   loading = false,
   toggleSaveJob,
-  handleTabSwitch
+  handleTabSwitch: _handleTabSwitch
 }) {
   const [search, setSearch] = useState("");
 

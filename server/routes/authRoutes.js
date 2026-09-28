@@ -3,19 +3,21 @@ const router = express.Router();
 const { register, login, logout, getProfile, updateProfile, sendOtp, googleLogin, googleRegister } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 const upload = require('../middleware/multerMiddleware');
+const { sendOtpLimiter, loginLimiter, registerLimiter } = require('../middleware/rateLimitMiddleware');
 
-router.post('/send-otp', sendOtp);
+router.post('/send-otp', sendOtpLimiter, sendOtp);
 
 router.post('/job-seeker/google/register', googleRegister);
 router.post('/job-seeker/google/login', googleLogin);
 
 router.post(
   '/register',
+  registerLimiter,
   upload.fields([{ name: 'avatar', maxCount: 1 }]),
   register
 );
 
-router.post('/login', login);
+router.post('/login', loginLimiter, login);
 
 router.post('/logout', protect, logout);
 

@@ -2,12 +2,10 @@ import React, { useState } from "react";
 import {
   Users,
   Search,
-  Shield,
-  Building2,
-  UserCheck,
-  Trash2,
+        Trash2,
   RefreshCw,
   Mail,
+  Phone,
   X
 } from "lucide-react";
 
@@ -22,10 +20,20 @@ export default function UsersTab({
   const [roleFilter, setRoleFilter] = useState("all");
   const [updatingId, setUpdatingId] = useState(null);
 
+  const getEmployerApprovalState = (u) => {
+    if (u.role !== "Employer") return null;
+    if (u.status === "Rejected") return "Rejected";
+    if (u.status === "Pending" || (u.isApproved === false && u.status !== "Suspended")) return "Pending Approval";
+    if (u.status === "Suspended" || u.employerAccess === false || u.isApproved === false) return "Revoked";
+    return "Approved";
+  };
+
   const filteredUsers = users.filter((u) => {
     const matchesSearch =
       u.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email?.toLowerCase().includes(searchTerm.toLowerCase());
+      u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (u.contactNumber || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (u.mobileNumber || "").toLowerCase().includes(searchTerm.toLowerCase());
 
     if (roleFilter === "Job Seeker") return matchesSearch && u.role === "Job Seeker";
     if (roleFilter === "Employer") return matchesSearch && u.role === "Employer";
@@ -165,6 +173,11 @@ export default function UsersTab({
                             <p className="text-xs text-slate-500 flex items-center gap-1">
                               <Mail size={12} /> {u.email}
                             </p>
+                            {u.role === "Employer" && (u.contactNumber || u.mobileNumber) && (
+                              <p className="text-xs text-slate-600 font-semibold flex items-center gap-1 mt-0.5">
+                                <Phone size={12} /> {u.mobileNumber || u.contactNumber}
+                              </p>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -180,6 +193,19 @@ export default function UsersTab({
                           <option value="Employer">Employer</option>
                           <option value="Admin">Admin</option>
                         </select>
+                        {getEmployerApprovalState(u) && (
+                          <p
+                            className={`text-[11px] font-bold mt-1.5 ${
+                              getEmployerApprovalState(u) === "Approved"
+                                ? "text-emerald-600"
+                                : getEmployerApprovalState(u) === "Pending Approval"
+                                ? "text-amber-600"
+                                : "text-rose-600"
+                            }`}
+                          >
+                            {getEmployerApprovalState(u)}
+                          </p>
+                        )}
                       </td>
 
                       <td className="py-4 px-6 text-xs text-slate-500">

@@ -15,6 +15,7 @@ export const endpoints = {
   EMPLOYER_STATS_API: BASE_URL + "/applications/stats",
   GET_EMPLOYER_JOBS_API: BASE_URL + "/jobs/my-jobs",
   GET_ALL_JOBS_API: BASE_URL + "/jobs",
+  GET_JOB_BY_SLUG_API: (slug) => `${BASE_URL}/jobs/slug/${encodeURIComponent(slug)}`,
   CREATE_JOB_API: BASE_URL + "/jobs",
   UPDATE_JOB_API: (id) => `${BASE_URL}/jobs/${id}`,
   DELETE_JOB_API: (id) => `${BASE_URL}/jobs/${id}`,
@@ -45,5 +46,4 @@ export const endpoints = {
   ADMIN_USERS_API: BASE_URL + "/admin/users",
   UPDATE_USER_ROLE_API: (id) => `${BASE_URL}/admin/users/${id}/role`,
   DELETE_USER_API: (id) => `${BASE_URL}/admin/users/${id}`,
-  SEED_ADMIN_API: BASE_URL + "/admin/seed",
 };

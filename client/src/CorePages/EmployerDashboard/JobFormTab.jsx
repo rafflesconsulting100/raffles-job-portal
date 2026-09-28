@@ -167,14 +167,17 @@ export default function JobFormTab({
               onChange={(e) => setJobForm({ ...jobForm, category: e.target.value })}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 outline-none focus:bg-white focus:border-[#2B2A8C] focus:ring-2 focus:ring-[#2B2A8C]/10 transition"
             >
-            
+              <option value="BPO">BPO</option>
+              <option value="Sales">Sales</option>
+              <option value="Warehouse">Warehouse Incharge / Warehouse</option>
+              <option value="Support Assistant">Support Assistant</option>
+              <option value="Customer Support">Customer Support</option>
+              <option value="Operations">Operations</option>
+              <option value="Back Office">Back Office</option>
               <option value="Marketing">Marketing</option>
               <option value="Finance">Finance</option>
               <option value="HR">HR</option>
               <option value="Management">Management</option>
-              <option value="Operations">Operations</option>
-              <option value="Sales">Sales</option>
-              <option value="Customer Support">Customer Support</option>
             </select>
           </div>
 
@@ -315,7 +318,7 @@ export default function JobFormTab({
           </div>
         </div>
 
-        {/* NUMBER OF OPENINGS & PREFERRED LANGUAGES */}
+        {/* NUMBER OF OPENINGS & APPLICATION DEADLINE */}
         <div className="grid sm:grid-cols-2 gap-6">
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
@@ -327,7 +330,7 @@ export default function JobFormTab({
               step="1"
               required
               placeholder="e.g. 5"
-              value={jobForm.numberOfOpenings}
+              value={jobForm.numberOfOpenings || ""}
               onChange={(e) => setJobForm({ ...jobForm, numberOfOpenings: e.target.value })}
               className={`w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-[#2B2A8C]/10 transition ${
                 showOpeningsError
@@ -338,6 +341,21 @@ export default function JobFormTab({
             {showOpeningsError && (
               <p className="text-xs text-rose-500 mt-1.5 font-medium">{openingsError}</p>
             )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+              Application Deadline (Optional)
+            </label>
+            <input
+              type="date"
+              value={jobForm.expiresAt || ""}
+              onChange={(e) => setJobForm({ ...jobForm, expiresAt: e.target.value })}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 outline-none focus:bg-white focus:border-[#2B2A8C] focus:ring-2 focus:ring-[#2B2A8C]/10 transition"
+            />
+            <p className="text-[11px] text-slate-400 mt-1.5">
+              The listing automatically expires after this date.
+            </p>
           </div>
         </div>
 

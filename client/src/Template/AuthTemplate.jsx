@@ -1,8 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
-  ShieldCheckIcon, 
-  ZapIcon, 
-  GlobeIcon, 
   CheckCircle2Icon, 
   UserCheckIcon, 
   Building2Icon,
@@ -24,17 +21,11 @@ export default function AuthTemplate({
   subtitle,
   features
 }) {
-  const [activeRole, setActiveRole] = useState(role);
-
-  // Sync internal state with incoming role prop
-  useEffect(() => {
-    if (role && role !== activeRole) {
-      setActiveRole(role);
-    }
-  }, [role]);
+  const [internalRole, setInternalRole] = useState(role);
+  const activeRole = role || internalRole;
 
   const handleRoleToggle = (newRole) => {
-    setActiveRole(newRole);
+    setInternalRole(newRole);
     if (onRoleChange) {
       onRoleChange(newRole);
     }

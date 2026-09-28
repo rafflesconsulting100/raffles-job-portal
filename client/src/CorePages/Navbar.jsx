@@ -1,29 +1,27 @@
 // src/components/layout/Navbar.jsx
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { NavLink, Link, useNavigate, useLocation } from "react-router-dom";
 import {
-  Search,
   Menu,
   X,
   BriefcaseBusiness,
-  Building2,
   Info,
   Phone,
   ChevronDown,
   Home,
   LayoutDashboard,
   LogOut,
-  UserCheck, ShieldCheck
+  ShieldCheck,
 } from "lucide-react";
-import { showSuccess, showError } from '../Utils/toast';
+import { showSuccess } from '../Utils/toast';
 import lightLogo from "../assets/rafflelogo-light.png";
 import darkLogo from "../assets/rafflelogo-dark.png";
 
 const navLinks = [
   {
     title: "Home",
-    path: "/home",
+    path: "/",
     icon: Home,
   },
   {
@@ -48,7 +46,14 @@ export default function Navbar() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem("user");
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
@@ -61,34 +66,36 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const syncUser = () => {
+  const syncUser = useCallback(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
+        const parsed = JSON.parse(storedUser);
+        setUser(parsed);
+      } catch {
         setUser(null);
       }
     } else {
       setUser(null);
     }
-  };
-
-  useEffect(() => {
-    syncUser();
-    window.addEventListener("storage", syncUser);
-    window.addEventListener("auth-change", syncUser);
-    window.addEventListener("focus", syncUser);
-    return () => {
-      window.removeEventListener("storage", syncUser);
-      window.removeEventListener("auth-change", syncUser);
-      window.removeEventListener("focus", syncUser);
-    };
   }, []);
 
   useEffect(() => {
-    syncUser();
-  }, [location.pathname]);
+    const handleSync = () => syncUser();
+    window.addEventListener("storage", handleSync);
+    window.addEventListener("auth-change", handleSync);
+    window.addEventListener("focus", handleSync);
+    return () => {
+      window.removeEventListener("storage", handleSync);
+      window.removeEventListener("auth-change", handleSync);
+      window.removeEventListener("focus", handleSync);
+    };
+  }, [syncUser]);
+
+  useEffect(() => {
+    const timer = setTimeout(syncUser, 0);
+    return () => clearTimeout(timer);
+  }, [location.pathname, syncUser]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -98,14 +105,6 @@ export default function Navbar() {
     window.dispatchEvent(new Event("auth-change"));
     navigate("/login");
     showSuccess('Logged out Successfully');
-  };
-
-  const handlePostJobClick = () => {
-    if (user && user.role === "Employer") {
-      navigate("/employer-dashboard?tab=post-job");
-    } else {
-      navigate("/login");
-    }
   };
 
   return (

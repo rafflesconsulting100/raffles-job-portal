@@ -8,22 +8,26 @@ export const sendOtp = async (email) => {
     const response = await apiConnector("POST", SENDOTP_API, { email });
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Connection error. Please check your backend server status.");
+    throw new Error(error.response?.data?.message || "Connection error. Please check your backend server status.", { cause: error });
   }
 };
 
-export const register = async (username, email, password, role, otp) => {
+export const register = async (username, email, password, role, otp, extras = {}) => {
   try {
     const response = await apiConnector("POST", REGISTER_API, {
       username,
+      companyName: extras.companyName || (role === 'Employer' ? username : ''),
       email,
       password,
       role,
       otp,
+      confirmPassword: extras.confirmPassword,
+      mobileNumber: extras.mobileNumber,
+      acceptedTerms: extras.acceptedTerms,
     });
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Connection error. Please check your backend server status.");
+    throw new Error(error.response?.data?.message || "Connection error. Please check your backend server status.", { cause: error });
   }
 };
 
@@ -35,7 +39,7 @@ export const login = async (email, password) => {
     });
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Connection error. Please check your backend server status.");
+    throw new Error(error.response?.data?.message || "Connection error. Please check your backend server status.", { cause: error });
   }
 };
 
@@ -46,38 +50,30 @@ export const getProfile = async (token) => {
     });
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to fetch user profile");
+    throw new Error(error.response?.data?.message || "Failed to fetch user profile", { cause: error });
   }
 };
 
-export const googleLogin = async (firebaseUid, email, displayName, photoURL, emailVerified) => {
+export const googleLogin = async (idToken) => {
   try {
     const response = await apiConnector("POST", GOOGLE_LOGIN_API, {
-      firebaseUid,
-      email,
-      displayName,
-      photoURL,
-      emailVerified,
+      idToken,
     });
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Google Login failed. Please try again.");
+    throw new Error(error.response?.data?.message || "Google Login failed. Please try again.", { cause: error });
   }
 };
 
-export const googleRegister = async (firebaseUid, email, displayName, photoURL, emailVerified) => {
+export const googleRegister = async (idToken) => {
   try {
     const response = await apiConnector("POST", GOOGLE_REGISTER_API, {
-      firebaseUid,
-      email,
-      displayName,
-      photoURL,
-      emailVerified,
+      idToken,
       acceptedTerms: true,
     });
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Google Registration failed. Please try again.");
+    throw new Error(error.response?.data?.message || "Google Registration failed. Please try again.", { cause: error });
   }
 };
 

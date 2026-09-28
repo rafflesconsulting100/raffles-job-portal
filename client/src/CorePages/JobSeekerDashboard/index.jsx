@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   fetchCandidateApplications,
@@ -24,17 +24,25 @@ import NotificationsTab from "./NotificationsTab";
 import ApplicationDetailModal from "./ApplicationDetailModal";
 import WithdrawModal from "./WithdrawModal";
 
+import useSeo from '../../Utils/useSeo';
+
 export default function JobSeekerDashboard() {
+  useSeo({ path: '/jobseeker-dashboard' });
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Active tab from URL search param (default: 'overview')
-  const currentTabParam = searchParams.get("tab") || "overview";
-  const [activeTab, setActiveTab] = useState(currentTabParam);
+  const activeTab = searchParams.get("tab") || "overview";
 
-  const [token, setToken] = useState("");
-  const [user, setUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const [token] = useState(() => localStorage.getItem("token") || "");
+  const [user, setUser] = useState(() => {
+    try {
+      const u = localStorage.getItem("user");
+      return u ? JSON.parse(u) : null;
+    } catch {
+      return null;
+    }
+  });
   const [dataLoading, setDataLoading] = useState(false);
 
   // Core Data States
@@ -48,34 +56,10 @@ export default function JobSeekerDashboard() {
   const [withdrawSubmitting, setWithdrawSubmitting] = useState(false);
 
   // Sync tab state with search params
-  useEffect(() => {
-    const tab = searchParams.get("tab") || "overview";
-    setActiveTab(tab);
-  }, [searchParams]);
-
-  // Handle User Auth & Session initialization
-  useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-
-    if (storedToken && storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setToken(storedToken);
-        setUser(parsedUser);
-
-        if (parsedUser.role === "Job Seeker") {
-          loadDashboardData(storedToken);
-        }
-      } catch (err) {
-        console.error("Failed to parse user session", err);
-      }
-    }
-    setAuthLoading(false);
-  }, []);
+  // activeTab derived directly from searchParams
 
   // Fetch all dashboard data from backend
-  const loadDashboardData = async (authToken) => {
+  const loadDashboardData = useCallback(async (authToken) => {
     const activeAuthToken = authToken || token;
     if (!activeAuthToken) return;
 
@@ -110,10 +94,18 @@ export default function JobSeekerDashboard() {
     } finally {
       setDataLoading(false);
     }
-  };
+  }, [token]);
+
+  // Handle User Auth & Session initialization
+  useEffect(() => {
+    if (token && user?.role === "Job Seeker") {
+      queueMicrotask(() => {
+        loadDashboardData(token);
+      });
+    }
+  }, [token, user, loadDashboardData]);
 
   const handleTabSwitch = (tab) => {
-    setActiveTab(tab);
     setSearchParams({ tab });
   };
 
@@ -215,7 +207,7 @@ export default function JobSeekerDashboard() {
   const unreadNotificationsCount = notifications.filter((n) => !n.isRead).length;
 
   // Auth Guard: Restrict access if not logged in or not a Job Seeker
-  if (!authLoading && (!token || !user || user.role !== "Job Seeker")) {
+  if ((!token || !user || user.role !== "Job Seeker")) {
     return <AuthGuard navigate={navigate} />;
   }
 

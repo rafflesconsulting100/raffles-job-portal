@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+﻿import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Building2,
@@ -6,32 +6,25 @@ import {
   Award,
   TrendingUp,
   ShieldCheck,
-  CheckCircle2,
   ArrowRight,
   Briefcase,
   Globe,
   Sparkles,
   Target,
   HeartHandshake,
-  Lightbulb,
-  BadgeCheck, ChevronRight, Home
+  ChevronRight
 } from 'lucide-react';
 import logo from '../assets/rafflelogo.png';
+import useSeo from '../Utils/useSeo';
+import { JOB_CATEGORIES, categoryPath } from '../Utils/seoConfig';
 
-const roleCategories = [
-  "Software Engineering",
-  "Data Science",
-  "Design",
-  "Marketing",
-  "Finance",
-  "HR",
-  "Management",
-  "Operations",
-  "Sales",
-  "Customer Support"
-];
+// Real categories offered by the job posting form (kept in sync with
+// client/src/Utils/seoConfig.js — these power the /jobs/<category> pages).
+const roleCategories = JOB_CATEGORIES.map((category) => category.name);
 
 export default function AboutPage() {
+  useSeo({ path: '/about' });
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -40,7 +33,7 @@ export default function AboutPage() {
     { label: "Jobs Available", value: "Active", icon: Users, color: "from-blue-600 to-indigo-600" },
     { label: "Companies", value: "Growing", icon: Building2, color: "from-purple-600 to-indigo-700" },
     { label: "Job Seekers", value: "Active", icon: ShieldCheck, color: "from-emerald-500 to-teal-700" },
-    { label: "Role Categories", value: "10", icon: Award, color: "from-amber-500 to-orange-600" }
+    { label: "Role Categories", value: String(JOB_CATEGORIES.length), icon: Award, color: "from-amber-500 to-orange-600" }
   ];
 
   const services = [
@@ -81,6 +74,12 @@ export default function AboutPage() {
       tag: "Business"
     },
     {
+      title: "BPO",
+      description: "Call centre, voice and non-voice, process and back-office opportunities.",
+      icon: Globe,
+      tag: "BPO"
+    },
+    {
       title: "Customer Support",
       description: "Customer service, customer success, support and helpdesk opportunities.",
       icon: HeartHandshake,
@@ -88,23 +87,6 @@ export default function AboutPage() {
     }
   ];
 
-  const coreValues = [
-    {
-      title: "Uncompromising Integrity",
-      desc: "We prioritize complete transparency, compliance, and ethical standards in candidate representation and client partnerships.",
-      icon: BadgeCheck
-    },
-    {
-      title: "Data-Driven Matching",
-      desc: "Combining human recruitment expertise with advanced AI matching algorithms to ensure 98%+ candidate alignment.",
-      icon: TrendingUp
-    },
-    {
-      title: "Client-Centric Commitment",
-      desc: "Customized talent solutions designed specifically for your organization's unique culture, tech stack, and growth goals.",
-      icon: HeartHandshake
-    }
-  ];
 
   const leadershipTeam = [
     {
@@ -157,7 +139,7 @@ export default function AboutPage() {
           </h1>
 
           <p className="text-sm sm:text-base text-blue-100 max-w-2xl mx-auto leading-relaxed">
-            RafflesJobs is a premier recruitment and talent acquisition platform dedicated to bridging the gap between exceptional professionals and industry-leading organizations across technology, data, engineering, and corporate domains.
+            RafflesJobs is a job portal that connects job seekers with employers across India. Search live openings in sales, customer support, BPO and other roles, apply online for free, and post vacancies that reach candidates.
           </p>
 
           <div className="pt-3 flex flex-wrap items-center justify-center gap-3">
@@ -192,9 +174,9 @@ export default function AboutPage() {
                 <div className={`w-12 h-12 rounded-xl bg-linear-to-br ${stat.color} text-white flex items-center justify-center shadow-md group-hover:scale-110 transition-transform`}>
                   <Icon className="w-6 h-6" />
                 </div>
-                <h3 className="text-2xl sm:text-3xl font-black text-[#1e293b] pt-1 break-words">
+                <p className="text-2xl sm:text-3xl font-black text-[#1e293b] pt-1 break-words">
                   {stat.value}
-                </h3>
+                </p>
                 <p className="text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider">
                   {stat.label}
                 </p>
@@ -241,7 +223,10 @@ export default function AboutPage() {
             <div className="relative">
               <img
                 src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=800"
-                alt="RafflesJobs Team Collaboration"
+                alt="Colleagues collaborating in an office"
+                width="800"
+                height="500"
+                loading="lazy"
                 className="rounded-2xl sm:rounded-3xl shadow-2xl object-cover w-full h-64 sm:h-80 lg:h-[25rem]"
               />
               <div className="absolute -bottom-5 left-4 sm:-left-6 bg-white p-4 sm:p-5 rounded-2xl shadow-xl border border-gray-100 max-w-[calc(100%-2rem)] sm:max-w-xs space-y-1 hidden sm:block">
@@ -263,7 +248,7 @@ export default function AboutPage() {
             Find Jobs by Role Category
           </h2>
           <p className="text-xs sm:text-sm text-gray-500 leading-6">
-            Explore jobs across ten focused professional categories.
+            Explore jobs across the role categories employers post on RafflesJobs.
           </p>
         </div>
 
@@ -271,7 +256,7 @@ export default function AboutPage() {
           {roleCategories.map((category) => (
             <Link
               key={category}
-              to={`/jobs?category=${encodeURIComponent(category)}`}
+              to={categoryPath(category) || '/jobs'}
               className="max-w-full px-3 py-2 rounded-lg bg-blue-50 border border-blue-100 text-[#2B2A8C] text-[11px] sm:text-xs font-bold text-center hover:bg-[#2B2A8C] hover:text-white transition-colors"
             >
               {category}
