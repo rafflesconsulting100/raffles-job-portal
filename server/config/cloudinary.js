@@ -1,23 +1,32 @@
 const cloudinary = require('cloudinary').v2;
 const path = require('path');
 
-// Validate Cloudinary credentials on startup
-if (
-  !process.env.CLOUDINARY_CLOUD_NAME ||
-  !process.env.CLOUDINARY_API_KEY ||
-  !process.env.CLOUDINARY_API_SECRET
-) {
-  throw new Error(
-    'Cloudinary credentials are missing! Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in your .env file.'
-  );
-}
+// Credentials are validated lazily on first upload instead of at require-time,
+// so a missing/typo'd env var cannot stop the whole API from booting when no
+// file is being uploaded.
+const getCredentialError = () => {
+  const missing = [
+    ['CLOUDINARY_CLOUD_NAME', process.env.CLOUDINARY_CLOUD_NAME],
+    ['CLOUDINARY_API_KEY', process.env.CLOUDINARY_API_KEY],
+    ['CLOUDINARY_API_SECRET', process.env.CLOUDINARY_API_SECRET],
+  ].filter(([, value]) => !value).map(([name]) => name);
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: true,
-});
+  return missing.length > 0
+    ? new Error(`Cloudinary credentials are missing! Set ${missing.join(', ')} in your .env file.`)
+    : null;
+};
+
+const credentialError = getCredentialError();
+if (credentialError) {
+  console.warn(`[Cloudinary] ${credentialError.message} File uploads will fail until this is fixed.`);
+} else {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure: true,
+  });
+}
 
 /**
  * Core Cloudinary upload helper — always uploads directly to cloud.
@@ -27,6 +36,9 @@ cloudinary.config({
  * @returns {Promise<string>}   - Secure public Cloudinary URL
  */
 const uploadToCloud = async (file, subfolder = 'general', extraOptions = {}) => {
+  if (credentialError) {
+    throw credentialError;
+  }
   if (!file || !file.buffer) {
     throw new Error('No file buffer provided for upload.');
   }

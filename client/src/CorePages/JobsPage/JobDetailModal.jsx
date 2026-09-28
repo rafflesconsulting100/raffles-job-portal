@@ -235,7 +235,7 @@ export default function JobDetailModal({
         <div className="space-y-2">
           <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Job Description</h3>
           <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-line bg-slate-50/70 p-4 rounded-2xl border border-slate-200 font-medium">
-            {job.description}
+            {job.cleanDescription || job.description}
           </p>
         </div>
 

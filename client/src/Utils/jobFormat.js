@@ -30,21 +30,73 @@ export function cleanJobDescription(text) {
   return filtered.join('\n').trim();
 }
 
-export const formatBackendJob = (job) => {
-  let salaryMin = 1000000;
-  let salaryMax = 2000000;
-  if (job.salary) {
-    const numbers = job.salary.match(/\d+[\d,.]*/g);
-    if (numbers && numbers.length >= 2) {
-      const isLakh = job.salary.toLowerCase().includes("lakh");
-      salaryMin = parseFloat(numbers[0].replace(/,/g, "")) * (isLakh ? 100000 : 1);
-      salaryMax = parseFloat(numbers[1].replace(/,/g, "")) * (isLakh ? 100000 : 1);
-    } else if (numbers && numbers.length === 1) {
-      const isLakh = job.salary.toLowerCase().includes("lakh");
-      salaryMin = parseFloat(numbers[0].replace(/,/g, "")) * (isLakh ? 100000 : 1);
-      salaryMax = salaryMin;
-    }
+// Salary text arrives as free-form strings: "₹1.2 LPA - ₹2 LPA",
+// "₹5,00,000 - ₹8,00,000 per annum", "₹40,000 / month". Numbers alone are
+// meaningless without the unit, so this normalises everything to INR per year.
+// Shared page <title> for a job — used by JobDetailPage (client) and by the
+// prerender plugin (build) so the head never changes on hydration.
+export function buildJobTitle(job) {
+  if (!job) return 'Job Details | RafflesJobs';
+  const locs = Array.isArray(job.locations) && job.locations.length > 0
+    ? job.locations
+    : (job.location ? job.location.split(/[|,]/).map((s) => s.trim()).filter(Boolean) : []);
+  const companyPart = job.company ? ` | ${job.company}` : '';
+  if (locs.length >= 3) {
+    return `${job.title} Jobs${companyPart} | RafflesJobs`;
   }
+  const locStr = locs.length > 0 ? ` in ${locs.join(', ')}` : '';
+  return `${job.title} Job${locStr}${companyPart} | RafflesJobs`;
+}
+
+// Shared meta description for a job (see buildJobTitle).
+export function buildJobDescription(job) {
+  if (!job) return undefined;
+  const companyPart = job.company ? ` at ${job.company}` : '';
+  const locs = Array.isArray(job.locations) && job.locations.length > 0
+    ? (job.locations.length >= 3 ? ` across multiple locations (${job.locations.slice(0, 3).join(', ')} & more)` : ` in ${job.locations.join(', ')}`)
+    : (job.location ? ` in ${job.location}` : '');
+
+  const details = [];
+  if (job.salary) details.push('salary');
+  if (job.experienceYears || job.experienceLevel) details.push('experience');
+  if (job.minEducation) details.push('eligibility');
+  if (Array.isArray(job.preferredLanguages) && job.preferredLanguages.length > 0) details.push('languages');
+  if (job.shift) details.push('shift');
+  if (Array.isArray(job.skills) && job.skills.length > 0) details.push('skills');
+  details.push('job responsibilities');
+
+  return `Apply for ${job.title}${companyPart}${locs}. View ${details.join(', ')} and application details on RafflesJobs.`;
+}
+
+export function parseSalaryRange(text) {
+  const FALLBACK = { min: 1000000, max: 2000000 };
+  const raw = String(text || '').trim();
+  if (!raw) return FALLBACK;
+
+  const numbers = raw.match(/\d[\d,]*(?:\.\d+)?/g);
+  if (!numbers || numbers.length === 0) return FALLBACK;
+
+  const lower = raw.toLowerCase();
+  const toNumber = (value) => parseFloat(value.replace(/,/g, ''));
+
+  let multiplier = 1;
+  if (/\bcrore|\bcr\b/.test(lower)) multiplier = 10000000;
+  else if (/\blpa\b|\blakh/.test(lower)) multiplier = 100000;
+  else if (/\bmonth|\/\s*mo\b|\bpm\b/.test(lower)) multiplier = 12;
+
+  const min = toNumber(numbers[0]) * multiplier;
+  const max = numbers.length > 1 ? toNumber(numbers[1]) * multiplier : min;
+
+  if (Number.isNaN(min)) return FALLBACK;
+
+  return {
+    min: max > 0 && min > max ? max : min,
+    max: max > 0 && min > max ? min : max,
+  };
+}
+
+export const formatBackendJob = (job) => {
+  const { min: salaryMin, max: salaryMax } = parseSalaryRange(job.salary);
 
   const createdDate = new Date(job.createdAt || Date.now());
   const diffDays = Math.floor((Date.now() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -88,7 +140,7 @@ export const formatBackendJob = (job) => {
     primaryLocation: primaryLocation,
     workMode: workMode,
     type: job.jobType || "Full-time",
-    jobType: job.jobType || "Full-Time",
+    jobType: job.jobType || "Full-time",
     experienceLevel: job.experienceLevel || "Mid Level",
     experienceYears: job.experienceYears || "1 - 3 Years",
     experience: formattedExperience,

@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { MailIcon, LockIcon, ArrowRightIcon } from 'lucide-react';
 import { login } from '../Service/Operation/authApi';
 import { showSuccess, showError } from '../Utils/toast';
+import { syncSessionMemory } from '../Utils/memoryStore';
 import { AuthTemplate, RoleSelector, AuthInput, GoogleLoginButton } from '../Template';
 
 import useSeo from '../Utils/useSeo';
@@ -50,6 +51,7 @@ export default function SignIn() {
         }
 
         // Store Token & User Profile
+        syncSessionMemory(data.user);
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         window.dispatchEvent(new Event('auth-change'));

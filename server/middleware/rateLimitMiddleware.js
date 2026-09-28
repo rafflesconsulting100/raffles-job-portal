@@ -9,6 +9,7 @@
 //   RATE_LIMIT_LOGIN_MAX         default 10
 //   RATE_LIMIT_REGISTER_MAX      default 10
 //   RATE_LIMIT_ADMIN_LOGIN_MAX   default 5
+//   RATE_LIMIT_GOOGLE_AUTH_MAX   default 10
 
 const WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS) > 0
   ? Number(process.env.RATE_LIMIT_WINDOW_MS)
@@ -89,11 +90,20 @@ const adminLoginLimiter = rateLimit({
   message: 'Too many administrator sign-in attempts. Please wait a few minutes and try again.',
 });
 
+// Google Sign-In verifies an untrusted ID token on every request, so it needs
+// the same protection as password login (it was previously unlimited).
+const googleAuthLimiter = rateLimit({
+  keyPrefix: 'google-auth',
+  max: limit('RATE_LIMIT_GOOGLE_AUTH_MAX', 10),
+  message: 'Too many Google sign-in attempts. Please wait a few minutes and try again.',
+});
+
 module.exports = {
   rateLimit,
   sendOtpLimiter,
   loginLimiter,
   registerLimiter,
   adminLoginLimiter,
+  googleAuthLimiter,
   resetRateLimits,
 };

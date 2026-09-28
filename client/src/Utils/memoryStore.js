@@ -79,3 +79,35 @@ export const addAppliedJobToMemory = (jobId) => {
 export const hasAppliedToJob = (jobId) => {
   return getAppliedJobs().includes(jobId);
 };
+
+// Bookmarks/applied markers are per-account. Clearing them on logout (and
+// whenever a different account signs in) stops the previous user's saved jobs
+// from showing up on the public homepage and for the next login.
+export const clearSessionMemory = () => {
+  cache.savedJobs = [];
+  cache.appliedJobs = [];
+  try {
+    localStorage.removeItem(MEMORY_KEYS.SAVED_JOBS);
+    localStorage.removeItem(MEMORY_KEYS.APPLIED_JOBS);
+  } catch (e) {
+    console.error("Failed to clear session memory:", e);
+  }
+};
+
+export const syncSessionMemory = (nextUser) => {
+  const nextId = nextUser && (nextUser._id || nextUser.id);
+  if (!nextId) return;
+
+  try {
+    const raw = localStorage.getItem(MEMORY_KEYS.USER);
+    const previousUser = raw ? JSON.parse(raw) : null;
+    const previousId = previousUser && (previousUser._id || previousUser.id);
+    if (previousId && String(previousId) !== String(nextId)) {
+      clearSessionMemory();
+    }
+  } catch (e) {
+    // A malformed stored user means we cannot prove it is the same account —
+    // treat it as a different one.
+    clearSessionMemory();
+  }
+};

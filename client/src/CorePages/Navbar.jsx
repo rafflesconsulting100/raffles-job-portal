@@ -15,6 +15,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { showSuccess } from '../Utils/toast';
+import { clearSessionMemory } from '../Utils/memoryStore';
 import lightLogo from "../assets/rafflelogo-light.png";
 import darkLogo from "../assets/rafflelogo-dark.png";
 
@@ -100,6 +101,7 @@ export default function Navbar() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    clearSessionMemory();
     setUser(null);
     setDropdownOpen(false);
     window.dispatchEvent(new Event("auth-change"));

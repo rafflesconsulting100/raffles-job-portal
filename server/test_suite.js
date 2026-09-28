@@ -37,10 +37,14 @@ function recordResult(testNum, title, passed, details = '') {
 }
 
 async function runTests() {
+  // Assigned only after listen() succeeds, so the finally guard (`if (server)`)
+  // never calls close() on an undefined handle.
+  let server = null;
+
   await connectDB();
   await ensureEmployerFields();
 
-  const server = app.listen(TEST_PORT);
+  server = app.listen(TEST_PORT);
   console.log(`Test server running on port ${TEST_PORT}\n========================================`);
 
   const uniqueSuffix = Date.now();
@@ -509,7 +513,7 @@ async function runTests() {
   } catch (err) {
     console.error('Test execution error:', err);
   } finally {
-    server.close();
+    if (server) server.close();
     await mongoose.disconnect();
     console.log('\n========================================');
     const passedCount = results.filter((r) => r.passed).length;
@@ -517,4 +521,14 @@ async function runTests() {
   }
 }
 
-runTests();
+runTests().catch(async (err) => {
+  // Failures outside the try/finally (DB connect, seed, listen) must still
+  // release the DB connection and exit non-zero.
+  console.error('Test suite failed:', err);
+  try {
+    await mongoose.disconnect();
+  } catch (disconnectErr) {
+    console.error('Failed to disconnect:', disconnectErr);
+  }
+  process.exitCode = 1;
+});

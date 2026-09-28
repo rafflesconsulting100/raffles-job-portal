@@ -8,24 +8,36 @@ export const filterOptions = {
   // the real categories stored on Job documents (SEO: /jobs/<category> pages).
   categories: CATEGORY_FILTER_OPTIONS,
 
+  // Labels must be substrings of the experienceLevel values written by the job
+  // posting form ("Mid Level (2-5 Yrs)", "Junior Level (1-3 Yrs)", ...) or the
+  // filter silently matches nothing.
   experienceLevels: [
     "All",
     "Entry Level",
+    "Junior Level",
     "Mid Level",
-    "Senior Level"
+    "Senior Level",
+    "Lead / Principal",
+    "Manager / Director",
+    "Executive / VP"
   ],
 
+  // Job documents only ever get "On-site" or "Remote" (see jobFormat.js) —
+  // there is no Hybrid jobType, so a Hybrid checkbox could never match.
   workModes: [
     "All",
-    "Hybrid",
     "On-site",
+    "Remote",
   ],
 
+  // Same strings the server enum accepts (server/models/Job.js).
   jobTypes: [
     "All",
-    "Full-Time",
-    "Part-Time",
+    "Full-time",
+    "Part-time",
     "Contract",
+    "Remote",
+    "Internship",
   ],
 
   datePosted: [

@@ -34,7 +34,8 @@ jobs:
       - name: Run Vite Build & Prerender
         run: npm run build
         env:
-          VITE_API_URL: https://raffles-job-portal.onrender.com/api
+          # Must match client/src/Service/apis.js (import.meta.env.VITE_API_BASE_URL)
+          VITE_API_BASE_URL: https://raffles-job-portal.onrender.com/api
 
   server:
     name: Server Dependencies & Syntax

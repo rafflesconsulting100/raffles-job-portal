@@ -145,7 +145,7 @@ async function runSeoTests() {
   );
 
   // Validate JobPosting JSON-LD parses cleanly
-  const jsonLdMatches = sampleJobHtml.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g) || [];
+  const jsonLdMatches = sampleJobHtml.match(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g) || [];
   let foundValidJobPosting = false;
   for (const scriptTag of jsonLdMatches) {
     const rawJson = scriptTag.replace(/<\/?script[^>]*>/g, '');

@@ -34,7 +34,13 @@ function upsertLink(rel, href) {
 }
 
 function clearJsonLd() {
-  document.head.querySelectorAll('script[data-seo-jsonld]').forEach((node) => node.remove());
+  // Clear every JSON-LD script, not only the ones this file injected: the
+  // prerendered HTML ships its own graphs, and any page-specific schema
+  // (BreadcrumbList / JobPosting / FAQ of the previous route) would otherwise
+  // stay in <head> after a client-side navigation.
+  document.head
+    .querySelectorAll('script[type="application/ld+json"], script[data-seo-jsonld]')
+    .forEach((node) => node.remove());
 }
 
 function injectJsonLd(schemas) {
@@ -88,7 +94,8 @@ export default function useSeo(options = {}) {
     upsertMeta('property', 'og:url', resolvedCanonical);
     upsertMeta('property', 'og:site_name', SITE_NAME);
     upsertMeta('property', 'og:type', 'website');
-    upsertMeta('name', 'twitter:card', 'summary_large_image');
+    // Must match client/index.html (twitter:image is a square logo).
+    upsertMeta('name', 'twitter:card', 'summary');
     upsertMeta('name', 'twitter:title', resolvedTitle);
     upsertMeta('name', 'twitter:description', resolvedDescription);
     upsertLink('canonical', resolvedCanonical);

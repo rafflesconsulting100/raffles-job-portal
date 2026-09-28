@@ -16,6 +16,7 @@ import {
 import { sendOtp, register } from '../Service/Operation/authApi';
 import { updateUserProfile } from '../Service/Operation/seekerApi';
 import { showSuccess, showError } from '../Utils/toast';
+import { syncSessionMemory } from '../Utils/memoryStore';
 import logo from '../assets/rafflelogo.png';
 
 import useSeo from '../Utils/useSeo';
@@ -171,6 +172,7 @@ export default function OtpPage() {
 
       if (data.success) {
         // Store authenticated session
+        syncSessionMemory(data.user);
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         window.dispatchEvent(new Event('auth-change'));

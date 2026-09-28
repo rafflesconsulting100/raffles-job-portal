@@ -252,7 +252,7 @@ exports.getJobs = async (req, res, next) => {
     }
 
     const jobs = await Job.find(query)
-      .populate('creator', 'username email avatar')
+      .populate('creator', 'username avatar')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -304,7 +304,7 @@ exports.getEmployerJobs = async (req, res, next) => {
 // @access  Public
 exports.getJobById = async (req, res, next) => {
   try {
-    const job = await Job.findById(req.params.id).populate('creator', 'username email avatar company bio');
+    const job = await Job.findById(req.params.id).populate('creator', 'username avatar company bio');
     if (!job) {
       return res.status(404).json({ success: false, message: 'Job not found' });
     }
@@ -326,7 +326,7 @@ exports.getJobBySlug = async (req, res, next) => {
   try {
     const job = await Job.findOne({ slug: req.params.slug }).populate(
       'creator',
-      'username email avatar company bio'
+      'username avatar company bio'
     );
     if (!job) {
       return res.status(404).json({ success: false, message: 'Job not found' });
@@ -533,13 +533,21 @@ exports.getSavedJobs = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id).populate({
       path: 'savedJobs',
-      populate: { path: 'creator', select: 'username email avatar' },
+      populate: { path: 'creator', select: 'username avatar' },
     });
+
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Not authorized, please login first' });
+    }
+
+    // Deleted jobs resolve to null placeholders — drop them so clients never
+    // receive array entries they would crash on.
+    const savedJobs = (user.savedJobs || []).filter(Boolean);
 
     res.status(200).json({
       success: true,
-      count: user.savedJobs.length,
-      savedJobs: user.savedJobs,
+      count: savedJobs.length,
+      savedJobs,
     });
   } catch (error) {
     next(error);

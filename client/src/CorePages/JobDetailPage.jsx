@@ -24,11 +24,21 @@ import {
   breadcrumbSchema,
 } from '../Utils/seoSchema';
 import { fetchJobBySlug } from '../Service/Operation/jobApi';
+import { buildJobTitle, buildJobDescription, cleanJobDescription } from '../Utils/jobFormat';
 import { showSuccess } from '../Utils/toast';
 
 export default function JobDetailPage({ slug }) {
   const params = useParams();
   const activeSlug = slug || params.slug;
+
+  // Keying the content on the slug forces a clean remount when the URL changes:
+  // otherwise the previous job (and its SEO meta) stays on screen under the new
+  // URL until the next fetch resolves.
+  return <JobDetailContent key={activeSlug} slug={activeSlug} />;
+}
+
+function JobDetailContent({ slug }) {
+  const activeSlug = slug;
   const [job, setJob] = useState(() => {
     const seed = typeof window !== 'undefined' ? window.__RAFFLES_JOB__ : null;
     return seed && seed.slug === activeSlug ? seed : null;
@@ -86,42 +96,10 @@ export default function JobDetailPage({ slug }) {
     );
   }
 
-  const buildTitle = (j) => {
-    if (!j) return 'Job Details | RafflesJobs';
-    const locs = Array.isArray(j.locations) && j.locations.length > 0
-      ? j.locations
-      : (j.location ? j.location.split(/[|,]/).map((s) => s.trim()).filter(Boolean) : []);
-    const companyPart = j.company ? ` | ${j.company}` : '';
-    if (locs.length >= 3) {
-      return `${j.title} Jobs${companyPart} | RafflesJobs`;
-    }
-    const locStr = locs.length > 0 ? ` in ${locs.join(', ')}` : '';
-    return `${j.title} Job${locStr}${companyPart} | RafflesJobs`;
-  };
-
-  const buildDescription = (j) => {
-    if (!j) return undefined;
-    const companyPart = j.company ? ` at ${j.company}` : '';
-    const locs = Array.isArray(j.locations) && j.locations.length > 0
-      ? (j.locations.length >= 3 ? ` across multiple locations (${j.locations.slice(0, 3).join(', ')} & more)` : ` in ${j.locations.join(', ')}`)
-      : (j.location ? ` in ${j.location}` : '');
-
-    const details = [];
-    if (j.salary) details.push('salary');
-    if (j.experienceYears || j.experienceLevel) details.push('experience');
-    if (j.minEducation) details.push('eligibility');
-    if (Array.isArray(j.preferredLanguages) && j.preferredLanguages.length > 0) details.push('languages');
-    if (j.shift) details.push('shift');
-    if (Array.isArray(j.skills) && j.skills.length > 0) details.push('skills');
-    details.push('job responsibilities');
-
-    return `Apply for ${j.title}${companyPart}${locs}. View ${details.join(', ')} and application details on RafflesJobs.`;
-  };
-
   useSeo({
     path: '/jobs',
-    title: buildTitle(job),
-    description: buildDescription(job),
+    title: buildJobTitle(job),
+    description: buildJobDescription(job),
     canonicalOverride: jobPath(activeSlug),
     noindex: !job || isClosed,
     jsonLd,
@@ -345,7 +323,7 @@ export default function JobDetailPage({ slug }) {
             <section className="rounded-2xl border border-gray-100 bg-white p-6 sm:p-8 shadow-xs">
               <h2 className="text-lg font-extrabold text-[#0F172A]">Job Description</h2>
               <p className="mt-3 whitespace-pre-line text-sm leading-7 text-gray-600">
-                {job.cleanDescription || job.description}
+                {job.cleanDescription || cleanJobDescription(job.description) || job.description}
               </p>
 
               {Array.isArray(job.requirements) && job.requirements.length > 0 && (

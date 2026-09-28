@@ -8,17 +8,26 @@ let io = null;
  * Initialize Socket.IO with HTTP server
  */
 const initSocket = (server) => {
-  // Allow the same origins as the Express HTTP API (CLIENT_URL, comma-separated).
-  const allowedOrigins = (process.env.CLIENT_URL || '')
+  // Mirror the Express CORS policy: an explicit CLIENT_URL allow-list when
+  // configured, otherwise the same environment defaults. Never fall back to
+  // "allow every origin" — that would expose the notification stream to any
+  // website that can obtain a token.
+  const configuredOrigins = (process.env.CLIENT_URL || '')
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean);
+
+  const defaultOrigins = process.env.NODE_ENV === 'production'
+    ? ['https://www.rafflesjobs.com', 'https://rafflesjobs.com']
+    : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'];
+
+  const allowedOrigins = configuredOrigins.length > 0 ? configuredOrigins : defaultOrigins;
 
   io = socketIO(server, {
     cors: {
       origin: (origin, callback) => {
         // Native/mobile clients send no Origin header; browsers always do.
-        if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+        if (!origin || allowedOrigins.includes(origin)) {
           return callback(null, true);
         }
         console.warn(`[Socket.IO] Rejected handshake from non-allowlisted origin: ${origin}`);

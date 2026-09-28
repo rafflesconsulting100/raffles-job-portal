@@ -210,8 +210,9 @@ exports.sendOtp = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Please provide a valid email address' });
     }
 
-    // Generate a random 6-digit OTP
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    // Generate a random 6-digit OTP (crypto, not Math.random — the code is a
+    // credential and must not be predictable).
+    const otpCode = crypto.randomInt(100000, 1000000).toString();
 
     // Store in database
     await OTP.deleteMany({ email });
@@ -287,6 +288,33 @@ exports.register = async (req, res, next) => {
     const companyName = typeof (bodyCompanyName || username) === 'string' ? (bodyCompanyName || username).trim() : '';
     const termsAccepted = acceptedTerms === true || acceptedTerms === 'true';
 
+    // Common validations — these used to run only for Employers, so a Job
+    // Seeker registration could skip the terms check entirely.
+    if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      return res.status(400).json({ success: false, message: 'Please provide a valid email address' });
+    }
+
+    if (!password || String(password).length < 6) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+    }
+
+    // Employers must always confirm; Job Seekers only send the field when the
+    // form rendered it, so an empty value must not fail their registration.
+    const confirmProvided = confirmPassword !== undefined && confirmPassword !== null && String(confirmPassword) !== '';
+    if (isEmployer && !confirmProvided) {
+      return res.status(400).json({ success: false, message: 'Please confirm your password' });
+    }
+    if (confirmProvided && confirmPassword !== password) {
+      return res.status(400).json({ success: false, message: 'Passwords do not match' });
+    }
+
+    if (!termsAccepted) {
+      return res.status(400).json({
+        success: false,
+        message: 'You must agree to the Terms & Conditions and Privacy Policy.',
+      });
+    }
+
     // Employer registration validations
     let employerMobile = '';
     if (isEmployer) {
@@ -304,25 +332,6 @@ exports.register = async (req, res, next) => {
         return res.status(400).json({
           success: false,
           message: 'Please provide a valid mobile number (10-digit mobile number or +91XXXXXXXXXX).',
-        });
-      }
-
-      if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-        return res.status(400).json({ success: false, message: 'Please provide a valid email address' });
-      }
-
-      if (!password || String(password).length < 6) {
-        return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
-      }
-
-      if (!confirmPassword || confirmPassword !== password) {
-        return res.status(400).json({ success: false, message: 'Passwords do not match' });
-      }
-
-      if (!termsAccepted) {
-        return res.status(400).json({
-          success: false,
-          message: 'You must agree to the Terms & Conditions and Privacy Policy.',
         });
       }
 

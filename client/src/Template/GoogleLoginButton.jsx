@@ -4,6 +4,7 @@ import { FcGoogle } from 'react-icons/fc';
 import { signInWithGooglePopup } from '../config/firebase';
 import { googleLogin, googleRegister } from '../Service/Operation/authApi';
 import { showSuccess, showError } from '../Utils/toast';
+import { syncSessionMemory } from '../Utils/memoryStore';
 
 export default function GoogleLoginButton({ mode = 'login' }) {
   const navigate = useNavigate();
@@ -31,6 +32,7 @@ export default function GoogleLoginButton({ mode = 'login' }) {
         : await googleLogin(idToken);
 
       if (data.success) {
+        syncSessionMemory(data.user);
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         window.dispatchEvent(new Event('auth-change'));

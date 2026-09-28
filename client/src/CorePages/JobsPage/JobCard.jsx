@@ -202,7 +202,7 @@ export default function JobCard({
 
         {/* Description snippet */}
         <p className="text-xs sm:text-sm text-gray-500 line-clamp-2 leading-relaxed font-normal">
-          {job.description}
+          {job.cleanDescription || job.description}
         </p>
       </div>
 

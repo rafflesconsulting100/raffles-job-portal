@@ -1,5 +1,11 @@
-//const BASE_URL = "http://localhost:5000/api"; 
- const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+// API origin. A missing VITE_API_BASE_URL used to silently produce URLs like
+// "undefined/auth/login", so the build now falls back to the local dev server
+// and warns loudly instead of failing at request time.
+const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL;
+if (!configuredBaseUrl && import.meta.env.PROD) {
+  console.error('[api] VITE_API_BASE_URL is not set — API requests will fail in this build.');
+}
+const BASE_URL = configuredBaseUrl || (import.meta.env.DEV ? 'http://localhost:5000/api' : '');
 
 
 // AUTH ENDPOINTS
@@ -9,7 +15,6 @@ export const endpoints = {
   LOGIN_API: BASE_URL + "/auth/login",
   GOOGLE_LOGIN_API: BASE_URL + "/auth/job-seeker/google/login",
   GOOGLE_REGISTER_API: BASE_URL + "/auth/job-seeker/google/register",
-  GET_ME_API: BASE_URL + "/auth/me",
 
   // EMPLOYER & JOB ENDPOINTS
   EMPLOYER_STATS_API: BASE_URL + "/applications/stats",

@@ -3,6 +3,18 @@
  * Generates responsive, high-converting HTML emails with Raffles Jobs branding.
  */
 
+// Employer/user supplied strings (job titles, company names, candidate names)
+// are interpolated into the markup below, so every dynamic value is escaped at
+// the point of rendering. Callers may still pass intentional HTML through
+// `bodyText` only.
+const escapeHtml = (value) =>
+  String(value === null || value === undefined ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
 const getRafflesEmailTemplate = ({
   title = "Notification from Raffles Jobs",
   subtitle = "Talent & Career Solutions",
@@ -15,6 +27,10 @@ const getRafflesEmailTemplate = ({
   footerNote = "Thank you for choosing Raffles Jobs. We are dedicated to connecting top talents with leading opportunities.",
 }) => {
   const currentYear = new Date().getFullYear();
+  const safeTitle = escapeHtml(title);
+  const safeSubtitle = escapeHtml(subtitle);
+  const safeGreeting = escapeHtml(greeting);
+  const safeFooterNote = escapeHtml(footerNote);
 
   // Render OTP Box if provided
   const otpSectionHtml = otpCode
@@ -33,8 +49,8 @@ const getRafflesEmailTemplate = ({
   const ctaSectionHtml = ctaText && ctaUrl
     ? `
     <div style="margin: 28px 0; text-align: center;">
-      <a href="${ctaUrl}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%); color: #FFFFFF; font-size: 14px; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 12px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
-        ${ctaText} &rarr;
+      <a href="${escapeHtml(ctaUrl)}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%); color: #FFFFFF; font-size: 14px; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 12px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
+        ${escapeHtml(ctaText)} &rarr;
       </a>
     </div>
   `
@@ -50,8 +66,8 @@ const getRafflesEmailTemplate = ({
             .map(
               (item) => `
             <tr>
-              <td style="padding: 6px 0; font-size: 13px; font-weight: 700; color: #475569; width: 35%;">${item.label}:</td>
-              <td style="padding: 6px 0; font-size: 13px; color: #0F172A; font-weight: 600;">${item.value}</td>
+              <td style="padding: 6px 0; font-size: 13px; font-weight: 700; color: #475569; width: 35%;">${escapeHtml(item.label)}:</td>
+              <td style="padding: 6px 0; font-size: 13px; color: #0F172A; font-weight: 600;">${escapeHtml(item.value)}</td>
             </tr>
           `
             )
@@ -67,7 +83,7 @@ const getRafflesEmailTemplate = ({
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title}</title>
+  <title>${safeTitle}</title>
   <!--[if mso]>
   <noscript>
     <xml>
@@ -109,8 +125,8 @@ const getRafflesEmailTemplate = ({
                     <div style="display: inline-block; background: rgba(255,255,255,0.1); border-radius: 12px; padding: 8px 16px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.15);">
                       <span style="color: #60A5FA; font-size: 12px; font-weight: 800; tracking: 1px; text-transform: uppercase;">Raffles Jobs</span>
                     </div>
-                    <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #FFFFFF; letter-spacing: -0.5px;">${title}</h1>
-                    <p style="margin: 6px 0 0 0; font-size: 13px; color: #94A3B8;">${subtitle}</p>
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #FFFFFF; letter-spacing: -0.5px;">${safeTitle}</h1>
+                    <p style="margin: 6px 0 0 0; font-size: 13px; color: #94A3B8;">${safeSubtitle}</p>
                   </td>
                 </tr>
               </table>
@@ -122,7 +138,7 @@ const getRafflesEmailTemplate = ({
             <td style="padding: 40px; color: #334155; font-size: 15px; line-height: 1.6;">
               
               <p style="margin-top: 0; font-size: 16px; font-weight: 700; color: #0F172A;">
-                ${greeting}
+                ${safeGreeting}
               </p>
 
               <div style="color: #475569; font-size: 14px; line-height: 1.7;">
@@ -136,7 +152,7 @@ const getRafflesEmailTemplate = ({
               ${ctaSectionHtml}
 
               <p style="margin-top: 32px; font-size: 13px; color: #64748B; border-top: 1px solid #F1F5F9; padding-top: 20px;">
-                ${footerNote}
+                ${safeFooterNote}
               </p>
 
             </td>
@@ -180,4 +196,5 @@ const getRafflesEmailTemplate = ({
 
 module.exports = {
   getRafflesEmailTemplate,
+  escapeHtml,
 };

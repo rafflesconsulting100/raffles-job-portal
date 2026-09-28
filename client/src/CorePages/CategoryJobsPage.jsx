@@ -177,7 +177,7 @@ export default function CategoryJobsPage({ category }) {
                       heading
                     )}
                     <p className="mt-2 line-clamp-3 text-sm leading-6 text-gray-600">
-                      {job.description}
+                      {job.cleanDescription || job.description}
                     </p>
                   </div>
 

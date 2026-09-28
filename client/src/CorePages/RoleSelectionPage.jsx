@@ -203,7 +203,7 @@ export default function RoleSelectionPage() {
             <span>By proceeding, you agree to our</span>
             <Link to="/about" className="text-[#2B2A8C] font-semibold hover:underline">Terms of Use</Link>
             <span>&</span>
-            <Link to="/contact" className="text-[#2B2A8C] font-semibold hover:underline">Privacy Policy</Link>
+            <Link to="/privacy" className="text-[#2B2A8C] font-semibold hover:underline">Privacy Policy</Link>
           </div>
         </div>
       </footer>

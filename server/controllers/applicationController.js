@@ -66,20 +66,22 @@ exports.applyJob = async (req, res, next) => {
       screeningAnswers,
     });
 
-    // Create notification for the job poster (Employer)
-    const newNotif = await Notification.create({
-      recipient: job.creator,
-      sender: req.user.id,
-      message: `${req.user.username} applied for "${job.title}" at ${job.company}`,
-      type: 'new_application',
-      relatedJob: job._id,
-    });
-
+    // Everything below is best-effort: the application is already persisted, so
+    // a notification/socket failure must not turn a successful apply into a 500
+    // (the user would retry and hit "You have already applied to this job").
     try {
+      const newNotif = await Notification.create({
+        recipient: job.creator,
+        sender: req.user.id,
+        message: `${req.user.username} applied for "${job.title}" at ${job.company}`,
+        type: 'new_application',
+        relatedJob: job._id,
+      });
+
       const populatedNotif = await Notification.findById(newNotif._id).populate('sender', 'username avatar');
       sendNotificationToUser(job.creator, populatedNotif || newNotif);
     } catch (err) {
-      console.error('Failed to emit real-time notification to employer:', err.message);
+      console.error('Failed to notify employer about new application:', err.message);
     }
 
     res.status(201).json({
@@ -98,7 +100,7 @@ exports.getCandidateApplications = async (req, res, next) => {
     const applications = await Application.find({ applicant: req.user.id })
       .populate({
         path: 'job',
-        populate: { path: 'creator', select: 'username email avatar' },
+        populate: { path: 'creator', select: 'username avatar' },
       })
       .sort({ createdAt: -1 });
 
@@ -162,50 +164,59 @@ exports.updateApplicationStatus = async (req, res, next) => {
     application.status = status;
     await application.save();
 
-    // Send in-app notification to the candidate
-    const actionMsg = status === 'accepted' ? 'ACCEPTED' : 'REJECTED';
-    const newNotif = await Notification.create({
-      recipient: application.applicant._id,
-      sender: req.user.id,
-      message: `Your application status for "${application.job.title}" at ${application.job.company} was updated to: ${actionMsg}`,
-      type: 'status_change',
-      relatedJob: application.job._id,
-    });
-
+    // The status change is already committed — notifications and email are
+    // best-effort so an SMTP/socket outage cannot report a failure for a save
+    // that actually succeeded.
     try {
-      const populatedNotif = await Notification.findById(newNotif._id).populate('sender', 'username avatar');
-      sendNotificationToUser(application.applicant._id, populatedNotif || newNotif);
+      // Send in-app notification to the candidate
+      const actionMsg = status === 'accepted' ? 'ACCEPTED' : 'REJECTED';
+      const newNotif = await Notification.create({
+        recipient: application.applicant._id,
+        sender: req.user.id,
+        message: `Your application status for "${application.job.title}" at ${application.job.company} was updated to: ${actionMsg}`,
+        type: 'status_change',
+        relatedJob: application.job._id,
+      });
+
+      try {
+        const populatedNotif = await Notification.findById(newNotif._id).populate('sender', 'username avatar');
+        sendNotificationToUser(application.applicant._id, populatedNotif || newNotif);
+      } catch (err) {
+        console.error('Failed to emit real-time notification to candidate:', err.message);
+      }
+
+      // Send email notification to applicant via Raffles Jobs Brevo SMTP
+      const { getRafflesEmailTemplate, escapeHtml } = require('../utils/emailTemplate');
+      const isAccepted = status === 'accepted';
+      const safeTitle = escapeHtml(application.job.title);
+      const safeCompany = escapeHtml(application.job.company);
+      const emailHtml = getRafflesEmailTemplate({
+        title: `Application Update: ${application.job.title}`,
+        subtitle: `Raffles Jobs Recruitment Update`,
+        greeting: `Dear ${application.applicant.username},`,
+        bodyText: `Your application status for the position of <strong>${safeTitle}</strong> at <strong>${safeCompany}</strong> has been updated to <span style="font-weight:700; text-transform:uppercase; color:${isAccepted ? '#059669' : '#DC2626'}">${status}</span>.`,
+        details: [
+          { label: 'Job Title', value: application.job.title },
+          { label: 'Company', value: application.job.company },
+          { label: 'Application Status', value: status.toUpperCase() },
+          { label: 'Update Date', value: new Date().toLocaleDateString() },
+        ],
+        footerNote: isAccepted
+          ? 'Congratulations! The recruiter or hiring team will contact you with further next steps.'
+          : 'Thank you for your interest in this opportunity. We encourage you to explore other open positions on our portal.',
+      });
+
+      const textSummary = `Your application status for the position of ${application.job.title} at ${application.job.company} has been updated to ${status}.`;
+
+      await sendEmail({
+        to: application.applicant.email,
+        subject: `[RAFFLES JOBS] Application Update for ${application.job.title.replace(/[\r\n]+/g, ' ')}`,
+        text: textSummary,
+        html: emailHtml,
+      });
     } catch (err) {
-      console.error('Failed to emit real-time notification to candidate:', err.message);
+      console.error('Failed to notify candidate about status change:', err.message);
     }
-
-    // Send email notification to applicant via Raffles Jobs Brevo SMTP
-    const { getRafflesEmailTemplate } = require('../utils/emailTemplate');
-    const isAccepted = status === 'accepted';
-    const emailHtml = getRafflesEmailTemplate({
-      title: `Application Update: ${application.job.title}`,
-      subtitle: `Raffles Jobs Recruitment Update`,
-      greeting: `Dear ${application.applicant.username},`,
-      bodyText: `Your application status for the position of <strong>${application.job.title}</strong> at <strong>${application.job.company}</strong> has been updated to <span style="font-weight:700; text-transform:uppercase; color:${isAccepted ? '#059669' : '#DC2626'}">${status}</span>.`,
-      details: [
-        { label: 'Job Title', value: application.job.title },
-        { label: 'Company', value: application.job.company },
-        { label: 'Application Status', value: status.toUpperCase() },
-        { label: 'Update Date', value: new Date().toLocaleDateString() },
-      ],
-      footerNote: isAccepted
-        ? 'Congratulations! The recruiter or hiring team will contact you with further next steps.'
-        : 'Thank you for your interest in this opportunity. We encourage you to explore other open positions on our portal.',
-    });
-
-    const textSummary = `Your application status for the position of ${application.job.title} at ${application.job.company} has been updated to ${status}.`;
-
-    await sendEmail({
-      to: application.applicant.email,
-      subject: `[RAFFLES JOBS] Application Update for ${application.job.title}`,
-      text: textSummary,
-      html: emailHtml,
-    });
 
     res.status(200).json({
       success: true,
@@ -285,8 +296,13 @@ exports.getDashboardStats = async (req, res, next) => {
 exports.getStudentDatabase = async (req, res, next) => {
   try {
     // 1. Get all Job Seekers
+    // Whitelist only the profile fields the employer directory renders.
+    // dob, gender, firebaseUid, savedJobs and terms bookkeeping must never
+    // leave the API for another user's account.
     const jobSeekers = await User.find({ role: 'Job Seeker' })
-      .select('-password -__v')
+      .select(
+        'username email avatar bio location contactNumber skills education experience projects certifications resume resumeOriginalName'
+      )
       .lean();
 
     // 2. Find jobs posted by this employer

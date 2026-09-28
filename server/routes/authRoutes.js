@@ -3,12 +3,12 @@ const router = express.Router();
 const { register, login, logout, getProfile, updateProfile, sendOtp, googleLogin, googleRegister } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 const upload = require('../middleware/multerMiddleware');
-const { sendOtpLimiter, loginLimiter, registerLimiter } = require('../middleware/rateLimitMiddleware');
+const { sendOtpLimiter, loginLimiter, registerLimiter, googleAuthLimiter } = require('../middleware/rateLimitMiddleware');
 
 router.post('/send-otp', sendOtpLimiter, sendOtp);
 
-router.post('/job-seeker/google/register', googleRegister);
-router.post('/job-seeker/google/login', googleLogin);
+router.post('/job-seeker/google/register', googleAuthLimiter, googleRegister);
+router.post('/job-seeker/google/login', googleAuthLimiter, googleLogin);
 
 router.post(
   '/register',

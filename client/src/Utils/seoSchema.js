@@ -267,20 +267,28 @@ export function parseSalary(text) {
   if (!value) return null;
 
   const hasCurrency = /(₹|\brs\b|\binr\b)/i.test(value);
+  // `\blpa\b` has to be listed explicitly: `p\.?\s*a\.?` can never start inside
+  // the word "LPA" because there is no word boundary before the "P".
   const periodMatch = value.match(
-    /\b(per\s*(month|annum|year|hour|day)|p\.?\s*a\.?|monthly|yearly|annually|hourly)\b/i
+    /\b(per\s*(month|annum|year|hour|day)|p\.?\s*a\.?|\blpa\b|monthly|yearly|annually|hourly)\b/i
   );
   if (!hasCurrency || !periodMatch) return null;
 
+  const lower = value.toLowerCase();
   const rawPeriod = periodMatch[0].toLowerCase();
   let unitText = 'MONTH';
   if (/hour/.test(rawPeriod)) unitText = 'HOUR';
   else if (/day/.test(rawPeriod)) unitText = 'DAY';
-  else if (/year|annum|p\.?\s*a\.?|annually|yearly/.test(rawPeriod)) unitText = 'YEAR';
+  else if (/year|annum|p\.?\s*a\.?|\blpa\b|annually|yearly/.test(rawPeriod)) unitText = 'YEAR';
   else if (/month|monthly/.test(rawPeriod)) unitText = 'MONTH';
 
+  // "1.2 LPA" means 1.2 lakh per year — publish the real amount, not 1.2.
+  let multiplier = 1;
+  if (/\bcrore|\bcr\b/.test(lower)) multiplier = 10000000;
+  else if (/\blpa\b|\blakh/.test(lower)) multiplier = 100000;
+
   const values = (value.match(/\d[\d,]*(?:\.\d+)?/g) || [])
-    .map((num) => parseFloat(num.replace(/,/g, '')))
+    .map((num) => parseFloat(num.replace(/,/g, '')) * multiplier)
     .filter((num) => !Number.isNaN(num));
   if (values.length === 0) return null;
 

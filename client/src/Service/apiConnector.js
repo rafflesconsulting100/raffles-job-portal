@@ -1,6 +1,9 @@
 import axios from "axios";
 
-export const axiosInstance = axios.create({});
+// withCredentials is required for the httpOnly session cookie the API sets;
+// without it cross-origin requests silently drop the cookie and only the
+// localStorage bearer token keeps the session alive.
+export const axiosInstance = axios.create({ withCredentials: true });
 
 export const apiConnector = (method, url, bodyData, headers, params) => {
   return axiosInstance({

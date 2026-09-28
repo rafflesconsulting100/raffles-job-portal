@@ -25,7 +25,7 @@ const { deriveJobSlug } = require('../server/utils/slug.js');
 
 const seoConfig = await import('./src/Utils/seoConfig.js');
 const seoSchema = await import('./src/Utils/seoSchema.js');
-const { formatBackendJob } = await import('./src/Utils/jobFormat.js');
+const { formatBackendJob, buildJobTitle, buildJobDescription, cleanJobDescription } = await import('./src/Utils/jobFormat.js');
 
 const {
   SITE_URL,
@@ -110,7 +110,7 @@ function applyHead(html, { title, description, canonical, noindex, jsonLd }) {
   }
 
   const scripts = (jsonLd || []).filter(Boolean).map((schema) =>
-    `<script type="application/ld+json">${serializeSchema(schema)}</script>`
+    `<script type="application/ld+json" data-seo-jsonld="true">${serializeSchema(schema)}</script>`
   );
   const block = scripts.join('\n    ');
   if (out.includes('<!-- seo:jsonld -->')) {
@@ -355,7 +355,9 @@ function renderCategoryBody(category, formattedJobs) {
               </div>
               <div class="mt-3">
                 <a href="${esc(jobPath(job.slug))}" class="text-lg font-bold text-[#1e293b] hover:text-[#2B2A8C]">${esc(job.title)}</a>
-                <p class="mt-2 text-sm leading-6 text-gray-600">${esc(job.description)}</p>
+                <p class="mt-2 line-clamp-3 text-sm leading-6 text-gray-600">${esc(
+                  cleanJobDescription(job.description) || job.description || ''
+                )}</p>
               </div>
               <div class="mt-4 flex flex-wrap items-center gap-3 border-t border-gray-100 pt-4 text-xs font-semibold text-gray-600">
                 ${
@@ -441,7 +443,9 @@ function renderJobBody(job) {
 
               <section class="rounded-2xl border border-gray-100 bg-white p-6 sm:p-8 shadow-xs">
                 <h2 class="text-lg font-extrabold text-[#0F172A]">Job Description</h2>
-                <p class="mt-3 whitespace-pre-line text-sm leading-7 text-gray-600">${esc(job.description)}</p>
+                <p class="mt-3 whitespace-pre-line text-sm leading-7 text-gray-600">${esc(
+                  cleanJobDescription(job.description) || job.description || ''
+                )}</p>
                 ${
                   Array.isArray(job.requirements) && job.requirements.length
                     ? `<h3 class="mt-6 text-base font-bold text-[#0F172A]">Requirements</h3>
@@ -778,7 +782,8 @@ export default function rafflesPrerenderPlugin() {
         // Do not generate pages for categories without active job inventory
         if (list.length === 0) continue;
         const indexable = list.length >= 2;
-        const body = renderCategoryBody(category, list.map((job) => formatBackendJob(job)));
+        const formatted = list.map((job) => formatBackendJob(job));
+        const body = renderCategoryBody(category, formatted);
         const jsonLd = [
           ...baseJsonLd,
           breadcrumbSchema([
@@ -786,21 +791,27 @@ export default function rafflesPrerenderPlugin() {
             { name: 'Jobs', path: '/jobs' },
             { name: category.label },
           ]),
-          jobItemListSchema(
-            list.map((job) => formatBackendJob(job)),
-            { name: `${category.label} on RafflesJobs`, url: absoluteUrl(route) }
-          ),
+          jobItemListSchema(formatted, {
+            name: `${category.label} on RafflesJobs`,
+            url: absoluteUrl(route),
+          }),
         ].filter(Boolean);
 
-        const html = withBody(
-          applyHead(template, {
-            title: `${category.label} – Apply Online | RafflesJobs`,
-            description: `Browse ${list.length > 0 ? list.length : 'current'} live ${category.label.toLowerCase()} on RafflesJobs. Filter openings by location and experience, then apply online for free.`,
-            canonical: canonicalUrl(route),
-            noindex: !indexable,
-            jsonLd,
-          }),
-          body
+        const html = withInlineScript(
+          withBody(
+            applyHead(template, {
+              title: `${category.label} – Apply Online | RafflesJobs`,
+              description: `Browse ${list.length > 0 ? list.length : 'current'} live ${category.label.toLowerCase()} on RafflesJobs. Filter openings by location and experience, then apply online for free.`,
+              canonical: canonicalUrl(route),
+              noindex: !indexable,
+              jsonLd,
+            }),
+            body
+          ),
+          `window.__RAFFLES_CATEGORY__=${toJson({
+            slug: category.slug,
+            jobs: formatted,
+          })};`
         );
 
         await writeFile(routeToFile(distDir, route), html);
@@ -833,11 +844,8 @@ export default function rafflesPrerenderPlugin() {
         const html = withInlineScript(
           withBody(
             applyHead(template, {
-              title: `${job.title} at ${job.company} – ${job.location} | RafflesJobs`,
-              description: `${String(job.description || '')
-                .replace(/\s+/g, ' ')
-                .trim()
-                .slice(0, 155)}`,
+              title: buildJobTitle(job),
+              description: buildJobDescription(job) || DEFAULT_DESCRIPTION,
               canonical: canonicalUrl(route),
               noindex: false,
               jsonLd,

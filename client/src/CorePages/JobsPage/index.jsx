@@ -24,7 +24,7 @@ import useSeo from '../../Utils/useSeo';
 export default function JobsPage() {
   useSeo({ path: '/jobs' });
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const urlJobId = searchParams.get('jobId');
 
   // Auth & User State from localStorage
@@ -235,6 +235,18 @@ export default function JobsPage() {
     setViewingJobDetails(job);
   };
 
+  // Closing the modal must also drop ?jobId= — otherwise the query param stays
+  // behind, the "sync from URL" effect never re-runs for that job, and sharing
+  // or re-clicking the link appears broken.
+  const closeJobDetails = () => {
+    setViewingJobDetails(null);
+    if (urlJobId) {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete('jobId');
+      setSearchParams(nextParams, { replace: true });
+    }
+  };
+
   // Trigger Apply Modal
   const handleApplyClick = (job) => {
     if (!token) {
@@ -255,7 +267,7 @@ export default function JobsPage() {
     }
 
     // Close details modal if open and open apply modal
-    setViewingJobDetails(null);
+    closeJobDetails();
     setApplyingJob(job);
     setCustomResumeFile(null);
     setUseProfileResume(true);
@@ -327,6 +339,18 @@ export default function JobsPage() {
 
   // Filter & Sort Logic
   const filteredJobs = useMemo(() => {
+    // Filter labels are display strings ("Full-Time", "Entry Level") while jobs
+    // store server enum values ("Full-time", "Mid Level (2-5 Yrs)"), so every
+    // comparison is case-insensitive and tolerant of extra detail text.
+    const norm = (value) => String(value || '').trim().toLowerCase();
+    const matchesOption = (jobValue, selectedValue) => {
+      const job = norm(jobValue);
+      const selected = norm(selectedValue);
+      if (!selected || selected === 'all') return true;
+      if (!job) return false;
+      return job === selected || job.includes(selected) || selected.includes(job);
+    };
+
     return allJobsList
       .filter((job) => {
         // Search term filter (title, company, skills, category)
@@ -348,15 +372,17 @@ export default function JobsPage() {
 
         // Experience level filter
         const matchExperience =
-          selectedExperience === 'All' || job.experienceLevel === selectedExperience;
+          selectedExperience === 'All' || matchesOption(job.experienceLevel, selectedExperience);
 
         // Work mode filter
         const matchWorkMode =
-          selectedWorkModes.length === 0 || selectedWorkModes.includes(job.workMode);
+          selectedWorkModes.length === 0 ||
+          selectedWorkModes.some((mode) => matchesOption(job.workMode, mode));
 
         // Job type filter
         const matchJobType =
-          selectedJobTypes.length === 0 || selectedJobTypes.includes(job.jobType);
+          selectedJobTypes.length === 0 ||
+          selectedJobTypes.some((type) => matchesOption(job.jobType, type));
 
         // Salary filter
         const matchSalary = job.salaryMin <= maxSalary;
@@ -522,7 +548,7 @@ export default function JobsPage() {
       {/* 3. FULL JOB DETAILS POPUP MODAL (When clicking any job card) */}
       <JobDetailModal
         job={viewingJobDetails}
-        onClose={() => setViewingJobDetails(null)}
+        onClose={closeJobDetails}
         isSaved={viewingJobDetails ? savedJobs.includes(viewingJobDetails._id || viewingJobDetails.id) : false}
         isApplied={viewingJobDetails ? appliedJobs.includes(viewingJobDetails._id || viewingJobDetails.id) : false}
         onSaveClick={toggleSaveJob}
