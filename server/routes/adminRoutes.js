@@ -15,6 +15,7 @@ const {
   updateUserRole,
   deleteUserByAdmin,
   getAllApplications,
+  getEmployerAuditLog,
 } = require('../controllers/adminController');
 const { updateApplicationStatus } = require('../controllers/applicationController');
 const { protect, restrictTo } = require('../middleware/authMiddleware');
@@ -28,6 +29,7 @@ router.use(protect, restrictTo('Admin'));
 
 router.get('/stats', getAdminStats);
 router.get('/employers', getAllEmployers);
+router.get('/employers/:id/audit', getEmployerAuditLog);
 router.put('/employers/:id/access', toggleEmployerAccess);
 router.put('/employers/:id/approve', approveEmployer);
 router.put('/employers/:id/reject', rejectEmployer);

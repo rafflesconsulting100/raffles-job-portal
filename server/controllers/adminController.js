@@ -1,11 +1,38 @@
-const jwt = require('jsonwebtoken');
+﻿const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
 const Job = require('../models/Job');
 const Application = require('../models/Application');
 const Notification = require('../models/Notification');
+const AuditLog = require('../models/AuditLog');
 const { sendNotificationToUser } = require('../utils/socket');
 const { getJwtSecret, getAdminPasskey, getAdminEmail } = require('../config/auth');
+
+// Helper: resolve canonical approval status (mirrors authController)
+const resolveApprovalStatus = (emp) => {
+  if (!emp || emp.role !== 'Employer') return 'approved';
+  const raw = (emp.approvalStatus || '').toLowerCase();
+  if (raw === 'rejected' || emp.status === 'Rejected') return 'rejected';
+  if (raw === 'pending'  || emp.status === 'Pending')  return 'pending';
+  if (raw === 'revoked'  || emp.status === 'Suspended') return 'revoked';
+  if (raw === 'approved' || (emp.status === 'Active' && emp.isApproved !== false && emp.employerAccess !== false)) return 'approved';
+  return 'pending';
+};
+
+// Helper: write an audit log entry (non-fatal — errors are swallowed)
+const writeAudit = async (targetUser, action, performedBy, description, meta = {}) => {
+  try {
+    await AuditLog.create({
+      targetUser,
+      performedBy: performedBy || null,
+      action,
+      description,
+      meta: new Map(Object.entries(meta).map(([k, v]) => [k, String(v)])),
+    });
+  } catch (err) {
+    console.error('[AuditLog] Failed to write audit entry:', err.message);
+  }
+};
 
 // Constant-time secret comparison: hashing first makes both sides fixed
 // length, so timingSafeEqual is safe to call with unequal-length inputs.
@@ -265,7 +292,7 @@ exports.getAllEmployers = async (req, res, next) => {
   }
 };
 
-// @desc    Grant, Approve, Reject or Revoke Employer Portal Access
+  // @desc    Grant, Approve, Reject or Revoke Employer Portal Access
 // @route   PUT /api/admin/employers/:id/access
 // @access  Private (Admin)
 exports.toggleEmployerAccess = async (req, res, next) => {
@@ -286,11 +313,10 @@ exports.toggleEmployerAccess = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Target user is not an Employer' });
     }
 
-    const previousStatus = employer.status;
+    const previousStatus = employer.approvalStatus || resolveApprovalStatus(employer);
     const rawApproval = (approvalStatus || '').toLowerCase();
 
     if (rawApproval === 'rejected' || status === 'Rejected') {
-      // Admin rejected the employer registration — account is kept, access denied
       employer.approvalStatus = 'rejected';
       employer.status = 'Rejected';
       employer.employerAccess = false;
@@ -323,17 +349,44 @@ exports.toggleEmployerAccess = async (req, res, next) => {
     }
 
     const isGranted = !!(employer.employerAccess && employer.isApproved && employer.status === 'Active');
+    const newStatus = employer.approvalStatus;
+    const hasMobile = !!(employer.mobileNumber || employer.contactNumber);
 
-    // Notify the employer whenever the approval state changes
-    if (employer.status !== previousStatus) {
+    // ── Audit log ──────────────────────────────────────────────────────────────
+    const adminId = req.user?._id || null;
+    let auditAction = 'employer_approved';
+    if (newStatus === 'rejected') auditAction = 'employer_rejected';
+    else if (newStatus === 'revoked') auditAction = 'employer_revoked';
+    else if (newStatus === 'approved' && previousStatus === 'revoked') auditAction = 'employer_regranted';
+    else if (newStatus === 'approved') auditAction = 'employer_approved';
+
+    await writeAudit(
+      employer._id,
+      auditAction,
+      adminId,
+      `Admin changed employer status from '${previousStatus}' to '${newStatus}'`,
+      { previousStatus, newStatus, adminId: String(adminId) }
+    );
+
+    // ── Notify the employer whenever the approval state changes ────────────────
+    if (previousStatus !== newStatus) {
       try {
+        let notificationMessage;
+        if (isGranted) {
+          notificationMessage = hasMobile
+            ? 'Your RafflesJobs employer account has been approved. You can now post jobs and manage applications.'
+            : 'Your RafflesJobs employer account has been approved. Please add your mobile number to complete your profile and start posting jobs.';
+        } else if (newStatus === 'rejected') {
+          notificationMessage = 'Your employer account registration was not approved. Please contact RafflesJobs support for assistance.';
+        } else if (newStatus === 'revoked') {
+          notificationMessage = 'Your employer access has been revoked. Please contact RafflesJobs support.';
+        } else {
+          notificationMessage = 'Your employer account status has been updated. Please contact RafflesJobs support if you have questions.';
+        }
+
         const notification = await Notification.create({
           recipient: employer._id,
-          message: isGranted
-            ? 'Your RafflesJobs employer account has been approved.'
-            : employer.status === 'Rejected'
-            ? 'Your employer account registration was not approved.'
-            : 'Your employer access has been revoked. Please contact RafflesJobs support.',
+          message: notificationMessage,
           type: 'status_change',
         });
         sendNotificationToUser(employer._id, notification);
@@ -348,7 +401,9 @@ exports.toggleEmployerAccess = async (req, res, next) => {
         ? 'Employer access updated to APPROVED & GRANTED'
         : employer.status === 'Rejected'
         ? 'Employer registration REJECTED'
-        : 'Employer access updated to SUSPENDED/REVOKED',
+        : employer.approvalStatus === 'revoked'
+        ? 'Employer access REVOKED'
+        : 'Employer access updated',
       employer: {
         _id: employer._id,
         username: employer.username,
@@ -357,22 +412,18 @@ exports.toggleEmployerAccess = async (req, res, next) => {
         role: employer.role,
         contactNumber: employer.contactNumber,
         mobileNumber: employer.mobileNumber || employer.contactNumber || '',
+        hasMobile: !!(employer.mobileNumber || employer.contactNumber),
         isApproved: employer.isApproved,
         employerAccess: employer.employerAccess,
         status: employer.status,
-        approvalStatus: employer.approvalStatus || (isGranted
-          ? 'approved'
-          : employer.status === 'Rejected'
-          ? 'rejected'
-          : employer.status === 'Pending'
-          ? 'pending'
-          : 'revoked'),
+        approvalStatus: employer.approvalStatus,
       },
     });
   } catch (error) {
     next(error);
   }
 };
+;
 
 
 // @desc    Get All Job Listings Portal-wide
@@ -603,3 +654,36 @@ exports.getAllApplications = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Get Audit Log for a specific employer
+// @route   GET /api/admin/employers/:id/audit
+// @access  Private (Admin)
+exports.getEmployerAuditLog = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const employer = await User.findById(id).select('username email role').lean();
+    if (!employer) {
+      return res.status(404).json({ success: false, message: 'Employer not found' });
+    }
+    if (employer.role !== 'Employer') {
+      return res.status(400).json({ success: false, message: 'Target user is not an Employer' });
+    }
+
+    const logs = await AuditLog.find({ targetUser: id })
+      .populate('performedBy', 'username email role')
+      .sort({ createdAt: -1 })
+      .limit(100)
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      employer: { _id: employer._id, username: employer.username, email: employer.email },
+      count: logs.length,
+      logs,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
