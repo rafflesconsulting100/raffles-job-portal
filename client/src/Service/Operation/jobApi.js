@@ -9,7 +9,9 @@ export const fetchAllJobs = async (params = {}) => {
     return response.data;
   } catch (error) {
     console.error("Failed to fetch jobs from backend:", error);
-    return { success: false, jobs: [] };
+    // `error: true` lets callers distinguish "fetch failed" from
+    // "fetched successfully but the list is empty".
+    return { success: false, jobs: [], error: true };
   }
 };
 

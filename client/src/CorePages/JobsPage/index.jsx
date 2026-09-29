@@ -90,10 +90,16 @@ export default function JobsPage() {
       setJobsError(false);
       try {
         const res = await fetchAllJobs();
-        let backendJobs = [];
-        if (res && res.success && Array.isArray(res.jobs)) {
-          backendJobs = res.jobs.map(formatBackendJob);
+        // fetchAllJobs never throws — a failed request comes back as
+        // { success: false, error: true }.
+        if (!res || res.error) {
+          setJobsError(true);
+          setAllJobsList([]);
+          return;
         }
+        const backendJobs = res.success && Array.isArray(res.jobs)
+          ? res.jobs.map(formatBackendJob)
+          : [];
         // Merge backend jobs first, then fallback to mockJobs ensuring unique IDs
         const combined = [...backendJobs, ...mockJobs];
         const uniqueJobs = combined.filter((job, index, self) =>
@@ -103,6 +109,7 @@ export default function JobsPage() {
       } catch (err) {
         console.error("Error loading jobs for JobsPage:", err);
         setJobsError(true);
+        setAllJobsList([]);
       } finally {
         setJobsLoading(false);
       }

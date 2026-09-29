@@ -43,6 +43,11 @@ axiosInstance.interceptors.response.use(
       !redirecting
     ) {
       redirecting = true;
+      // Reset if navigation doesn't happen (same-page assign, blocked nav)
+      // so later legitimate 401s can still redirect.
+      setTimeout(() => {
+        redirecting = false;
+      }, 3000);
       clearClientSession();
       sessionStorage.setItem("sessionExpired", "1");
       window.location.assign("/login");
