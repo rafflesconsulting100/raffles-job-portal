@@ -634,25 +634,25 @@ export default function EmployerDashboard() {
     !isEmployerRestricted &&
     (approval === "rejected" || user?.status === "Rejected");
 
-  // 3. PENDING ADMIN APPROVAL
+  // 3. APPROVED — only treat as approved when the server explicitly says so
   const isApprovedEmployer =
     !isEmployerRestricted &&
     !isEmployerRejected &&
-    (approval === "approved" ||
-      (user?.isApproved !== false &&
-        user?.employerAccess !== false &&
-        user?.status !== "Suspended"));
+    approval === "approved";
 
   const isEmployerPending =
     !isEmployerRestricted && !isEmployerRejected && !isApprovedEmployer;
 
-  // 4. APPROVED + MOBILE MISSING OR PENDING CONFIRMATION
+  // 4. APPROVED + MOBILE MISSING
   const hasMobile =
     (typeof user?.mobileNumber === 'string' && user.mobileNumber.trim() !== '') ||
     (typeof user?.contactNumber === 'string' && user.contactNumber.trim() !== '');
 
+  // requiresMobileNumber is true only when approved AND no mobile in DB.
+  // mobileSavedPendingContinue is the "success + continue" UI state shown
+  // AFTER the number is saved — it must NOT block the dashboard.
   const requiresMobileNumber =
-    isApprovedEmployer && (user?.requiresMobileNumber === true || !hasMobile || mobileSavedPendingContinue);
+    isApprovedEmployer && !hasMobile && !mobileSavedPendingContinue;
 
   if (isEmployerRestricted) {
     return (
