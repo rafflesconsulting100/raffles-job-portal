@@ -532,7 +532,7 @@ exports.getProfile = async (req, res, next) => {
       await User.updateOne({ _id: user._id }, { $set: { approvalStatus: resolvedApproval } });
     }
 
-    res.status(200).json({ success: true, user: userObj });
+    res.status(200).json({ success: true, user: userObj, employer: userObj });
   } catch (error) {
     next(error);
   }
@@ -582,8 +582,18 @@ exports.updateProfile = async (req, res, next) => {
       user.username = username.trim();
     }
 
-    if (mobileNumber !== undefined) {
-      const rawMobile = typeof mobileNumber === 'string' ? mobileNumber.trim() : '';
+    const incomingMobile = mobileNumber !== undefined
+      ? mobileNumber
+      : req.body.mobile !== undefined
+      ? req.body.mobile
+      : req.body.phone !== undefined
+      ? req.body.phone
+      : req.body.phoneNumber !== undefined
+      ? req.body.phoneNumber
+      : contactNumber;
+
+    if (incomingMobile !== undefined && incomingMobile !== null) {
+      const rawMobile = typeof incomingMobile === 'string' ? incomingMobile.trim() : String(incomingMobile).trim();
       if (!rawMobile) {
         return res.status(400).json({ success: false, message: 'Mobile number cannot be empty' });
       }
@@ -606,30 +616,6 @@ exports.updateProfile = async (req, res, next) => {
       }
       user.mobileNumber = normalizedMobile;
       user.contactNumber = normalizedMobile;
-    } else if (contactNumber !== undefined) {
-      const rawContact = typeof contactNumber === 'string' ? contactNumber.trim() : '';
-      if (!rawContact) {
-        return res.status(400).json({ success: false, message: 'Contact number cannot be empty' });
-      }
-      const normalizedContact = normalizeMobileNumber(rawContact);
-      if (!normalizedContact) {
-        return res.status(400).json({
-          success: false,
-          message: 'Please provide a valid mobile number (10-digit mobile number or +91XXXXXXXXXX).',
-        });
-      }
-      const existingContact = await User.findOne({
-        _id: { $ne: user._id },
-        $or: [
-          { contactNumber: { $in: mobileSearchValues(normalizedContact) } },
-          { mobileNumber: { $in: mobileSearchValues(normalizedContact) } },
-        ],
-      });
-      if (existingContact) {
-        return res.status(400).json({ success: false, message: 'This mobile number is already registered.' });
-      }
-      user.contactNumber = normalizedContact;
-      user.mobileNumber = normalizedContact;
     }
 
     if (bio !== undefined) user.bio = bio;
@@ -696,6 +682,15 @@ exports.updateProfile = async (req, res, next) => {
 
     await user.save();
 
+    // Verify the save actually persisted the mobile number by re-fetching from database
+    const verifiedUser = await User.findById(user._id).select('mobileNumber contactNumber').lean();
+    if (!verifiedUser || (!verifiedUser.mobileNumber && !verifiedUser.contactNumber)) {
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Mobile number was not persisted to database. Please try again.' 
+      });
+    }
+
     const userObj = user.toObject();
     delete userObj.password;
 
@@ -722,6 +717,7 @@ exports.updateProfile = async (req, res, next) => {
       success: true,
       message: 'Profile updated successfully',
       user: userObj,
+      employer: userObj,
     });
   } catch (error) {
     next(error);

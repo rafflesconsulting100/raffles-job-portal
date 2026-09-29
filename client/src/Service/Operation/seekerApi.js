@@ -67,10 +67,15 @@ export const fetchUserProfile = async (token) => {
   }
 };
 
-// Update user profile (supports text & multipart form-data for resume/avatar)
-export const updateUserProfile = async (formData, token) => {
+// Update user profile (supports JSON objects & multipart form-data for resume/avatar)
+export const updateUserProfile = async (profileData, token) => {
   try {
-    const response = await apiConnector("PUT", UPDATE_PROFILE_API, formData, getAuthHeaders(token));
+    const isFormData = typeof FormData !== 'undefined' && profileData instanceof FormData;
+    const authHeaders = getAuthHeaders(token) || {};
+    const headers = isFormData
+      ? authHeaders
+      : { ...authHeaders, 'Content-Type': 'application/json' };
+    const response = await apiConnector("PUT", UPDATE_PROFILE_API, profileData, headers);
     return response.data;
   } catch (error) {
     throw new Error(error.response?.data?.message || "Failed to update profile details", { cause: error });

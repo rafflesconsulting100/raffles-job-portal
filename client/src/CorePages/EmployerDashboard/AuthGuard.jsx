@@ -1,13 +1,23 @@
 import React, { useState } from "react";
 import { Lock, ChevronRight, ShieldAlert, Clock, Mail, RefreshCw, CheckCircle2, XCircle, Phone, Save, LogOut } from "lucide-react";
 
-export default function AuthGuard({ navigate, isPending, isRejected, isRestricted, requiresMobileNumber, onRefreshStatus, onSaveMobile, onLogout }) {
-  const [checking, setChecking] = useState(false);
+export default function AuthGuard({
+  navigate,
+  isPending,
+  isRejected,
+  isRestricted,
+  requiresMobileNumber,
+  isMobileSavedSuccess,
+  onSaveMobile,
+  onContinueToDashboard,
+  onRefreshStatus,
+  onLogout,
+}) {
   const [mobileNumber, setMobileNumber] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-
-  const [savedSuccess, setSavedSuccess] = useState(false);
+  const [continuing, setContinuing] = useState(false);
+  const [checking, setChecking] = useState(false);
 
   const handleCheckStatus = async () => {
     if (onRefreshStatus) {
@@ -22,6 +32,21 @@ export default function AuthGuard({ navigate, isPending, isRejected, isRestricte
     }
   };
 
+  const handleContinue = async () => {
+    setContinuing(true);
+    try {
+      if (onContinueToDashboard) {
+        await onContinueToDashboard();
+      } else if (onRefreshStatus) {
+        await onRefreshStatus();
+      } else {
+        window.location.reload();
+      }
+    } finally {
+      setContinuing(false);
+    }
+  };
+
   const handleSaveMobile = async (e) => {
     e.preventDefault();
     const cleaned = mobileNumber.replace(/\D/g, '');
@@ -33,16 +58,15 @@ export default function AuthGuard({ navigate, isPending, isRejected, isRestricte
     setError("");
     try {
       await onSaveMobile(cleaned);
-      setSavedSuccess(true);
     } catch (err) {
-      setError(err.message || "Unable to save mobile number. Please try again.");
+      setError(err.message || "Unable to save your mobile number. Please try again.");
     } finally {
       setSaving(false);
     }
   };
 
   if (requiresMobileNumber) {
-    if (savedSuccess) {
+    if (isMobileSavedSuccess) {
       return (
         <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col items-center justify-center p-6 pt-24 font-sans">
           <div className="max-w-md w-full bg-white border border-emerald-200 rounded-3xl p-8 text-center shadow-xl animate-fadeIn">
@@ -63,10 +87,20 @@ export default function AuthGuard({ navigate, isPending, isRejected, isRestricte
             </p>
             <button
               type="button"
-              onClick={handleCheckStatus}
-              className="w-full bg-[#2B2A8C] hover:bg-[#1E1D66] text-white font-bold py-3.5 rounded-xl transition shadow-md flex items-center justify-center gap-2 text-sm cursor-pointer"
+              disabled={continuing}
+              onClick={handleContinue}
+              className="w-full bg-[#2B2A8C] hover:bg-[#1E1D66] text-white font-bold py-3.5 rounded-xl transition shadow-md flex items-center justify-center gap-2 text-sm cursor-pointer disabled:opacity-75"
             >
-              Continue to Employer Dashboard <ChevronRight className="w-4 h-4" />
+              {continuing ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Verifying Account...
+                </>
+              ) : (
+                <>
+                  Continue to Employer Dashboard <ChevronRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </div>
         </div>

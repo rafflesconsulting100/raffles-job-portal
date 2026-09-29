@@ -49,6 +49,7 @@ export default function EmployerDashboard() {
       return null;
     }
   });
+  const [mobileSavedPendingContinue, setMobileSavedPendingContinue] = useState(false);
   // Stats state
   const [stats, setStats] = useState({
     totalJobs: 0,
@@ -498,24 +499,97 @@ export default function EmployerDashboard() {
     }
   };
 
-  // Save mobile number for profile completion
+// Save mobile number for profile completion
   const handleSaveMobile = async (mobileNumber) => {
     if (!token) throw new Error("Not authenticated");
+    const rawDigits = String(mobileNumber || "").replace(/\D/g, "");
+    if (!rawDigits || rawDigits.length < 10) {
+      throw new Error("Please enter a valid 10-digit mobile number");
+    }
+    const normalized = rawDigits.length === 10
+      ? `+91${rawDigits}`
+      : rawDigits.startsWith("91") && rawDigits.length === 12
+        ? `+${rawDigits}`
+        : `+91${rawDigits.slice(-10)}`;
+
     try {
-      const formData = new FormData();
-      formData.append("mobileNumber", mobileNumber);
-      const res = await updateUserProfile(formData, token);
-      if (res.success && res.user) {
-        localStorage.setItem("user", JSON.stringify(res.user));
-        setUser(res.user);
-        window.dispatchEvent(new Event("auth-change"));
-        showSuccess("Mobile number added successfully!");
-        loadDashboardData(token);
-      } else {
-        throw new Error(res.message || "Failed to save mobile number");
+      const res = await updateUserProfile({ mobileNumber: normalized }, token);
+      const updatedUser = res?.employer || res?.user;
+      if (!res?.success || !updatedUser || !updatedUser.mobileNumber) {
+        throw new Error(res?.message || "Unable to save mobile number. Please try again.");
       }
+
+      // Re-fetch current employer profile to verify MongoDB persistence
+      // IMPORTANT: Do NOT fall back to updatedUser - we must verify the data is actually in MongoDB
+      const freshRes = await getProfile(token);
+      const freshUser = freshRes?.user || freshRes?.employer;
+      if (!freshUser?.mobileNumber) {
+        throw new Error("Mobile number was not persisted. Please try again.");
+      }
+
+      localStorage.setItem("user", JSON.stringify(freshUser));
+      setUser(freshUser);
+      window.dispatchEvent(new Event("auth-change"));
+      setMobileSavedPendingContinue(true);
+      showSuccess("Your mobile number has been added successfully.");
+      return freshUser;
     } catch (err) {
-      throw Object.assign(new Error(err.message || "Unable to save mobile number. Please try again."), { cause: err });
+      throw Object.assign(
+        new Error(err.message || "Unable to save your mobile number. Please try again."),
+        { cause: err }
+      );
+    }
+  };
+
+  const handleContinueToDashboard = async () => {
+    if (!token) return;
+    try {
+      const res = await getProfile(token);
+      const fresh = res?.user || res?.employer;
+      if (!fresh) {
+        showError("Could not verify status. Please try again later.");
+        return;
+      }
+      const appr = (fresh.approvalStatus || "").toLowerCase();
+      const isApproved =
+        appr === "approved" ||
+        (fresh.status === "Active" &&
+          fresh.isApproved !== false &&
+          fresh.employerAccess !== false &&
+          fresh.status !== "Suspended" &&
+          fresh.status !== "Pending");
+
+      if (!isApproved) {
+        showError("Your employer account is pending Admin approval.");
+        setMobileSavedPendingContinue(false);
+        return;
+      }
+
+      const hasMob =
+        (typeof fresh.mobileNumber === 'string' && fresh.mobileNumber.trim() !== '') ||
+        (typeof fresh.contactNumber === 'string' && fresh.contactNumber.trim() !== '');
+
+      if (!hasMob) {
+        showError("Mobile number is required. Please provide your mobile number.");
+        setMobileSavedPendingContinue(false);
+        return;
+      }
+
+      // Verify the mobile number is actually persisted in MongoDB by checking it's not just a frontend state
+      if (fresh.mobileNumber === undefined && fresh.contactNumber === undefined) {
+        showError("Mobile number not found in profile. Please add your mobile number again.");
+        setMobileSavedPendingContinue(false);
+        return;
+      }
+
+      localStorage.setItem("user", JSON.stringify(fresh));
+      setUser(fresh);
+      window.dispatchEvent(new Event("auth-change"));
+      setMobileSavedPendingContinue(false);
+      showSuccess("Welcome to your Employer Dashboard!");
+      loadDashboardData(token);
+    } catch {
+      showError("Could not verify status. Please try again later.");
     }
   };
 
@@ -572,13 +646,13 @@ export default function EmployerDashboard() {
   const isEmployerPending =
     !isEmployerRestricted && !isEmployerRejected && !isApprovedEmployer;
 
-  // 4. APPROVED + MOBILE MISSING
+  // 4. APPROVED + MOBILE MISSING OR PENDING CONFIRMATION
   const hasMobile =
     (typeof user?.mobileNumber === 'string' && user.mobileNumber.trim() !== '') ||
     (typeof user?.contactNumber === 'string' && user.contactNumber.trim() !== '');
 
   const requiresMobileNumber =
-    isApprovedEmployer && (user?.requiresMobileNumber === true || !hasMobile);
+    isApprovedEmployer && (user?.requiresMobileNumber === true || !hasMobile || mobileSavedPendingContinue);
 
   if (isEmployerRestricted) {
     return (
@@ -618,7 +692,9 @@ export default function EmployerDashboard() {
       <AuthGuard
         navigate={navigate}
         requiresMobileNumber={true}
+        isMobileSavedSuccess={mobileSavedPendingContinue}
         onSaveMobile={handleSaveMobile}
+        onContinueToDashboard={handleContinueToDashboard}
         onRefreshStatus={handleRefreshStatus}
         onLogout={handleLogout}
       />
