@@ -69,12 +69,14 @@ export function buildJobDescription(job) {
 }
 
 export function parseSalaryRange(text) {
-  const FALLBACK = { min: 1000000, max: 2000000 };
+  // Return null when no numbers are found so callers can distinguish
+  // "no salary info" from a real range — a fabricated 10-20 LPA default
+  // would corrupt salary filters and sorting.
   const raw = String(text || '').trim();
-  if (!raw) return FALLBACK;
+  if (!raw) return null;
 
   const numbers = raw.match(/\d[\d,]*(?:\.\d+)?/g);
-  if (!numbers || numbers.length === 0) return FALLBACK;
+  if (!numbers || numbers.length === 0) return null;
 
   const lower = raw.toLowerCase();
   const toNumber = (value) => parseFloat(value.replace(/,/g, ''));
@@ -87,7 +89,7 @@ export function parseSalaryRange(text) {
   const min = toNumber(numbers[0]) * multiplier;
   const max = numbers.length > 1 ? toNumber(numbers[1]) * multiplier : min;
 
-  if (Number.isNaN(min)) return FALLBACK;
+  if (Number.isNaN(min)) return null;
 
   return {
     min: max > 0 && min > max ? max : min,
@@ -96,7 +98,9 @@ export function parseSalaryRange(text) {
 }
 
 export const formatBackendJob = (job) => {
-  const { min: salaryMin, max: salaryMax } = parseSalaryRange(job.salary);
+  const range = parseSalaryRange(job.salary);
+  const salaryMin = range ? range.min : 0;
+  const salaryMax = range ? range.max : 0;
 
   const createdDate = new Date(job.createdAt || Date.now());
   const diffDays = Math.floor((Date.now() - createdDate.getTime()) / (1000 * 60 * 60 * 24));

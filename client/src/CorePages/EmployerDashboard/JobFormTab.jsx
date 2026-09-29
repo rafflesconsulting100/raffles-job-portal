@@ -46,6 +46,11 @@ export default function JobFormTab({
   const [langOpen, setLangOpen] = useState(false);
   const [customLang, setCustomLang] = useState("");
 
+  // Shared word count for the description field (empty text is 0 words, not 1).
+  const descWordCount = jobForm.description.trim()
+    ? jobForm.description.trim().split(/\s+/).length
+    : 0;
+
   const addCustomLanguage = () => {
     const value = customLang.trim();
     if (!value) return;
@@ -562,17 +567,21 @@ export default function JobFormTab({
     placeholder="Provide an overview of the role, team responsibilities, and expected outcomes..."
     value={jobForm.description}
     onChange={(e) => {
-      const text = e.target.value;
-      const wordCount = text.trim().split(/\s+/).length;
-      if (wordCount <= 150) {
-        setJobForm({ ...jobForm, description: text });
-      }
+      // Always store the text: the old code silently discarded keystrokes once
+      // the value hit 150 words, so the field looked frozen and jobs already
+      // longer than 150 words could never be edited at all.
+      setJobForm({ ...jobForm, description: e.target.value });
     }}
-    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-900 outline-none focus:bg-white focus:border-[#2B2A8C] focus:ring-2 focus:ring-[#2B2A8C]/10 transition leading-relaxed"
+    className={`w-full bg-slate-50 border rounded-xl p-4 text-sm text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-[#2B2A8C]/10 transition leading-relaxed ${
+      descWordCount > 150
+        ? "border-rose-400 focus:border-rose-500 focus:ring-rose-100"
+        : "border-slate-200 focus:border-[#2B2A8C]"
+    }`}
   />
-  <p className="text-xs text-slate-500 mt-1">
-    Word count: {jobForm.description.trim().split(/\s+/).length} / 150
-    {jobForm.description.trim().split(/\s+/).length < 100 && " (minimum 100 words required)"}
+  <p className={`text-xs mt-1 ${descWordCount > 150 ? "text-rose-500 font-semibold" : "text-slate-500"}`}>
+    Word count: {descWordCount} / 150
+    {descWordCount > 150 && " — please cut this down to 150 words before posting"}
+    {descWordCount > 0 && descWordCount < 100 && " (minimum 100 words required)"}
   </p>
 </div>
 

@@ -20,6 +20,7 @@ export default function HowItWorksSection() {
   const [isPaused, setIsPaused] = useState(false);
 
   // Auto progression animation (step 1 -> step 2 -> step 3)
+  // Reset the timer when the user manually clicks a step
   useEffect(() => {
     if (isPaused) return;
 
@@ -28,7 +29,7 @@ export default function HowItWorksSection() {
     }, 3500);
 
     return () => clearInterval(timer);
-  }, [isPaused]);
+  }, [isPaused, activeStep]);
 
   const steps = [
     {

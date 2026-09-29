@@ -55,7 +55,7 @@ export default function AdminJobDetailModal({
               </div>
               <p className="text-xs text-slate-300 font-medium flex items-center gap-1.5 mt-0.5">
                 <Building2 size={13} className="text-blue-400" />
-                {job.company || "Company"} • Posted{" "}
+                {job.company || "—"} • Posted{" "}
                 {job.createdAt
                   ? new Date(job.createdAt).toLocaleDateString("en-US", {
                       month: "short",
@@ -143,7 +143,7 @@ export default function AdminJobDetailModal({
               </span>
               <p className="font-bold text-slate-900 text-xs flex items-center gap-1 truncate">
                 <MapPin size={13} className="text-slate-500 shrink-0" />
-                {job.location || "Remote / India"}
+                {job.location || "Not specified"}
               </p>
             </div>
 
@@ -153,7 +153,7 @@ export default function AdminJobDetailModal({
               </span>
               <p className="font-bold text-slate-900 text-xs flex items-center gap-1 truncate">
                 <IndianRupee size={13} className="text-slate-500 shrink-0" />
-                {job.salary || "Competitive"}
+                {job.salary || "Not specified"}
               </p>
             </div>
 
@@ -163,7 +163,7 @@ export default function AdminJobDetailModal({
               </span>
               <p className="font-bold text-slate-900 text-xs flex items-center gap-1 truncate">
                 <Briefcase size={13} className="text-slate-500 shrink-0" />
-                {job.experienceLevel || job.experienceYears || "0-3 Yrs"}
+                {job.experienceLevel || job.experienceYears || "Not specified"}
               </p>
             </div>
 
@@ -215,15 +215,15 @@ export default function AdminJobDetailModal({
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs">
               <div>
                 <span className="text-slate-400 block text-[10px] uppercase font-bold">Category</span>
-                <span className="font-bold text-slate-800">{job.category || "Software & Tech"}</span>
+                <span className="font-bold text-slate-800">{job.category || "Not specified"}</span>
               </div>
               <div>
                 <span className="text-slate-400 block text-[10px] uppercase font-bold">Job Type</span>
-                <span className="font-bold text-slate-800">{job.jobType || "Full-time"}</span>
+                <span className="font-bold text-slate-800">{job.jobType || "Not specified"}</span>
               </div>
               <div>
                 <span className="text-slate-400 block text-[10px] uppercase font-bold">Work Mode</span>
-                <span className="font-bold text-slate-800">{job.workMode || "On-site"}</span>
+                <span className="font-bold text-slate-800">{job.workMode || "Not specified"}</span>
               </div>
               {job.minEducation && (
                 <div className="col-span-2 sm:col-span-3 border-t border-slate-200 pt-2 flex items-center gap-1.5">

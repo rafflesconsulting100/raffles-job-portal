@@ -85,6 +85,7 @@ app.use('/api/jobs', require('./routes/jobRoutes'));
 app.use('/api/applications', require('./routes/applicationRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/contact', require('./routes/contactRoutes'));
 
 // Public SEO endpoints
 app.get('/robots.txt', (req, res) => {
@@ -95,7 +96,10 @@ app.get('/robots.txt', (req, res) => {
 app.get('/sitemap.xml', async (req, res, next) => {
   try {
     const Job = require('./models/Job');
-    const jobs = await Job.find({ status: 'active' }).select('slug updatedAt createdAt').lean();
+    const { notExpiredCondition } = require('./utils/jobExpiry');
+    const jobs = await Job.find({ status: 'active', ...notExpiredCondition() })
+      .select('slug updatedAt createdAt')
+      .lean();
 
     const staticRoutes = [
       'https://www.rafflesjobs.com/',
@@ -135,6 +139,16 @@ app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the Raffles Job Portal ' });
 });
 
+// Unknown API paths fell through to Express' default final handler, which
+// answers `Cannot GET ...` as text/html — so every client that reads
+// `error.response.data.message` showed a meaningless "connection error".
+app.use('/api', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `API endpoint not found: ${req.method} ${req.originalUrl}`,
+  });
+});
+
 // Error handling middleware (Must be last)
 app.use(errorHandler);
 
@@ -157,10 +171,18 @@ server.listen(PORT, () => {
 // Registered after the server is created so `server` is never in its TDZ.
 process.on('unhandledRejection', (err) => {
   console.error(`Unhandled Rejection: ${err && err.message ? err.message : err}`);
-  server.close(() => process.exit(1));
+  if (server) {
+    server.close(() => process.exit(1));
+  } else {
+    process.exit(1);
+  }
 });
 
 process.on('uncaughtException', (err) => {
   console.error(`Uncaught Exception: ${err && err.message ? err.message : err}`);
-  server.close(() => process.exit(1));
+  if (server) {
+    server.close(() => process.exit(1));
+  } else {
+    process.exit(1);
+  }
 });

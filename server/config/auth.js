@@ -50,7 +50,15 @@ const getAdminEmail = () => {
 
 const getAdminPasskey = () => {
   const key = process.env.ADMIN_PASSKEY;
-  if (key && key.trim()) return key;
+  if (key && key.trim()) {
+    // The sample value is committed to the repository, so it is public. In
+    // production it must not authenticate anyone (mirrors the JWT_SECRET
+    // rejection above) — fall through to the 503 path instead.
+    if (isProduction() && key === LEGACY_ADMIN_PASSKEY) {
+      return null;
+    }
+    return key;
+  }
   if (isProduction()) return null;
   console.warn('[auth] ADMIN_PASSKEY is not set — using the development-only admin passkey.');
   return LEGACY_ADMIN_PASSKEY;
@@ -58,9 +66,9 @@ const getAdminPasskey = () => {
 
 const warnWeakAdminPasskey = () => {
   if (!isProduction()) return;
-  if (process.env.ADMIN_PASSKEY === LEGACY_ADMIN_PASSKEY) {
+  if (!process.env.ADMIN_PASSKEY || process.env.ADMIN_PASSKEY === LEGACY_ADMIN_PASSKEY) {
     console.warn(
-      '[auth] ADMIN_PASSKEY still holds the legacy sample value. Rotate it before exposing this instance.'
+      '[auth] ADMIN_PASSKEY is missing or still the committed sample value. Admin login is disabled until a unique passkey is set.'
     );
   }
 };

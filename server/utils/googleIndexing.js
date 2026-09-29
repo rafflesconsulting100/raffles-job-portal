@@ -75,6 +75,7 @@ async function getAccessToken(serviceAccount) {
       grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
       assertion: buildAssertionToken(serviceAccount),
     }),
+    signal: AbortSignal.timeout(5000),
   });
 
   if (!response.ok) {
@@ -107,6 +108,7 @@ async function notifyGoogle(url, urlUpdateType = 'URL_UPDATED') {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ url, urlUpdateType }),
+      signal: AbortSignal.timeout(5000),
     });
 
     if (!response.ok) {

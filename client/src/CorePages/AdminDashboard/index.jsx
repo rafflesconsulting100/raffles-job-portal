@@ -12,6 +12,7 @@ import {
   deleteUserByAdmin,
 } from "../../Service/Operation/adminApi";
 import { showSuccess, showError } from "../../Utils/toast";
+import { getToken } from "../../Utils/memoryStore";
 
 import OverviewTab from "./OverviewTab";
 import EmployersTab from "./EmployersTab";
@@ -36,7 +37,7 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();  const activeTab = searchParams.get("tab") || "overview";
 
-  const [token] = useState(() => localStorage.getItem("token") || "");
+  const [token] = useState(() => getToken());
   const [user] = useState(() => {
     try {
       const u = localStorage.getItem("user");
@@ -144,7 +145,7 @@ export default function AdminDashboard() {
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, user]);
+  }, [token, user?.role]);
 
   const handleTabSwitch = (tab) => {
     setSearchParams({ tab });
@@ -193,8 +194,11 @@ export default function AdminDashboard() {
   };
 
   // Delete Job
+  const [deletingJob, setDeletingJob] = useState(false);
   const handleDeleteJob = async (jobId, jobTitle) => {
+    if (deletingJob) return;
     if (!window.confirm(`Are you sure you want to delete job "${jobTitle}"?`)) return;
+    setDeletingJob(true);
     try {
       const res = await deleteAdminJob(jobId, token);
       if (res.success) {
@@ -204,6 +208,8 @@ export default function AdminDashboard() {
       }
     } catch (err) {
       showError(err.message || "Failed to delete job");
+    } finally {
+      setDeletingJob(false);
     }
   };
 

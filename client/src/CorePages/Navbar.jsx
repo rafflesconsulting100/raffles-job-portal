@@ -15,7 +15,9 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { showSuccess } from '../Utils/toast';
-import { clearSessionMemory } from '../Utils/memoryStore';
+import { clearClientSession } from '../Service/apiConnector';
+import { logout } from '../Service/Operation/authApi';
+import { getToken } from '../Utils/memoryStore';
 import lightLogo from "../assets/rafflelogo-light.png";
 import darkLogo from "../assets/rafflelogo-dark.png";
 
@@ -98,13 +100,18 @@ export default function Navbar() {
     return () => clearTimeout(timer);
   }, [location.pathname, syncUser]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    clearSessionMemory();
+  const handleLogout = async () => {
+    // Clear the server session first (httpOnly cookie) — clearing only
+    // localStorage left the cookie valid, so every optionalAuth request kept
+    // acting as the previous account after "logout".
+    try {
+      await logout(getToken());
+    } catch {
+      // Best-effort: local session is cleared regardless
+    }
+    clearClientSession();
     setUser(null);
     setDropdownOpen(false);
-    window.dispatchEvent(new Event("auth-change"));
     navigate("/login");
     showSuccess('Logged out Successfully');
   };

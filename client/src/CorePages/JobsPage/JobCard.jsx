@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Building,
@@ -27,6 +27,7 @@ export default function JobCard({
   onApplyClick
 }) {
   const jobId = job._id || job.id;
+  const [imgError, setImgError] = useState(false);
   // Public job page URL (used for crawlable links and sharing).
   const jobUrlPath = job.slug ? jobPath(job.slug) : null;
   const categoryUrlPath = job.category ? categoryPath(job.category) : null;
@@ -81,17 +82,14 @@ export default function JobCard({
           <div className="flex items-center gap-3.5 min-w-0">
             {/* Company Logo / Gradient Avatar */}
             <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden bg-linear-to-br ${job.logoBg || 'from-blue-600 via-indigo-600 to-purple-700'} text-white flex items-center justify-center font-extrabold text-base sm:text-lg shadow-md shrink-0 group-hover:scale-105 transition-transform duration-300 border border-slate-100`}>
-              {job.companyLogo ? (
+              {job.companyLogo && !imgError ? (
                 <img
                   src={job.companyLogo}
                   alt={job.company}
                   className="w-full h-full object-cover bg-white"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                  }}
+                  onError={() => setImgError(true)}
                 />
-              ) : null}
-              {(!job.companyLogo) && (
+              ) : (
                 <span>{job.company ? job.company.substring(0, 2).toUpperCase() : 'JP'}</span>
               )}
             </div>
@@ -170,7 +168,7 @@ export default function JobCard({
           </span>
           <span className="flex items-center gap-1 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100">
             <IndianRupee className="w-3.5 h-3.5 text-emerald-600" />
-            {job.salary ? job.salary.split(' ')[0] : 'Competitive'}
+            {job.salary || 'Not specified'}
           </span>
           <span className="flex items-center gap-1 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100">
             <MapPin className="w-3.5 h-3.5 text-rose-500" />

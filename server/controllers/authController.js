@@ -10,14 +10,28 @@ const { getJwtSecret } = require('../config/auth');
 
 // Create token helper
 const sendTokenResponse = (user, statusCode, res) => {
+  const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
   const token = jwt.sign(
     { id: user._id },
     getJwtSecret(),
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    { expiresIn }
   );
 
+  // Parse the JWT expiry so the cookie never outlives the token.
+  // Supports "7d", "24h", "30m", "60" (seconds) — the formats jsonwebtoken accepts.
+  const match = expiresIn.match(/^(\d+)([dhm]|)$/);
+  let cookieMs = 7 * 24 * 60 * 60 * 1000; // default 7 days
+  if (match) {
+    const value = parseInt(match[1], 10);
+    const unit = match[2];
+    if (unit === 'd') cookieMs = value * 24 * 60 * 60 * 1000;
+    else if (unit === 'h') cookieMs = value * 60 * 60 * 1000;
+    else if (unit === 'm') cookieMs = value * 60 * 1000;
+    else cookieMs = value * 1000; // seconds
+  }
+
   const cookieOptions = {
-    expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+    expires: new Date(Date.now() + cookieMs),
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax', // Lax is helpful for local cross-port dev
@@ -349,8 +363,11 @@ exports.register = async (req, res, next) => {
     if (otpRecord.otp !== otp) {
       return res.status(400).json({ success: false, message: 'Invalid OTP' });
     }
-    // Delete verified OTP
-    await OTP.deleteMany({ email });
+
+    // NOTE: the OTP is only burned after every remaining validation passed
+    // and the account actually exists. Deleting it first meant a later 400
+    // (duplicate email/mobile, missing username) forced the user to request a
+    // fresh OTP and restart the whole registration.
 
     // Check if user exists
     const userExists = await User.findOne({ email: email.toLowerCase().trim() });
@@ -388,6 +405,9 @@ exports.register = async (req, res, next) => {
       termsVersion: termsAccepted ? '1.0' : '',
     });
 
+    // Consume the verified OTP only once the account exists.
+    await OTP.deleteMany({ email });
+
     sendTokenResponse(user, 201, res);
   } catch (error) {
     next(error);
@@ -401,7 +421,9 @@ exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
+    // `!email || !password` is true for objects/arrays too, and a non-string
+    // email reaches bcrypt.compare (=> 500) or a `$`-operator filter.
+    if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password) {
       return res.status(400).json({ success: false, message: 'Please provide email and password' });
     }
 
@@ -419,6 +441,14 @@ exports.login = async (req, res, next) => {
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    // Block suspended/rejected accounts from obtaining a new token
+    if (user.status === 'Suspended') {
+      return res.status(403).json({ success: false, message: 'Your account has been suspended. Please contact support.' });
+    }
+    if (user.status === 'Rejected') {
+      return res.status(403).json({ success: false, message: 'Your account registration was not approved.' });
     }
 
     sendTokenResponse(user, 200, res);

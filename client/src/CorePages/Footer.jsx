@@ -9,6 +9,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { FaFacebook, FaInstagram, FaLinkedin } from "react-icons/fa";
+import { showSuccess } from "../Utils/toast";
 import logo from "../assets/rafflelogo-light.png";
 import AdminLoginModal from "./Footer/AdminLoginModal";
 
@@ -75,18 +76,30 @@ export default function Footer() {
               </div>
 
               <div>
-                <div className="bg-white rounded-2xl p-2 flex flex-col sm:flex-row gap-3 shadow-2xl">
+                <form
+                  className="bg-white rounded-2xl p-2 flex flex-col sm:flex-row gap-3 shadow-2xl"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    showSuccess('Thank you for subscribing!');
+                  }}
+                >
                   <input
                     type="email"
                     placeholder="Enter your email address"
                     className="flex-1 h-14 px-5 rounded-xl outline-none text-gray-700"
+                    id="newsletter-email"
+                    name="newsletter-email"
+                    required
                   />
 
-                  <button className="h-14 px-7 rounded-xl bg-[#2563EB] hover:bg-blue-700 transition text-white font-semibold flex items-center justify-center gap-2">
+                  <button
+                    type="submit"
+                    className="h-14 px-7 rounded-xl bg-[#2563EB] hover:bg-blue-700 transition text-white font-semibold flex items-center justify-center gap-2"
+                  >
                     Subscribe
                     <Send size={18} />
                   </button>
-                </div>
+                </form>
               </div>
             </div>
           </div>

@@ -12,6 +12,7 @@ import {
   ArrowRight,
   UserPlus
 } from "lucide-react";
+import { getEmployerState, EMPLOYER_STATE_META } from "../../Utils/employerState";
 
 export default function OverviewTab({ stats, recentUsers, handleTabSwitch, onGrantAccessClick: _onGrantAccessClick }) {
   const statCards = [
@@ -188,7 +189,10 @@ export default function OverviewTab({ stats, recentUsers, handleTabSwitch, onGra
               <tbody className="divide-y divide-slate-100">
                 {recentUsers.map((u) => {
                   const isEmp = u.role === "Employer";
-                  const isGranted = u.employerAccess !== false && u.isApproved !== false && u.status !== "Suspended";
+                  // Uses the shared 4-state helper: this table used to collapse
+                  // Pending and Rejected employers into "Access Revoked".
+                  const state = isEmp ? getEmployerState(u) : null;
+                  const stateMeta = state ? EMPLOYER_STATE_META[state] : null;
 
                   return (
                     <tr key={u._id} className="hover:bg-slate-50/80 transition">
@@ -215,16 +219,13 @@ export default function OverviewTab({ stats, recentUsers, handleTabSwitch, onGra
                         </span>
                       </td>
                       <td className="py-3.5 px-4">
-                        {isEmp ? (
-                          isGranted ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
-                              <CheckCircle2 size={12} /> Access Granted
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700 border border-rose-200">
-                              <XCircle size={12} /> Access Revoked
-                            </span>
-                          )
+                        {isEmp && stateMeta ? (
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${stateMeta.className}`}
+                          >
+                            {state === "granted" ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
+                            {stateMeta.label}
+                          </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-slate-500">
                             Active Candidate

@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   Mail,
   Phone,
@@ -23,20 +23,27 @@ import logo from '../assets/rafflelogo.png';
 import useSeo from '../Utils/useSeo';
 import { CONTACT_FAQS } from '../Utils/seoConfig';
 import { faqSchema } from '../Utils/seoSchema';
+import { submitContactForm } from '../Service/Operation/contactApi';
 
 export default function ContactPage() {
+  const location = useLocation();
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  // Form State
-  const [formData, setFormData] = useState({
+  // Form State — seeded from router state when arriving from the pricing page
+  // (plan selection / callback button) instead of a setState-in-effect.
+  const routeState = location.state;
+  const [formData, setFormData] = useState(() => ({
     fullName: '',
     email: '',
     phone: '',
-    queryType: 'Job Seeker Query',
-    message: ''
-  });
+    queryType: routeState?.queryType || 'Job Seeker Query',
+    message: routeState?.plan
+      ? `I am interested in the ${routeState.plan}. Please share the next steps.`
+      : ''
+  }));
   const [submitting, setSubmitting] = useState(false);
   const [copiedText, setCopiedText] = useState(null);
 
@@ -48,14 +55,18 @@ export default function ContactPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleCopy = (text, label) => {
-    navigator.clipboard.writeText(text);
-    setCopiedText(label);
-    showSuccess(`Copied ${label} to clipboard!`);
+  const handleCopy = async (text, label) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedText(label);
+      showSuccess(`Copied ${label} to clipboard!`);
+    } catch {
+      showError('Failed to copy to clipboard');
+    }
     setTimeout(() => setCopiedText(null), 2500);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.fullName.trim() || !formData.email.trim() || !formData.message.trim()) {
       showError('Please fill in all required fields.');
@@ -63,9 +74,9 @@ export default function ContactPage() {
     }
 
     setSubmitting(true);
-    setTimeout(() => {
-      setSubmitting(false);
-      showSuccess('Thank you for contacting Raffles Jobs! Our team will get back to you shortly.');
+    try {
+      const data = await submitContactForm(formData);
+      showSuccess(data.message || 'Thank you for contacting Raffles Jobs! Our team will get back to you shortly.');
       setFormData({
         fullName: '',
         email: '',
@@ -73,7 +84,11 @@ export default function ContactPage() {
         queryType: 'Job Seeker Query',
         message: ''
       });
-    }, 1000);
+    } catch (err) {
+      showError(err.message || 'We could not send your message. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // 3 Contact Cards based on active business details (Headquarters card excluded as commented)

@@ -1,7 +1,19 @@
 import { apiConnector } from "../apiConnector";
 import { endpoints } from "../apis";
 
-const { SENDOTP_API, REGISTER_API, LOGIN_API, GET_PROFILE_API, GOOGLE_LOGIN_API, GOOGLE_REGISTER_API } = endpoints;
+const { SENDOTP_API, REGISTER_API, LOGIN_API, LOGOUT_API, GET_PROFILE_API, GOOGLE_LOGIN_API, GOOGLE_REGISTER_API } = endpoints;
+
+// Clears the httpOnly session cookie on the server. localStorage is cleared
+// separately by the caller, so this is best-effort: a failed call must never
+// block the user from signing out locally.
+export const logout = async (token) => {
+  try {
+    const response = await apiConnector("POST", LOGOUT_API, null, token ? { Authorization: `Bearer ${token}` } : null);
+    return response.data;
+  } catch {
+    return { success: false };
+  }
+};
 
 export const sendOtp = async (email) => {
   try {

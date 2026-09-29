@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Briefcase, Building2, Clock, IndianRupee } from 'lucide-react';
+import { MapPin, Briefcase, Building2, Clock, IndianRupee, RefreshCw } from 'lucide-react';
 import useSeo from '../Utils/useSeo';
 import { jobPath, absoluteUrl } from '../Utils/seoConfig';
 import { breadcrumbSchema, jobItemListSchema } from '../Utils/seoSchema';
@@ -10,6 +10,14 @@ import { fetchAllJobs, formatBackendJob } from '../Service/Operation/jobApi';
 const MIN_JOBS_TO_INDEX = 2;
 
 export default function CategoryJobsPage({ category }) {
+  // Remount per category. The job list and loading flag belong to one slug:
+  // without this key, navigating /jobs/bpo → /jobs/sales reused the mounted
+  // component, so the previous category's jobs stayed on screen with
+  // loading === false until (unless) the new fetch resolved.
+  return <CategoryJobsContent key={category.slug} category={category} />;
+}
+
+function CategoryJobsContent({ category }) {
   const seed =
     typeof window !== 'undefined' &&
     window.__RAFFLES_CATEGORY__ &&
@@ -19,6 +27,8 @@ export default function CategoryJobsPage({ category }) {
 
   const [jobs, setJobs] = useState(seed ? seed.jobs : []);
   const [loading, setLoading] = useState(!seed);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -30,11 +40,16 @@ export default function CategoryJobsPage({ category }) {
         if (cancelled) return;
         if (res && res.success && Array.isArray(res.jobs)) {
           setJobs(res.jobs.map(formatBackendJob));
+          setFailed(false);
         } else if (!seed) {
           setJobs([]);
+          setFailed(true);
         }
       } catch {
-        if (!cancelled && !seed) setJobs([]);
+        if (!cancelled && !seed) {
+          setJobs([]);
+          setFailed(true);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -44,7 +59,7 @@ export default function CategoryJobsPage({ category }) {
     return () => {
       cancelled = true;
     };
-  }, [category.name, seed]);
+  }, [category.name, seed, attempt]);
 
   const pageUrl = absoluteUrl(`/jobs/${category.slug}`);
   const indexable = jobs.length >= MIN_JOBS_TO_INDEX;
@@ -66,6 +81,41 @@ export default function CategoryJobsPage({ category }) {
     noindex: !indexable,
     jsonLd,
   });
+
+  if (!loading && failed && jobs.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] pt-28 pb-20 px-4">
+        <div className="mx-auto max-w-2xl rounded-2xl border border-gray-100 bg-white p-10 text-center shadow-xs">
+          <h1 className="text-2xl font-extrabold text-[#1e293b]">
+            Could not load {category.label} jobs
+          </h1>
+          <p className="mt-3 text-sm text-gray-500">
+            Something went wrong while fetching live openings. Try again, or
+            browse every current vacancy instead.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setFailed(false);
+                setLoading(true);
+                setAttempt((value) => value + 1);
+              }}
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-bold text-gray-700 transition hover:bg-gray-50"
+            >
+              <RefreshCw className="h-4 w-4" /> Try again
+            </button>
+            <Link
+              to="/jobs"
+              className="rounded-xl bg-[#2B2A8C] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#1E1D66]"
+            >
+              Browse all jobs
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!loading && jobs.length === 0) {
     return (
@@ -125,7 +175,7 @@ export default function CategoryJobsPage({ category }) {
               All Jobs
             </Link>
             <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-gray-600">
-              {jobs.length} Live Opening{jobs.length === 1 ? '' : 's'}
+              {loading ? 'Loading…' : `${jobs.length} Live Opening${jobs.length === 1 ? '' : 's'}`}
             </span>
           </div>
         </header>

@@ -201,8 +201,6 @@ export default function RoleSelectionPage() {
           <span>© 2026 RAFFLES JOBS. All Rights Reserved.</span>
           <div className="flex items-center gap-4 text-slate-500">
             <span>By proceeding, you agree to our</span>
-            <Link to="/about" className="text-[#2B2A8C] font-semibold hover:underline">Terms of Use</Link>
-            <span>&</span>
             <Link to="/privacy" className="text-[#2B2A8C] font-semibold hover:underline">Privacy Policy</Link>
           </div>
         </div>

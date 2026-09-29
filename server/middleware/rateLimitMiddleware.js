@@ -10,6 +10,7 @@
 //   RATE_LIMIT_REGISTER_MAX      default 10
 //   RATE_LIMIT_ADMIN_LOGIN_MAX   default 5
 //   RATE_LIMIT_GOOGLE_AUTH_MAX   default 10
+//   RATE_LIMIT_CONTACT_MAX       default 5
 
 const WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS) > 0
   ? Number(process.env.RATE_LIMIT_WINDOW_MS)
@@ -98,6 +99,13 @@ const googleAuthLimiter = rateLimit({
   message: 'Too many Google sign-in attempts. Please wait a few minutes and try again.',
 });
 
+// Contact form: public and unauthenticated, so keep it cheap to abuse.
+const contactLimiter = rateLimit({
+  keyPrefix: 'contact',
+  max: limit('RATE_LIMIT_CONTACT_MAX', 5),
+  message: 'Too many messages sent. Please wait a few minutes and try again.',
+});
+
 module.exports = {
   rateLimit,
   sendOtpLimiter,
@@ -105,5 +113,6 @@ module.exports = {
   registerLimiter,
   adminLoginLimiter,
   googleAuthLimiter,
+  contactLimiter,
   resetRateLimits,
 };

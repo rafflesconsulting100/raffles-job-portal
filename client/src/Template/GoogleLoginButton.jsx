@@ -4,7 +4,7 @@ import { FcGoogle } from 'react-icons/fc';
 import { signInWithGooglePopup } from '../config/firebase';
 import { googleLogin, googleRegister } from '../Service/Operation/authApi';
 import { showSuccess, showError } from '../Utils/toast';
-import { syncSessionMemory } from '../Utils/memoryStore';
+import { syncSessionMemory, storeToken } from '../Utils/memoryStore';
 
 export default function GoogleLoginButton({ mode = 'login' }) {
   const navigate = useNavigate();
@@ -33,12 +33,13 @@ export default function GoogleLoginButton({ mode = 'login' }) {
 
       if (data.success) {
         syncSessionMemory(data.user);
-        localStorage.setItem('token', data.token);
+        storeToken(data.token, true);
         localStorage.setItem('user', JSON.stringify(data.user));
         window.dispatchEvent(new Event('auth-change'));
 
         showSuccess(isRegister ? 'Account created with Google successfully!' : 'Signed in with Google successfully!');
-        navigate('/jobseeker-dashboard');
+        const destination = data.user?.role === 'Employer' ? '/employer-dashboard' : '/jobseeker-dashboard';
+        navigate(destination);
       } else {
         showError(data.message || `Google ${isRegister ? 'Registration' : 'Login'} failed. Please try again.`);
       }

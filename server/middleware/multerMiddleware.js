@@ -18,7 +18,12 @@ const fileFilter = (req, file, cb) => {
   if (allowedMimeTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Unsupported file type. Please upload a JPEG, PNG, WEBP image or PDF, DOC, DOCX document.'), false);
+    // multer forwards fileFilter errors unwrapped (err.name === 'Error'), so
+    // without statusCode the error middleware answered 500 for a client-side
+    // problem. Mark it as a 400.
+    const err = new Error('Unsupported file type. Please upload a JPEG, PNG, WEBP image or PDF, DOC, DOCX document.');
+    err.statusCode = 400;
+    cb(err, false);
   }
 };
 
@@ -28,6 +33,8 @@ const upload = multer({
   limits: {
     // Matches the 10MB limit the client advertises (see OtpPage.jsx).
     fileSize: 10 * 1024 * 1024,
+    // Resume + avatar at most — anything more is an abuse attempt.
+    files: 2,
   },
 });
 

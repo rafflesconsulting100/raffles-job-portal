@@ -10,29 +10,22 @@ import {
   Building2Icon, 
   IndianRupee
 } from 'lucide-react';
-import { saveJobToMemory, removeSavedJobFromMemory } from '../../Utils/memoryStore';
-import { showSuccess } from '../../Utils/toast';
+import { showError, showSuccess } from '../../Utils/toast';
 import { fetchAllJobs, formatBackendJob } from '../../Service/Operation/jobApi';
+import { fetchSavedJobs, toggleSaveJobBackend } from '../../Service/Operation/seekerApi';
+import { getToken } from '../../Utils/memoryStore';
 import { jobPath, categoryPath } from '../../Utils/seoConfig';
 
 const staticFallbackJobs = [];
 
 export default function ActiveJobsSection() {
   const navigate = useNavigate();
-  const [savedJobs, setSavedJobs] = useState(() => {
-    try {
-      const stored = localStorage.getItem('savedJobs');
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [token] = useState(() => getToken());
+  const [savedJobs, setSavedJobs] = useState([]);
   const [activeJobs, setActiveJobs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Sync memory saved state initialized in useState
-
     // Fetch jobs from backend API
     const loadJobs = async () => {
       try {
@@ -58,17 +51,57 @@ export default function ActiveJobsSection() {
     loadJobs();
   }, []);
 
-  const toggleBookmark = (e, jobId, jobTitle) => {
+  // Bookmarks live on the server — the local-only toggle used to show "Saved!"
+  // while the dashboard kept an unrelated localStorage list. Load the real
+  // list so the icons match what the seeker actually has bookmarked.
+  useEffect(() => {
+    if (!token) {
+      queueMicrotask(() => setSavedJobs([]));
+      return;
+    }
+    let cancelled = false;
+    fetchSavedJobs(token)
+      .then((res) => {
+        if (cancelled || !res?.success || !Array.isArray(res.savedJobs)) return;
+        const ids = res.savedJobs.map((job) =>
+          typeof job === 'object' ? job._id || job.id : job
+        );
+        setSavedJobs(ids);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  const toggleBookmark = async (e, jobId, jobTitle) => {
     e.stopPropagation();
-    if (savedJobs.includes(jobId)) {
-      removeSavedJobFromMemory(jobId);
-      const updated = savedJobs.filter(id => id !== jobId);
-      setSavedJobs(updated);
-      showSuccess(`Removed "${jobTitle}" from bookmarks`);
-    } else {
-      saveJobToMemory(jobId);
-      setSavedJobs([...savedJobs, jobId]);
-      showSuccess(`Saved "${jobTitle}" to bookmarks!`);
+    if (!token) {
+      showError('Please log in to save jobs.');
+      navigate('/login');
+      return;
+    }
+
+    try {
+      const res = await toggleSaveJobBackend(jobId, token);
+      if (res?.success) {
+        if (Array.isArray(res.savedJobs)) {
+          const ids = res.savedJobs.map((job) =>
+            typeof job === 'object' ? job._id || job.id : job
+          );
+          setSavedJobs(ids);
+        } else if (savedJobs.includes(jobId)) {
+          setSavedJobs(savedJobs.filter((id) => id !== jobId));
+        } else {
+          setSavedJobs([...savedJobs, jobId]);
+        }
+        showSuccess(res.message || `Saved "${jobTitle}" to bookmarks!`);
+      } else {
+        showError(res?.message || 'Failed to update saved status.');
+      }
+    } catch (err) {
+      console.error('Toggle save job error:', err);
+      showError(err.message || 'Failed to update bookmark');
     }
   };
 

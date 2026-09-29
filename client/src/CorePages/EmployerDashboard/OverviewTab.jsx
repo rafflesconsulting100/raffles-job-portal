@@ -27,8 +27,14 @@ export default function OverviewTab({ stats, jobs, handleTabSwitch, startEditJob
               <Briefcase className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-black text-slate-900">{stats.totalJobs}</div>
-          <div className="text-xs text-slate-500 mt-2">Active recruitment drives</div>
+          <div className="text-3xl font-black text-slate-900">
+            {stats.activeJobs ?? stats.totalJobs ?? 0}
+          </div>
+          <div className="text-xs text-slate-500 mt-2">
+            {stats.activeJobs != null && stats.totalJobs > stats.activeJobs
+              ? `${stats.activeJobs} live of ${stats.totalJobs} total`
+              : "Active recruitment drives"}
+          </div>
         </div>
 
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-md transition">

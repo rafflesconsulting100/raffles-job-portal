@@ -141,7 +141,7 @@ export default function ApplicantsTab({
                     </div>
 
                     <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 pt-1">
-                      <span>📧 {candidate.email}</span>
+                      {candidate.email && <span>📧 {candidate.email}</span>}
                       {candidate.contactNumber && <span>📞 {candidate.contactNumber}</span>}
                       {candidate.location && <span>📍 {candidate.location}</span>}
                       <span className="text-slate-400">
@@ -178,16 +178,16 @@ export default function ApplicantsTab({
                     </a>
                   )}
 
-                  {/* Screening Q&A Details */}
-                  {app.screeningAnswers && app.screeningAnswers.length > 0 && (
+                  {/* Screening Q&A / Cover Letter Details */}
+                  {(app.screeningAnswers && app.screeningAnswers.length > 0) || app.coverLetter ? (
                     <button
                       onClick={() => setViewingApplicantModal(app)}
                       className="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#2B2A8C] border border-blue-100 transition cursor-pointer"
-                      title="View Screening Answers"
+                      title="View Screening Answers & Cover Letter"
                     >
                       <Eye className="w-4 h-4" />
                     </button>
-                  )}
+                  ) : null}
 
                   {/* Accept / Reject Buttons */}
                   <button

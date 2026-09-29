@@ -1,9 +1,9 @@
 ﻿import React, { useState,useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { MailIcon, LockIcon, ArrowRightIcon } from 'lucide-react';
-import { login } from '../Service/Operation/authApi';
+import { login, logout } from '../Service/Operation/authApi';
 import { showSuccess, showError } from '../Utils/toast';
-import { syncSessionMemory } from '../Utils/memoryStore';
+import { syncSessionMemory, storeToken } from '../Utils/memoryStore';
 import { AuthTemplate, RoleSelector, AuthInput, GoogleLoginButton } from '../Template';
 
 import useSeo from '../Utils/useSeo';
@@ -12,6 +12,12 @@ export default function SignIn() {
   useSeo({ path: '/login' });
   useEffect(() => {
     window.scrollTo(0, 0);
+    // Set by the apiConnector 401 interceptor when an expired session forced
+    // a redirect here.
+    if (sessionStorage.getItem('sessionExpired')) {
+      sessionStorage.removeItem('sessionExpired');
+      showError('Your session has expired. Please log in again.');
+    }
   }, []);
   const navigate = useNavigate();
   const [role, setRole] = useState('Job Seeker');
@@ -43,6 +49,9 @@ export default function SignIn() {
       if (data.success) {
         // Enforce role consistency
         if (data.user.role !== role) {
+          // The login already succeeded and set the httpOnly cookie — drop it
+          // again, otherwise a "failed" login leaves a live session behind.
+          logout(data.token);
           const mismatchError = `Role Mismatch: This email is registered as a "${data.user.role}". Please switch roles above to log in.`;
           setError(mismatchError);
           showError(mismatchError);
@@ -52,7 +61,7 @@ export default function SignIn() {
 
         // Store Token & User Profile
         syncSessionMemory(data.user);
-        localStorage.setItem('token', data.token);
+        storeToken(data.token, formData.rememberMe);
         localStorage.setItem('user', JSON.stringify(data.user));
         window.dispatchEvent(new Event('auth-change'));
 
@@ -129,11 +138,6 @@ export default function SignIn() {
 
           <AuthInput
             label="Password"
-            rightLabelAction={
-              <span className="text-xs font-semibold text-[#2B2A8C] hover:underline cursor-pointer">
-                Forgot password?
-              </span>
-            }
             icon={LockIcon}
             type="password"
             name="password"

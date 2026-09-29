@@ -132,19 +132,24 @@ export default function Register() {
 
       if (data.success) {
         showSuccess('OTP sent successfully!');
-        // Redirect to separate verification page, passing the register form data in router state
-        navigate('/verify-otp', {
-          state: {
-            username: formData.name.trim(),
-            companyName: formData.name.trim(),
-            email: formData.email.trim(),
-            password: formData.password,
-            confirmPassword: formData.confirmPassword,
-            mobileNumber: formData.mobileNumber.trim(),
-            acceptedTerms: formData.agreeTerms,
-            role: role
-          }
-        });
+        // Redirect to separate verification page, passing the register form
+        // data in router state. Router state is lost on a page refresh, so a
+        // copy is kept in sessionStorage for the OTP page to fall back on.
+        const pendingRegistration = {
+          username: formData.name.trim(),
+          companyName: formData.name.trim(),
+          email: formData.email.trim(),
+          password: formData.password,
+          confirmPassword: formData.confirmPassword,
+          mobileNumber: formData.mobileNumber.trim(),
+          acceptedTerms: formData.agreeTerms,
+          role: role,
+        };
+        sessionStorage.setItem(
+          'raffles.pendingRegistration',
+          JSON.stringify({ savedAt: Date.now(), data: pendingRegistration })
+        );
+        navigate('/verify-otp', { state: pendingRegistration });
       } else {
         setError(data.message || 'Could not send OTP. Please try again.');
         showError(data.message || 'Could not send OTP. Please try again.');

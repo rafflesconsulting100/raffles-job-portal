@@ -31,6 +31,10 @@ const applicationSchema = new mongoose.Schema(
         answer: String,
       },
     ],
+    coverLetter: {
+      type: String,
+      default: '',
+    },
   },
   {
     timestamps: true,

@@ -1,10 +1,19 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const User = require('../models/User');
 const Job = require('../models/Job');
 const Application = require('../models/Application');
 const Notification = require('../models/Notification');
 const { sendNotificationToUser } = require('../utils/socket');
 const { getJwtSecret, getAdminPasskey, getAdminEmail } = require('../config/auth');
+
+// Constant-time secret comparison: hashing first makes both sides fixed
+// length, so timingSafeEqual is safe to call with unequal-length inputs.
+const safeCompare = (provided, expected) => {
+  const a = crypto.createHash('sha256').update(String(provided || ''), 'utf8').digest();
+  const b = crypto.createHash('sha256').update(String(expected || ''), 'utf8').digest();
+  return crypto.timingSafeEqual(a, b);
+};
 
 // Helper to generate Admin token response
 const generateAdminToken = (adminUser) => {
@@ -37,10 +46,16 @@ exports.adminLoginPasskey = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Please provide administrator passkey/password' });
     }
 
-    const requestedEmail = (email && email.trim().length > 0) ? email.trim().toLowerCase() : envEmail;
+    // Non-string `email` (object/array from the JSON body) used to throw on
+    // .trim() and answer 500 on a public login endpoint.
+    const requestedEmail = (typeof email === 'string' && email.trim().length > 0)
+      ? email.trim().toLowerCase()
+      : envEmail;
 
-    // Check if provided passkey matches the ENV passkey
-    const isMasterPasskeyMatch = providedPasskey === envPasskey;
+    // Check if provided passkey matches the ENV passkey.
+    // Hash both sides first so the comparison is constant-time and cannot
+    // leak the passkey length/prefix through timing.
+    const isMasterPasskeyMatch = safeCompare(providedPasskey, envPasskey);
 
     // Check if user already exists in DB
     const adminUser = await User.findOne({ email: requestedEmail }).select('+password');
@@ -390,7 +405,11 @@ exports.updateJobStatus = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Job not found' });
     }
 
-    job.status = status || (job.status === 'active' ? 'closed' : 'active');
+    const newStatus = status || (job.status === 'active' ? 'closed' : 'active');
+    if (!['active', 'closed'].includes(newStatus)) {
+      return res.status(400).json({ success: false, message: 'Status must be "active" or "closed"' });
+    }
+    job.status = newStatus;
     await job.save();
 
     res.status(200).json({
@@ -416,6 +435,7 @@ exports.deleteJobByAdmin = async (req, res, next) => {
     }
 
     await Application.deleteMany({ job: id });
+    await User.updateMany({ savedJobs: id }, { $pull: { savedJobs: id } });
     await job.deleteOne();
 
     res.status(200).json({
@@ -460,6 +480,9 @@ exports.updateUserRole = async (req, res, next) => {
     }
 
     if (role) {
+      if (!['Job Seeker', 'Employer', 'Admin'].includes(role)) {
+        return res.status(400).json({ success: false, message: 'Role must be "Job Seeker", "Employer", or "Admin"' });
+      }
       user.role = role;
       if (role === 'Employer') {
         user.employerAccess = true;
@@ -497,6 +520,8 @@ exports.deleteUserByAdmin = async (req, res, next) => {
       const jobIds = jobs.map((j) => j._id);
       await Application.deleteMany({ job: { $in: jobIds } });
       await Job.deleteMany({ creator: id });
+      // Remove deleted jobs from every seeker's savedJobs list
+      await User.updateMany({ savedJobs: { $in: jobIds } }, { $pull: { savedJobs: { $in: jobIds } } });
     } else {
       await Application.deleteMany({ applicant: id });
     }

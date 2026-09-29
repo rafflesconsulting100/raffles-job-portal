@@ -35,7 +35,7 @@ export default function JobStatsBar({
           onClick={() => setMobileFiltersOpen(true)}
         >
           <SlidersHorizontal className="w-3.5 h-3.5 text-[#2B2A8C]" />
-          s
+          Filters
         </button>
 
         {/* View Mode Switcher (Grid vs List) */}

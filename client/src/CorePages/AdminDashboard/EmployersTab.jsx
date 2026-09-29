@@ -17,6 +17,7 @@ import {
   MapPin,
   Phone
 } from "lucide-react";
+import { getEmployerState } from "../../Utils/employerState";
 
 export default function EmployersTab({
   employers,
@@ -29,20 +30,6 @@ export default function EmployersTab({
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [togglingId, setTogglingId] = useState(null);
-
-  const getEmployerState = (emp) => {
-    const raw = (emp.approvalStatus || emp.status || "").toLowerCase();
-    if (raw === "rejected") {
-      return "rejected";
-    }
-    if (raw === "pending" || (emp.isApproved === false && emp.status !== "Suspended")) {
-      return "pending";
-    }
-    if (raw === "suspended" || raw === "revoked" || emp.status === "Suspended" || emp.employerAccess === false || emp.isApproved === false) {
-      return "revoked";
-    }
-    return "granted";
-  };
 
   const getMobile = (emp) => emp.mobileNumber || emp.contactNumber || "";
 

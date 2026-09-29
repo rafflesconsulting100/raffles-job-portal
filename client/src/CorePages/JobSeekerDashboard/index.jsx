@@ -12,6 +12,7 @@ import {
   markAllNotificationsAsRead
 } from "../../Service/Operation/seekerApi";
 import { showSuccess, showError } from "../../Utils/toast";
+import { getToken } from "../../Utils/memoryStore";
 
 import AuthGuard from "./AuthGuard";
 import HeaderBar from "./HeaderBar";
@@ -34,7 +35,7 @@ export default function JobSeekerDashboard() {
   // Active tab from URL search param (default: 'overview')
   const activeTab = searchParams.get("tab") || "overview";
 
-  const [token] = useState(() => localStorage.getItem("token") || "");
+  const [token] = useState(() => getToken());
   const [user, setUser] = useState(() => {
     try {
       const u = localStorage.getItem("user");
@@ -97,13 +98,16 @@ export default function JobSeekerDashboard() {
   }, [token]);
 
   // Handle User Auth & Session initialization
+  // Depend on `user?.role` (a stable string), NOT `user`: loadDashboardData
+  // replaces `user` with a fresh object on every cycle, so listing `user`
+  // here re-fired the effect endlessly (4 requests per loop, forever).
   useEffect(() => {
     if (token && user?.role === "Job Seeker") {
       queueMicrotask(() => {
         loadDashboardData(token);
       });
     }
-  }, [token, user, loadDashboardData]);
+  }, [token, user?.role, loadDashboardData]);
 
   const handleTabSwitch = (tab) => {
     setSearchParams({ tab });
@@ -141,12 +145,18 @@ export default function JobSeekerDashboard() {
 
   // Profile Update Handler
   const handleProfileUpdated = async (formData) => {
-    const res = await updateUserProfile(formData, token);
-    if (res.success && res.user) {
-      setUser(res.user);
-      localStorage.setItem("user", JSON.stringify(res.user));
-      window.dispatchEvent(new Event("auth-change"));
-      loadDashboardData(token);
+    try {
+      const res = await updateUserProfile(formData, token);
+      if (res.success && res.user) {
+        setUser(res.user);
+        localStorage.setItem("user", JSON.stringify(res.user));
+        window.dispatchEvent(new Event("auth-change"));
+        loadDashboardData(token);
+      } else {
+        showError(res.message || 'Failed to update profile');
+      }
+    } catch (err) {
+      showError(err.message || 'Failed to update profile');
     }
   };
 

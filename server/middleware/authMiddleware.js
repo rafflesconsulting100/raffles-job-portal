@@ -27,6 +27,14 @@ const protect = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'User matching this token no longer exists' });
     }
 
+    // 4. Block suspended/rejected accounts from accessing protected routes
+    if (req.user.status === 'Suspended' || req.user.status === 'Rejected') {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account has been suspended or rejected. Please contact support.',
+      });
+    }
+
     next();
   } catch (error) {
     console.error('JWT Auth Error:', error.message);

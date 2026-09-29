@@ -13,10 +13,14 @@ const errorHandler = (err, req, res, next) => {
       : `Upload error: ${err.message}`;
   }
 
-  // Handle Mongoose Cast Error (Invalid ID)
-  if (err.name === 'CastError' && err.kind === 'ObjectId') {
-    statusCode = 404;
-    message = 'Resource not found with that identifier';
+  // Handle Mongoose Cast Errors.
+  // ObjectId -> 404 (bad id); Date/Number casts (e.g. expiresAt: "abc") are
+  // client input errors -> 400, not a server crash.
+  if (err.name === 'CastError') {
+    statusCode = err.kind === 'ObjectId' ? 404 : 400;
+    message = err.kind === 'ObjectId'
+      ? 'Resource not found with that identifier'
+      : `Invalid value for "${err.path}": ${err.value}`;
   }
 
   // Handle Duplicate key error (11000)
@@ -31,7 +35,15 @@ const errorHandler = (err, req, res, next) => {
     message = Object.values(err.errors).map((val) => val.message).join(', ');
   }
 
-  console.error('Error Interceptor:', err);
+  // Log a sanitized one-liner only. body-parser attaches the raw request
+  // payload to JSON parse errors (`err.body`), and printing the whole error
+  // object dumped submitted passwords/OTPs into the logs.
+  console.error(
+    `[error] ${statusCode} ${req.method} ${req.originalUrl} - ${err.name}: ${err.message}`
+  );
+  if (process.env.NODE_ENV !== 'production') {
+    console.error(err.stack);
+  }
 
   res.status(statusCode).json({
     success: false,

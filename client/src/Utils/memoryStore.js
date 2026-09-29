@@ -94,6 +94,41 @@ export const clearSessionMemory = () => {
   }
 };
 
+// Token persistence: "Keep me signed in" stores the token in localStorage so
+// it survives browser restarts; otherwise it goes to sessionStorage and is
+// discarded when the tab closes. All reads go through getToken() so the two
+// storages stay transparent to the rest of the app.
+export const storeToken = (token, rememberMe) => {
+  try {
+    if (rememberMe) {
+      localStorage.setItem(MEMORY_KEYS.TOKEN, token);
+      sessionStorage.removeItem(MEMORY_KEYS.TOKEN);
+    } else {
+      sessionStorage.setItem(MEMORY_KEYS.TOKEN, token);
+      localStorage.removeItem(MEMORY_KEYS.TOKEN);
+    }
+  } catch (e) {
+    console.error("Failed to store token:", e);
+  }
+};
+
+export const getToken = () => {
+  try {
+    return localStorage.getItem(MEMORY_KEYS.TOKEN) || sessionStorage.getItem(MEMORY_KEYS.TOKEN) || '';
+  } catch {
+    return '';
+  }
+};
+
+export const clearToken = () => {
+  try {
+    localStorage.removeItem(MEMORY_KEYS.TOKEN);
+    sessionStorage.removeItem(MEMORY_KEYS.TOKEN);
+  } catch (e) {
+    console.error("Failed to clear token:", e);
+  }
+};
+
 export const syncSessionMemory = (nextUser) => {
   const nextId = nextUser && (nextUser._id || nextUser.id);
   if (!nextId) return;

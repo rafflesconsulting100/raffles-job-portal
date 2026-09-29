@@ -12,6 +12,7 @@ import {
 } from "../../Service/Operation/employerApi";
 import { getProfile } from "../../Service/Operation/authApi";
 import { showSuccess, showError } from "../../Utils/toast";
+import { getToken } from "../../Utils/memoryStore";
 
 import AuthGuard from "./AuthGuard";
 import HeaderBar from "./HeaderBar";
@@ -35,7 +36,7 @@ export default function EmployerDashboard() {
   const activeTab = searchParams.get("tab") || "overview";
   const selectedJobIdParam = searchParams.get("jobId") || "";
 
-  const [token] = useState(() => localStorage.getItem("token") || "");
+  const [token] = useState(() => getToken());
   const [user, setUser] = useState(() => {
     try {
       const stored = localStorage.getItem("user");
@@ -44,8 +45,6 @@ export default function EmployerDashboard() {
       return null;
     }
   });
-  const [loading] = useState(false);
-
   // Stats state
   const [stats, setStats] = useState({
     totalJobs: 0,
@@ -84,10 +83,16 @@ export default function EmployerDashboard() {
     benefits: "",
     screeningQuestions: "",
     status: "active",
-    expiresAt: ""
+    expiresAt: "",
+    // Missing from this object before: the edit form rendered these two
+    // fields empty, so every edit silently dropped the stored values.
+    numberOfOpenings: "",
+    preferredLanguages: []
   });
 
   const [formSubmitting, setFormSubmitting] = useState(false);
+  // Drives the inline required-field errors in JobFormTab.
+  const [validationAttempted, setValidationAttempted] = useState(false);
 
   // Applicants ATS state
   const [selectedJobId, setSelectedJobId] = useState(selectedJobIdParam);
@@ -142,7 +147,18 @@ export default function EmployerDashboard() {
         });
       }
     }
-  }, [token, user]);
+    // Primitive deps only: `user` is replaced by a fresh object after a
+    // profile refresh, which would re-run this effect (and refetch) for no
+    // reason — the guard only reads these scalar fields.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    token,
+    user?.role,
+    user?.approvalStatus,
+    user?.isApproved,
+    user?.employerAccess,
+    user?.status,
+  ]);
 
   // Load Applicants for ATS view
   const loadApplicantsForJob = useCallback(async (jobId, authToken) => {
@@ -201,15 +217,15 @@ export default function EmployerDashboard() {
     }
   }, [token]);
 
+  const [studentsLoaded, setStudentsLoaded] = useState(false);
+
   useEffect(() => {
-    if (activeTab === "student-database" && token) {
-      if (students.length === 0) {
-        queueMicrotask(() => {
-          loadStudentDatabase(token);
-        });
-      }
+    if (activeTab === "student-database" && token && !studentsLoaded) {
+      queueMicrotask(() => {
+        loadStudentDatabase(token).finally(() => setStudentsLoaded(true));
+      });
     }
-  }, [activeTab, token, students.length, loadStudentDatabase]);
+  }, [activeTab, token, studentsLoaded, loadStudentDatabase]);
 
   const handleTabSwitch = (tab, jobId = "") => {
     if (jobId) {
@@ -223,10 +239,11 @@ export default function EmployerDashboard() {
   // Reset job form
   const resetForm = () => {
     setEditingJob(null);
+    setValidationAttempted(false);
     setJobForm({
       title: "",
-      company: user?.username ? `${user.username} Inc` : "",
-      category: "Marketing",
+      company: user?.companyName || user?.username || "",
+      category: "BPO",
       minEducation: "Bachelor's Degree",
       companyLogo: "",
       location: "",
@@ -241,7 +258,9 @@ export default function EmployerDashboard() {
       benefits: "",
       screeningQuestions: "",
       status: "active",
-      expiresAt: ""
+      expiresAt: "",
+      numberOfOpenings: "",
+      preferredLanguages: []
     });
   };
 
@@ -266,7 +285,9 @@ export default function EmployerDashboard() {
       benefits: Array.isArray(job.benefits) ? job.benefits.join("\n") : job.benefits || "",
       screeningQuestions: Array.isArray(job.screeningQuestions) ? job.screeningQuestions.join("\n") : job.screeningQuestions || "",
       status: job.status || "active",
-      expiresAt: job.expiresAt ? new Date(job.expiresAt).toISOString().split('T')[0] : ""
+      expiresAt: job.expiresAt ? new Date(job.expiresAt).toISOString().split('T')[0] : "",
+      numberOfOpenings: job.numberOfOpenings ?? "",
+      preferredLanguages: Array.isArray(job.preferredLanguages) ? [...job.preferredLanguages] : []
     });
     handleTabSwitch("post-job");
   };
@@ -276,8 +297,41 @@ export default function EmployerDashboard() {
     e.preventDefault();
     if (!token) return;
 
-    if (!jobForm.title || !jobForm.company || !jobForm.location || !jobForm.description) {
-      showError("Please fill in all required fields (Title, Company, Location, Description)");
+    const missingRequired =
+      !jobForm.title || !jobForm.company || !jobForm.location || !jobForm.description;
+    const missingOpenings =
+      jobForm.numberOfOpenings === "" ||
+      jobForm.numberOfOpenings === null ||
+      jobForm.numberOfOpenings === undefined;
+    const missingLanguages =
+      !Array.isArray(jobForm.preferredLanguages) || jobForm.preferredLanguages.length === 0;
+
+    if (missingRequired || missingOpenings || missingLanguages) {
+      // Flip the flag the form uses for its inline field errors — the language
+      // error could never render before because nothing ever set it.
+      setValidationAttempted(true);
+      showError(
+        missingRequired
+          ? "Please fill in all required fields (Title, Company, Location, Description)"
+          : missingOpenings
+          ? "Please enter the number of openings."
+          : "Please select at least one preferred language."
+      );
+      return;
+    }
+    setValidationAttempted(false);
+
+    // The form advertises 100–150 words; previously neither limit was checked
+    // and the textarea just stopped accepting input at 150 with no feedback.
+    const descriptionWords = jobForm.description.trim()
+      ? jobForm.description.trim().split(/\s+/).length
+      : 0;
+    if (descriptionWords > 150) {
+      showError(`Job description is ${descriptionWords} words — the maximum is 150.`);
+      return;
+    }
+    if (!editingJob && descriptionWords < 100) {
+      showError("Job description must be at least 100 words.");
       return;
     }
 
@@ -407,7 +461,7 @@ export default function EmployerDashboard() {
   };
 
   // Auth Guard Screen if not logged in or not an Employer
-  if (!loading && (!token || !user || user.role !== "Employer")) {
+  if (!token || !user || user.role !== "Employer") {
     return <AuthGuard navigate={navigate} />;
   }
 
@@ -431,7 +485,7 @@ export default function EmployerDashboard() {
       user?.employerAccess === false ||
       user?.status === "Suspended");
 
-  if (!loading && isEmployerRejected) {
+  if (isEmployerRejected) {
     return (
       <AuthGuard
         navigate={navigate}
@@ -441,7 +495,7 @@ export default function EmployerDashboard() {
     );
   }
 
-  if (!loading && isEmployerPending) {
+  if (isEmployerPending) {
     return (
       <AuthGuard
         navigate={navigate}
@@ -451,7 +505,7 @@ export default function EmployerDashboard() {
     );
   }
 
-  if (!loading && isEmployerRestricted) {
+  if (isEmployerRestricted) {
     return (
       <AuthGuard
         navigate={navigate}
@@ -522,6 +576,7 @@ export default function EmployerDashboard() {
             formSubmitting={formSubmitting}
             resetForm={resetForm}
             handleTabSwitch={handleTabSwitch}
+            validationAttempted={validationAttempted}
           />
         )}
 

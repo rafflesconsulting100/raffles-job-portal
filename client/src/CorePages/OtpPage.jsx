@@ -16,18 +16,40 @@ import {
 import { sendOtp, register } from '../Service/Operation/authApi';
 import { updateUserProfile } from '../Service/Operation/seekerApi';
 import { showSuccess, showError } from '../Utils/toast';
-import { syncSessionMemory } from '../Utils/memoryStore';
+import { syncSessionMemory, storeToken, getToken } from '../Utils/memoryStore';
 import logo from '../assets/rafflelogo.png';
 
 import useSeo from '../Utils/useSeo';
+
+const PENDING_REGISTRATION_KEY = 'raffles.pendingRegistration';
+
+// Router state does not survive a refresh: reloading /verify-otp used to
+// bounce the user straight back to /register, where re-submitting failed with
+// "Email is already registered" — a dead end, since the account is only
+// created at the end of the OTP step. sessionStorage holds a short-lived
+// copy of the form so the flow can be resumed.
+const readPendingRegistration = () => {
+  try {
+    const raw = sessionStorage.getItem(PENDING_REGISTRATION_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (!parsed.savedAt || Date.now() - parsed.savedAt > 15 * 60 * 1000) {
+      sessionStorage.removeItem(PENDING_REGISTRATION_KEY);
+      return {};
+    }
+    return parsed.data || {};
+  } catch {
+    return {};
+  }
+};
 
 export default function OtpPage() {
   useSeo({ path: '/verify-otp' });
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Get registration data passed from RegisterPage
-  const registrationData = location.state || {};
+  // Get registration data passed from RegisterPage (refresh-proof fallback)
+  const registrationData = location.state || readPendingRegistration();
   const {
     username,
     companyName = '',
@@ -59,11 +81,33 @@ export default function OtpPage() {
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Auto-redirect if email is missing (direct access without registration flow)
+  // Auto-redirect when there is no registration context.
+  // If the account was already created (session in localStorage) we resume at
+  // the resume-upload step instead of bouncing back to /register — which would
+  // end in "Email is already registered".
   useEffect(() => {
-    if (!email && currentStep === 2) {
-      navigate('/register');
+    if (email || currentStep !== 2) return;
+
+    const storedUser = (() => {
+      try {
+        const raw = localStorage.getItem('user');
+        return raw ? JSON.parse(raw) : null;
+      } catch {
+        return null;
+      }
+    })();
+    const storedToken = getToken();
+
+    if (storedToken && storedUser && storedUser.role === 'Job Seeker') {
+      queueMicrotask(() => {
+        setAuthToken(storedToken);
+        setCurrentStep(3);
+      });
+      return;
     }
+
+    sessionStorage.removeItem(PENDING_REGISTRATION_KEY);
+    navigate('/register');
   }, [email, currentStep, navigate]);
 
   // Resend Timer Countdown
@@ -171,9 +215,13 @@ export default function OtpPage() {
       });
 
       if (data.success) {
+        // Account exists now — the staged registration payload must not be
+        // reusable (the OTP it carried has been consumed server-side).
+        sessionStorage.removeItem(PENDING_REGISTRATION_KEY);
+
         // Store authenticated session
         syncSessionMemory(data.user);
-        localStorage.setItem('token', data.token);
+        storeToken(data.token, true);
         localStorage.setItem('user', JSON.stringify(data.user));
         window.dispatchEvent(new Event('auth-change'));
 
@@ -250,7 +298,7 @@ export default function OtpPage() {
       const formData = new FormData();
       formData.append('resume', resumeFile);
 
-      const token = authToken || localStorage.getItem('token');
+      const token = authToken || getToken();
       const res = await updateUserProfile(formData, token);
 
       if (res && res.success) {

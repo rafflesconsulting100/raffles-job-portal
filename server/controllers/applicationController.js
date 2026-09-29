@@ -5,6 +5,7 @@ const User = require('../models/User');
 const Notification = require('../models/Notification');
 const { uploadResume } = require('../config/cloudinary');
 const sendEmail = require('../config/email');
+const { isExpired } = require('../utils/jobExpiry');
 
 // @desc    Apply for a job
 // @route   POST /api/applications/apply/:jobId
@@ -20,6 +21,11 @@ exports.applyJob = async (req, res, next) => {
 
     if (job.status === 'closed') {
       return res.status(400).json({ success: false, message: 'This job posting has been closed' });
+    }
+
+    // Enforce the deadline the employer set on the listing.
+    if (isExpired(job)) {
+      return res.status(400).json({ success: false, message: 'This job posting has expired' });
     }
 
     // Check if already applied
@@ -57,14 +63,27 @@ exports.applyJob = async (req, res, next) => {
       }
     }
 
+    const coverLetter = typeof req.body.coverLetter === 'string' ? req.body.coverLetter.trim() : '';
+
     // Create application
-    const application = await Application.create({
-      job: jobId,
-      applicant: req.user.id,
-      resume: resumeUrl,
-      resumeOriginalName: resumeName,
-      screeningAnswers,
-    });
+    let application;
+    try {
+      application = await Application.create({
+        job: jobId,
+        applicant: req.user.id,
+        resume: resumeUrl,
+        resumeOriginalName: resumeName,
+        screeningAnswers,
+        coverLetter,
+      });
+    } catch (err) {
+      // Duplicate key = concurrent double-submit; the unique index is the
+      // source of truth, so surface it as a friendly 400 instead of a 500.
+      if (err && err.code === 11000) {
+        return res.status(400).json({ success: false, message: 'You have already applied to this job' });
+      }
+      throw err;
+    }
 
     // Everything below is best-effort: the application is already persisted, so
     // a notification/socket failure must not turn a successful apply into a 500
@@ -154,6 +173,12 @@ exports.updateApplicationStatus = async (req, res, next) => {
 
     if (!application) {
       return res.status(404).json({ success: false, message: 'Application not found' });
+    }
+
+    // The job may have been deleted (legacy records) — populate then yields
+    // null, and dereferencing it crashed with a 500 instead of a clean 404.
+    if (!application.job) {
+      return res.status(404).json({ success: false, message: 'The job for this application no longer exists' });
     }
 
     // Confirm job belongs to this employer
@@ -265,7 +290,9 @@ exports.getDashboardStats = async (req, res, next) => {
 
     // Calculate metrics
     const totalJobs = jobs.length;
-    const activeJobs = jobs.filter(j => j.status === 'active').length;
+    // Match the listing rule: past its deadline a posting is no longer active
+    // even while its status field still reads 'active'.
+    const activeJobs = jobs.filter((j) => j.status === 'active' && !isExpired(j)).length;
 
     const applications = await Application.find({ job: { $in: jobIds } });
 
@@ -295,50 +322,49 @@ exports.getDashboardStats = async (req, res, next) => {
 // @access  Private (Employer only)
 exports.getStudentDatabase = async (req, res, next) => {
   try {
-    // 1. Get all Job Seekers
-    // Whitelist only the profile fields the employer directory renders.
-    // dob, gender, firebaseUid, savedJobs and terms bookkeeping must never
-    // leave the API for another user's account.
-    const jobSeekers = await User.find({ role: 'Job Seeker' })
+    // 1. Find jobs posted by this employer
+    const employerJobs = await Job.find({ creator: req.user.id }).select('_id');
+    const employerJobIds = employerJobs.map(job => job._id);
+
+    // 2. Find all applications made to this employer's jobs
+    const applicationsToEmployer = await Application.find({
+      job: { $in: employerJobIds }
+    }).select('applicant status').lean();
+
+    // 3. Only return job seekers who have applied to this employer's jobs
+    const applicantIds = new Set(applicationsToEmployer.map(app => app.applicant.toString()));
+
+    // 4. Get only the applicants who applied — never expose the full seeker DB
+    const students = await User.find({ _id: { $in: [...applicantIds].map(id => new mongoose.Types.ObjectId(id)) } })
       .select(
         'username email avatar bio location contactNumber skills education experience projects certifications resume resumeOriginalName'
       )
       .lean();
 
-    // 2. Find jobs posted by this employer
-    const employerJobs = await Job.find({ creator: req.user.id }).select('_id');
-    const employerJobIds = employerJobs.map(job => job._id);
+    // 5. Attach application status for each student
+    const statusByApplicant = new Map(
+      applicationsToEmployer.map(app => [app.applicant.toString(), app.status])
+    );
 
-    // 3. Find all applications made to this employer's jobs
-    const applicationsToEmployer = await Application.find({
-      job: { $in: employerJobIds }
-    }).select('applicant status').lean();
-
-    // Create a Set of applicant IDs that have applied to this employer
-    const applicantIds = new Set(applicationsToEmployer.map(app => app.applicant.toString()));
-
-    // 4. Map students and add hasAppliedToMe flag
-    const students = jobSeekers.map(student => ({
+    const enriched = students.map(student => ({
       ...student,
-      hasAppliedToMe: applicantIds.has(student._id.toString())
+      applicationStatus: statusByApplicant.get(student._id.toString()) || 'pending'
     }));
 
     // Calculate quick stats
-    let totalApplied = 0;
+    let totalApplied = enriched.length;
     const locationCounts = {};
 
-    students.forEach(student => {
-      if (student.hasAppliedToMe) totalApplied++;
-
+    enriched.forEach(student => {
       const loc = student.location || 'Not Specified';
       locationCounts[loc] = (locationCounts[loc] || 0) + 1;
     });
 
     res.status(200).json({
       success: true,
-      count: students.length,
+      count: enriched.length,
       stats: {
-        total: students.length,
+        total: enriched.length,
         appliedToYou: totalApplied,
         notApplied: students.length - totalApplied,
         locationCounts
@@ -368,6 +394,14 @@ exports.getApplicationResume = async (req, res, next) => {
     // Strict Employer authorization check:
     const isOwner = application.job && application.job.creator.toString() === req.user.id;
     const isAdmin = req.user.role === 'Admin';
+    if (!application.job && !isAdmin) {
+      // Orphaned record: the owner would have been rejected with a 403 for a
+      // job they legitimately owned before it was deleted.
+      return res.status(404).json({
+        success: false,
+        message: 'The job for this application no longer exists',
+      });
+    }
     if (!isOwner && !isAdmin) {
       return res.status(403).json({
         success: false,

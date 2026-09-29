@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   CheckCircle2,
   Phone,
@@ -27,12 +27,20 @@ export default function PricingPage() {
   // State for single vs multi hires tab toggle
   const [activeTab, setActiveTab] = useState('single'); // 'single' | 'multi'
 
+  const navigate = useNavigate();
+
+  // There is no checkout in this app: these buttons used to claim
+  // "Redirecting to checkout..." / "Callback request received!" and do
+  // nothing at all. Route the intent to the contact form, which really
+  // delivers the message to the support mailbox.
   const handleBuyNow = (planName) => {
-    showSuccess(`Selected ${planName}! Redirecting to checkout...`);
+    showSuccess(`${planName} selected — tell us about your hiring needs.`);
+    navigate('/contact', { state: { queryType: 'Employer Hiring Plan', plan: planName } });
   };
 
   const handleRequestCallback = () => {
-    showSuccess('Callback request received! Our hiring team will contact you shortly.');
+    showSuccess('Let us know the best number to reach you on.');
+    navigate('/contact', { state: { queryType: 'Callback Request' } });
   };
 
   return (

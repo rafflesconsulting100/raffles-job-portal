@@ -11,6 +11,7 @@ import {
   } from "lucide-react";
 import { adminLogin } from "../../Service/Operation/adminApi";
 import { showSuccess, showError } from "../../Utils/toast";
+import { storeToken } from "../../Utils/memoryStore";
 
 export default function AdminLoginModal({ isOpen, onClose }) {
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ export default function AdminLoginModal({ isOpen, onClose }) {
       });
 
       if (data.success) {
-        localStorage.setItem("token", data.token);
+        storeToken(data.token, true);
         localStorage.setItem("user", JSON.stringify(data.user));
         window.dispatchEvent(new Event("auth-change"));
         showSuccess("Admin authorization granted!");

@@ -10,6 +10,7 @@ import {
   fetchCandidateApplications,
   fetchUserProfile
 } from '../../Service/Operation/seekerApi';
+import { getToken } from '../../Utils/memoryStore';
 
 import TopSearchBanner from './TopSearchBanner';
 import JobStatsBar from './JobStatsBar';
@@ -20,6 +21,7 @@ import JobDetailModal from './JobDetailModal';
 import JobApplyModal from './JobApplyModal';
 
 import useSeo from '../../Utils/useSeo';
+import { SALARY_FILTER_MAX, isSalaryFilterActive } from '../../Utils/filters';
 
 export default function JobsPage() {
   useSeo({ path: '/jobs' });
@@ -28,7 +30,7 @@ export default function JobsPage() {
   const urlJobId = searchParams.get('jobId');
 
   // Auth & User State from localStorage
-  const [token] = useState(() => localStorage.getItem('token') || '');
+  const [token] = useState(() => getToken());
   const [user] = useState(() => {
     try {
       const u = localStorage.getItem('user');
@@ -42,6 +44,7 @@ export default function JobsPage() {
   // All jobs list & loading state
   const [allJobsList, setAllJobsList] = useState(mockJobs);
   const [jobsLoading, setJobsLoading] = useState(false);
+  const [jobsError, setJobsError] = useState(false);
 
   // Search state
   const [searchTerm, setSearchTerm] = useState(() => searchParams.get('q') || searchParams.get('title') || searchParams.get('skill') || '');
@@ -53,7 +56,7 @@ export default function JobsPage() {
   const [selectedWorkModes, setSelectedWorkModes] = useState([]);
   const [selectedJobTypes, setSelectedJobTypes] = useState([]);
   const [selectedDatePosted, setSelectedDatePosted] = useState('all');
-  const [maxSalary, setMaxSalary] = useState(3500000); // 35 Lakhs default max
+  const [maxSalary, setMaxSalary] = useState(SALARY_FILTER_MAX); // at the cap = no salary filter
 
   // Selected job for detail view & saved/applied tracking
   const [selectedJobId, setSelectedJobId] = useState('');
@@ -84,6 +87,7 @@ export default function JobsPage() {
 
     const loadJobs = async () => {
       setJobsLoading(true);
+      setJobsError(false);
       try {
         const res = await fetchAllJobs();
         let backendJobs = [];
@@ -98,6 +102,7 @@ export default function JobsPage() {
         setAllJobsList(uniqueJobs);
       } catch (err) {
         console.error("Error loading jobs for JobsPage:", err);
+        setJobsError(true);
       } finally {
         setJobsLoading(false);
       }
@@ -181,7 +186,7 @@ export default function JobsPage() {
     setSelectedWorkModes([]);
     setSelectedJobTypes([]);
     setSelectedDatePosted('all');
-    setMaxSalary(3500000);
+    setMaxSalary(SALARY_FILTER_MAX);
     showSuccess('Filters reset successfully');
   };
 
@@ -194,7 +199,7 @@ export default function JobsPage() {
     selectedWorkModes.length > 0 ||
     selectedJobTypes.length > 0 ||
     selectedDatePosted !== 'all' ||
-    maxSalary < 3500000
+    isSalaryFilterActive(maxSalary)
   );
 
   // Toggle Save / Bookmark Job via backend API
@@ -384,8 +389,9 @@ export default function JobsPage() {
           selectedJobTypes.length === 0 ||
           selectedJobTypes.some((type) => matchesOption(job.jobType, type));
 
-        // Salary filter
-        const matchSalary = job.salaryMin <= maxSalary;
+        // Salary filter — at SALARY_FILTER_MAX the predicate is skipped entirely.
+        // Jobs with no salary info (salaryMin === 0) always pass the filter.
+        const matchSalary = !isSalaryFilterActive(maxSalary) || job.salaryMin <= maxSalary;
 
         // Date Posted filter
         let matchDate = true;
@@ -493,13 +499,28 @@ export default function JobsPage() {
             handleJobTypeChange={handleJobTypeChange}
             maxSalary={maxSalary}
             setMaxSalary={setMaxSalary}
+            salaryFilterMax={SALARY_FILTER_MAX}
             selectedDatePosted={selectedDatePosted}
             setSelectedDatePosted={setSelectedDatePosted}
             resetFilters={resetFilters}
           />
 
           {/* B. JOB LIST & DETAIL PANELS */}
-          {filteredJobs.length === 0 ? (
+          {jobsError && filteredJobs.length === 0 ? (
+            <div className="lg:col-span-9 bg-white border border-gray-100 rounded-2xl p-12 text-center shadow-xs flex flex-col items-center justify-center space-y-4">
+              <AlertCircle className="w-12 h-12 text-amber-400" />
+              <h3 className="text-lg font-bold text-[#1e293b]">Could not load jobs</h3>
+              <p className="text-sm text-gray-400 max-w-sm">
+                Something went wrong while fetching live openings. Check your connection and try again.
+              </p>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-5 py-2.5 bg-[#2B2A8C] hover:bg-[#1E1D66] text-white rounded-xl text-xs font-bold transition shadow-md cursor-pointer"
+              >
+                Retry
+              </button>
+            </div>
+          ) : filteredJobs.length === 0 ? (
             <div className="lg:col-span-9 bg-white border border-gray-100 rounded-2xl p-12 text-center shadow-xs flex flex-col items-center justify-center space-y-4">
               <AlertCircle className="w-12 h-12 text-gray-300" />
               <h3 className="text-lg font-bold text-[#1e293b]">No Matching Jobs Found</h3>
@@ -571,12 +592,13 @@ export default function JobsPage() {
         handleWorkModeChange={handleWorkModeChange}
         selectedJobTypes={selectedJobTypes}
         handleJobTypeChange={handleJobTypeChange}
-        maxSalary={maxSalary}
-        setMaxSalary={setMaxSalary}
-        selectedDatePosted={selectedDatePosted}
-        setSelectedDatePosted={setSelectedDatePosted}
-        resetFilters={resetFilters}
-      />
+          maxSalary={maxSalary}
+          setMaxSalary={setMaxSalary}
+          salaryFilterMax={SALARY_FILTER_MAX}
+          selectedDatePosted={selectedDatePosted}
+          setSelectedDatePosted={setSelectedDatePosted}
+          resetFilters={resetFilters}
+        />
 
       {/* 5. APPLICATION SUBMISSION MODAL */}
       <JobApplyModal

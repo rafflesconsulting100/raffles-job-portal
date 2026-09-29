@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   User,
   Phone,
@@ -48,6 +48,29 @@ export default function ProfileTab({
   const [avatarPreview, setAvatarPreview] = useState(() => user?.avatar || "");
   const [resumeFile, setResumeFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Resync form data when the user prop changes (e.g. after async profile load)
+  useEffect(() => {
+    if (!user) return;
+    queueMicrotask(() => {
+      setFormData((prev) => ({
+        ...prev,
+        username: user.username || prev.username,
+        email: user.email || prev.email,
+        bio: user.bio || prev.bio,
+        location: user.location || prev.location,
+        contactNumber: user.contactNumber || prev.contactNumber,
+        gender: user.gender || prev.gender,
+        dob: user.dob || prev.dob,
+        skills: Array.isArray(user.skills) ? user.skills : prev.skills,
+      }));
+      setEducationList(Array.isArray(user.education) ? user.education : []);
+      setExperienceList(Array.isArray(user.experience) ? user.experience : []);
+      setProjectsList(Array.isArray(user.projects) ? user.projects : []);
+      setCertificationsList(Array.isArray(user.certifications) ? user.certifications : []);
+      if (user.avatar) setAvatarPreview(user.avatar);
+    });
+  }, [user]);
 
   // Modals / Add Forms State
   const [showEduForm, setShowEduForm] = useState(false);
@@ -201,13 +224,23 @@ export default function ProfileTab({
   };
 
   // Avatar & Resume Files
+  const avatarBlobUrl = useRef(null);
+
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setAvatarFile(file);
-      setAvatarPreview(URL.createObjectURL(file));
+      if (avatarBlobUrl.current) URL.revokeObjectURL(avatarBlobUrl.current);
+      avatarBlobUrl.current = URL.createObjectURL(file);
+      setAvatarPreview(avatarBlobUrl.current);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (avatarBlobUrl.current) URL.revokeObjectURL(avatarBlobUrl.current);
+    };
+  }, []);
 
   const handleResumeChange = (e) => {
     const file = e.target.files[0];

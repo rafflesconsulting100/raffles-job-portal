@@ -13,6 +13,7 @@ export const endpoints = {
   SENDOTP_API: BASE_URL + "/auth/send-otp",
   REGISTER_API: BASE_URL + "/auth/register",
   LOGIN_API: BASE_URL + "/auth/login",
+  LOGOUT_API: BASE_URL + "/auth/logout",
   GOOGLE_LOGIN_API: BASE_URL + "/auth/job-seeker/google/login",
   GOOGLE_REGISTER_API: BASE_URL + "/auth/job-seeker/google/register",
 
@@ -28,6 +29,9 @@ export const endpoints = {
   UPDATE_APPLICATION_STATUS_API: (id) => `${BASE_URL}/applications/${id}/status`,
   APPLY_JOB_API: (jobId) => `${BASE_URL}/applications/apply/${jobId}`,
   GET_STUDENT_DATABASE_API: BASE_URL + "/applications/student-database",
+
+  // PUBLIC ENDPOINTS
+  CONTACT_API: BASE_URL + "/contact",
 
   // JOB SEEKER & PROFILE ENDPOINTS
   GET_MY_APPLICATIONS_API: BASE_URL + "/applications/my-applications",

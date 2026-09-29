@@ -2,6 +2,7 @@ const Job = require('../models/Job');
 const Application = require('../models/Application');
 const User = require('../models/User');
 const { notifyJobUpdated, notifyJobDeleted } = require('../utils/googleIndexing');
+const { notExpiredCondition, isExpired } = require('../utils/jobExpiry');
 
 const SITE_ORIGIN = process.env.SITE_URL || 'https://www.rafflesjobs.com';
 
@@ -30,6 +31,34 @@ const validateJobTitle = (title) => {
 };
 
 const escapeRegex = (str) => String(str || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// Express' extended query parser turns `?category[$ne]=` into an object and
+// `?jobType=a&jobType=b` into an array. Passing those through made
+// `field.split(',')` throw (HTTP 500 on a public endpoint) and let operators
+// such as `$ne` silently reach the Mongo filter.
+const asSingleString = (value, name) => {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string') {
+    const err = new Error(`Query parameter "${name}" must be a single plain value`);
+    err.statusCode = 400;
+    throw err;
+  }
+  return value;
+};
+
+// Slug assignment is check-then-insert: two employers posting the same title
+// at the same instant can both pass the pre-save uniqueness check, and the
+// loser used to surface as a confusing "duplicate record" 400. Re-running
+// create makes the hook re-evaluate uniqueness and append a suffix instead.
+const createJobRecord = async (payload) => {
+  try {
+    return await Job.create(payload);
+  } catch (error) {
+    const slugConflict = error && error.code === 11000 && (!error.keyPattern || error.keyPattern.slug);
+    if (!slugConflict) throw error;
+    return Job.create(payload);
+  }
+};
 
 // Validate Number of Openings (whole number >= 1)
 const validateNumberOfOpenings = (value) => {
@@ -141,7 +170,7 @@ exports.createJob = async (req, res, next) => {
 
     const expiryDate = expiresAt || validThrough || null;
 
-    const job = await Job.create({
+    const job = await createJobRecord({
       locations: parsedLocations,
       incentives: incentives ? String(incentives).trim() : '',
       allowances: allowances ? String(allowances).trim() : '',
@@ -189,7 +218,11 @@ exports.createJob = async (req, res, next) => {
 // @access  Public
 exports.getJobs = async (req, res, next) => {
   try {
-    const { keyword, location, jobType, experienceLevel, category } = req.query;
+    const keyword = asSingleString(req.query.keyword, 'keyword');
+    const location = asSingleString(req.query.location, 'location');
+    const jobType = asSingleString(req.query.jobType, 'jobType');
+    const experienceLevel = asSingleString(req.query.experienceLevel, 'experienceLevel');
+    const category = asSingleString(req.query.category, 'category');
 
     const query = { status: 'active' };
 
@@ -249,6 +282,15 @@ exports.getJobs = async (req, res, next) => {
       if (appliedJobIds.length > 0) {
         query._id = { $nin: appliedJobIds };
       }
+    }
+
+    // Listing deadline: a job past its expiresAt date is no longer active,
+    // even though its status column still says 'active'.
+    const expiryCondition = { $and: [notExpiredCondition()] };
+    if (query.$and) {
+      query.$and = [...query.$and, ...expiryCondition.$and];
+    } else {
+      query.$and = expiryCondition.$and;
     }
 
     const jobs = await Job.find(query)
@@ -399,14 +441,24 @@ exports.updateJob = async (req, res, next) => {
     if (description) job.description = description;
     if (salary !== undefined) job.salary = salary;
     if (location) job.location = location;
-    if (jobType) job.jobType = jobType;
+    if (jobType) {
+      if (!['Full-time', 'Part-time', 'Contract', 'Remote', 'Internship'].includes(jobType)) {
+        return res.status(400).json({ success: false, message: 'Invalid job type' });
+      }
+      job.jobType = jobType;
+    }
     if (experienceLevel) job.experienceLevel = experienceLevel;
     if (experienceYears) job.experienceYears = experienceYears;
     if (category) job.category = category;
     if (minEducation) job.minEducation = minEducation;
     if (aboutCompany !== undefined) job.aboutCompany = aboutCompany;
     if (companyLogo !== undefined) job.companyLogo = companyLogo;
-    if (status) job.status = status;
+    if (status) {
+      if (!['active', 'closed'].includes(status)) {
+        return res.status(400).json({ success: false, message: 'Status must be "active" or "closed"' });
+      }
+      job.status = status;
+    }
 
     if (numberOfOpenings !== undefined) {
       const openingsCheck = validateNumberOfOpenings(numberOfOpenings);
@@ -479,6 +531,11 @@ exports.deleteJob = async (req, res, next) => {
     }
 
     const deletedUrl = publicJobUrl(job);
+    // Mirror the admin delete path: leaving Applications behind makes
+    // application.job populate to null (=> 500 on status updates, 403 on
+    // resume access), and stale ids in users.savedJobs keep failing to load.
+    await Application.deleteMany({ job: job._id });
+    await User.updateMany({ savedJobs: job._id }, { $pull: { savedJobs: job._id } });
     await job.deleteOne();
 
     if (deletedUrl) notifyJobDeleted(deletedUrl);
@@ -503,11 +560,17 @@ exports.saveJob = async (req, res, next) => {
     }
 
     const user = await User.findById(req.user.id);
-    const index = user.savedJobs.indexOf(job.id);
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'User not found' });
+    }
+
+    // job.id is a string virtual; savedJobs holds ObjectId objects.
+    // indexOf with === never matches, so compare via toString.
+    const index = user.savedJobs.findIndex(id => id.toString() === job._id.toString());
 
     let isSaved = false;
     if (index === -1) {
-      user.savedJobs.push(job.id);
+      user.savedJobs.push(job._id);
       isSaved = true;
     } else {
       user.savedJobs.splice(index, 1);

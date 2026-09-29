@@ -36,6 +36,8 @@ const sendViaBrevoRestApi = async (apiKey, sender, options, htmlContent) => {
     subject: options.subject,
     htmlContent: htmlContent,
     textContent: options.text || options.body || '',
+    // Lets the team reply straight to the sender (used by the contact form).
+    ...(options.replyTo ? { replyTo: [{ email: options.replyTo }] } : {}),
   };
 
   const response = await fetch(url, {
@@ -117,6 +119,7 @@ const sendViaNodemailerSmtpWithFallback = async (sender, options, htmlContent) =
       const mailOptions = {
         from: sender.raw,
         to: options.to,
+        ...(options.replyTo ? { replyTo: options.replyTo } : {}),
         subject: options.subject,
         text: options.text || options.body || '',
         html: htmlContent,
@@ -183,7 +186,9 @@ const sendEmail = async (options) => {
   if (process.env.BREVO_SMTP_USER && (process.env.BREVO_SMTP_PASS || process.env.BREVO_API_KEY)) {
     try {
       const result = await sendViaNodemailerSmtpWithFallback(sender, options, finalHtml);
-      console.log(`[Email Delivered] Sent to ${options.to} ${options.text || options.body || 'HTML Content'} via ${result.provider} (ID: ${result.messageId})`);
+      // Never log options.text/subject here: sendOtp embeds the live OTP code
+      // in both, and this line runs on the production SMTP path.
+      console.log(`[Email Delivered] Sent to ${options.to} via ${result.provider} SMTP (ID: ${result.messageId})`);
       return result;
     } catch (smtpError) {
       console.error(`[Brevo SMTP Error]: All ports failed - ${smtpError.message}`);

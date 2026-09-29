@@ -39,7 +39,10 @@ export default function JobDetailModal({
   const jobId = job._id || job.id;
 
   const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
+    const shareUrl = job.slug
+      ? `${window.location.origin}/jobs/${job.slug}`
+      : window.location.href;
+    navigator.clipboard.writeText(shareUrl);
     setCopied(true);
     showSuccess(`Job link for "${job.title}" copied!`);
     setTimeout(() => setCopied(false), 2000);
@@ -152,7 +155,7 @@ export default function JobDetailModal({
             <div>
               <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Salary</p>
               <p className="text-xs sm:text-sm font-black text-slate-900">
-                {job.salary ? (job.salary.startsWith('') ? job.salary : `${job.salary}`) : '₹3.5 - 6.5 Lacs P.A.'}
+                {job.salary || 'Not specified'}
               </p>
             </div>
           </div>
@@ -164,7 +167,7 @@ export default function JobDetailModal({
             <div>
               <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Location</p>
               <p className="text-xs sm:text-sm font-black text-slate-900 truncate">
-                {job.location || 'Erode, Tamil Nadu'}
+                {job.location || 'Not specified'}
               </p>
             </div>
           </div>

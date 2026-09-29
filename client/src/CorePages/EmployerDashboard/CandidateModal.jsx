@@ -21,6 +21,16 @@ export default function CandidateModal({ viewingApplicantModal, setViewingApplic
         </p>
 
         <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+          {viewingApplicantModal.coverLetter && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <div className="text-xs font-bold text-[#2B2A8C] mb-1">
+                Cover Letter
+              </div>
+              <div className="text-xs text-slate-800 font-medium leading-relaxed whitespace-pre-wrap">
+                {viewingApplicantModal.coverLetter}
+              </div>
+            </div>
+          )}
           {viewingApplicantModal.screeningAnswers?.map((item, idx) => (
             <div key={idx} className="bg-slate-50 border border-slate-200 rounded-xl p-4">
               <div className="text-xs font-bold text-[#2B2A8C] mb-1">

@@ -22,6 +22,7 @@ const verifyFirebaseIdToken = async (idToken) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ idToken }),
+      signal: AbortSignal.timeout(5000),
     });
 
     if (!response.ok) {

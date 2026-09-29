@@ -1,6 +1,7 @@
 import React from 'react';
 import { Filter, MapPin, X } from 'lucide-react';
 import { filterOptions } from '../../data/mockdata';
+import { SALARY_FILTER_MAX, SALARY_FILTER_MIN, salaryFilterLabel } from '../../Utils/filters';
 
 export default function MobileFilterDrawer({
   isOpen,
@@ -19,6 +20,7 @@ export default function MobileFilterDrawer({
   handleJobTypeChange,
   maxSalary,
   setMaxSalary,
+  salaryFilterMax = SALARY_FILTER_MAX,
   selectedDatePosted,
   setSelectedDatePosted,
   resetFilters
@@ -79,7 +81,7 @@ export default function MobileFilterDrawer({
                 {availableLocations.length > 0 && (
                   <select
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-[#1e293b] focus:outline-none focus:border-[#2B2A8C] transition cursor-pointer"
-                    value={locationSearch}
+                    value={availableLocations.includes(locationSearch) ? locationSearch : ''}
                     onChange={(e) => setLocationSearch(e.target.value)}
                   >
                     <option value="">All Locations ({allJobsCount})</option>
@@ -161,18 +163,22 @@ export default function MobileFilterDrawer({
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">Max Salary</label>
                   <span className="text-xs font-bold text-[#2B2A8C]">
-                    ₹{(maxSalary / 100000).toFixed(1)}L PA
+                    {salaryFilterLabel(maxSalary)}
                   </span>
                 </div>
                 <input
                   type="range"
-                  min="400000"
-                  max="3500000"
+                  min={SALARY_FILTER_MIN}
+                  max={salaryFilterMax}
                   step="100000"
                   value={maxSalary}
                   onChange={(e) => setMaxSalary(Number(e.target.value))}
                   className="w-full accent-[#2B2A8C] cursor-pointer"
                 />
+                <div className="flex justify-between text-[10px] text-gray-400 font-bold">
+                  <span>₹{(SALARY_FILTER_MIN / 100000).toFixed(0)}L PA</span>
+                  <span>Any</span>
+                </div>
               </div>
 
               {/* Date Posted selection */}
