@@ -306,8 +306,13 @@ exports.register = async (req, res, next) => {
     }
     const isEmployer = roleKey === 'employer';
     const accountRole = isEmployer ? 'Employer' : 'Job Seeker';
-
-    const companyName = typeof (bodyCompanyName || username) === 'string' ? (bodyCompanyName || username).trim() : '';
+    const resolvedCompany = typeof bodyCompanyName === 'string' && bodyCompanyName.trim()
+      ? bodyCompanyName.trim()
+      : (typeof username === 'string' ? username.trim() : '');
+    const resolvedUsername = typeof username === 'string' && username.trim()
+      ? username.trim()
+      : resolvedCompany;
+    const companyName = resolvedCompany;
     const termsAccepted = acceptedTerms === true || acceptedTerms === 'true';
 
     // Common validations — these used to run only for Employers, so a Job
@@ -397,7 +402,7 @@ exports.register = async (req, res, next) => {
 
     // Create user — new Employers always start as Pending awaiting Admin approval
     const user = await User.create({
-      username: isEmployer ? companyName : username,
+      username: isEmployer ? (resolvedUsername || companyName) : username,
       companyName: isEmployer ? companyName : '',
       email: email.toLowerCase().trim(),
       password,
@@ -486,7 +491,29 @@ exports.logout = async (req, res, next) => {
 exports.getProfile = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
-    res.status(200).json({ success: true, user });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const userObj = user.toObject();
+    delete userObj.password;
+
+    const isApprovedEmployer = user.role === 'Employer' &&
+      (user.approvalStatus === 'approved' || (
+        user.status === 'Active' &&
+        user.isApproved !== false &&
+        user.employerAccess !== false &&
+        user.status !== 'Pending' &&
+        user.status !== 'Rejected' &&
+        user.status !== 'Suspended'
+      ));
+
+    const hasMobile = (typeof user.mobileNumber === 'string' && user.mobileNumber.trim() !== '') ||
+      (typeof user.contactNumber === 'string' && user.contactNumber.trim() !== '');
+
+    userObj.requiresMobileNumber = user.role === 'Employer' && isApprovedEmployer && !hasMobile;
+
+    res.status(200).json({ success: true, user: userObj });
   } catch (error) {
     next(error);
   }
@@ -522,21 +549,68 @@ exports.updateProfile = async (req, res, next) => {
     if (user.role === 'Employer') {
       if (companyName) {
         user.companyName = companyName.trim();
-        user.username = companyName.trim();
-      } else if (username) {
+      }
+      if (username) {
         user.username = username.trim();
-        user.companyName = username.trim();
+      }
+      if (!user.companyName && user.username) {
+        user.companyName = user.username;
+      }
+      if (!user.username && user.companyName) {
+        user.username = user.companyName;
       }
     } else if (username) {
       user.username = username.trim();
     }
 
     if (mobileNumber !== undefined) {
-      user.mobileNumber = mobileNumber;
-      user.contactNumber = mobileNumber;
+      const rawMobile = typeof mobileNumber === 'string' ? mobileNumber.trim() : '';
+      if (!rawMobile) {
+        return res.status(400).json({ success: false, message: 'Mobile number cannot be empty' });
+      }
+      const normalizedMobile = normalizeMobileNumber(rawMobile);
+      if (!normalizedMobile) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please provide a valid mobile number (10-digit mobile number or +91XXXXXXXXXX).',
+        });
+      }
+      const existingMobile = await User.findOne({
+        _id: { $ne: user._id },
+        $or: [
+          { contactNumber: { $in: mobileSearchValues(normalizedMobile) } },
+          { mobileNumber: { $in: mobileSearchValues(normalizedMobile) } },
+        ],
+      });
+      if (existingMobile) {
+        return res.status(400).json({ success: false, message: 'This mobile number is already registered.' });
+      }
+      user.mobileNumber = normalizedMobile;
+      user.contactNumber = normalizedMobile;
     } else if (contactNumber !== undefined) {
-      user.contactNumber = contactNumber;
-      user.mobileNumber = contactNumber;
+      const rawContact = typeof contactNumber === 'string' ? contactNumber.trim() : '';
+      if (!rawContact) {
+        return res.status(400).json({ success: false, message: 'Contact number cannot be empty' });
+      }
+      const normalizedContact = normalizeMobileNumber(rawContact);
+      if (!normalizedContact) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please provide a valid mobile number (10-digit mobile number or +91XXXXXXXXXX).',
+        });
+      }
+      const existingContact = await User.findOne({
+        _id: { $ne: user._id },
+        $or: [
+          { contactNumber: { $in: mobileSearchValues(normalizedContact) } },
+          { mobileNumber: { $in: mobileSearchValues(normalizedContact) } },
+        ],
+      });
+      if (existingContact) {
+        return res.status(400).json({ success: false, message: 'This mobile number is already registered.' });
+      }
+      user.contactNumber = normalizedContact;
+      user.mobileNumber = normalizedContact;
     }
 
     if (bio !== undefined) user.bio = bio;
@@ -603,10 +677,28 @@ exports.updateProfile = async (req, res, next) => {
 
     await user.save();
 
+    const userObj = user.toObject();
+    delete userObj.password;
+
+    const isApprovedEmployer = user.role === 'Employer' &&
+      (user.approvalStatus === 'approved' || (
+        user.status === 'Active' &&
+        user.isApproved !== false &&
+        user.employerAccess !== false &&
+        user.status !== 'Pending' &&
+        user.status !== 'Rejected' &&
+        user.status !== 'Suspended'
+      ));
+
+    const hasMobile = (typeof user.mobileNumber === 'string' && user.mobileNumber.trim() !== '') ||
+      (typeof user.contactNumber === 'string' && user.contactNumber.trim() !== '');
+
+    userObj.requiresMobileNumber = user.role === 'Employer' && isApprovedEmployer && !hasMobile;
+
     res.status(200).json({
       success: true,
       message: 'Profile updated successfully',
-      user,
+      user: userObj,
     });
   } catch (error) {
     next(error);

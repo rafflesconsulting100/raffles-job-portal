@@ -29,9 +29,17 @@ const protect = async (req, res, next) => {
 
     // 4. Block suspended/rejected accounts from accessing protected routes
     if (req.user.status === 'Suspended' || req.user.status === 'Rejected') {
+      let message = 'Your account has been suspended or rejected. Please contact support.';
+      if (req.user.role === 'Employer') {
+        if (req.user.status === 'Rejected' || req.user.approvalStatus === 'rejected') {
+          message = 'Your employer account registration was not approved.';
+        } else if (req.user.status === 'Suspended' || req.user.approvalStatus === 'revoked' || req.user.employerAccess === false) {
+          message = 'Your employer access has been revoked. Please contact RafflesJobs support.';
+        }
+      }
       return res.status(403).json({
         success: false,
-        message: 'Your account has been suspended or rejected. Please contact support.',
+        message,
       });
     }
 

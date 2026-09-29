@@ -1,11 +1,13 @@
 import React, { useState } from "react";
-import { Lock, ChevronRight, ShieldAlert, Clock, Mail, RefreshCw, CheckCircle2, XCircle, Phone, Save } from "lucide-react";
+import { Lock, ChevronRight, ShieldAlert, Clock, Mail, RefreshCw, CheckCircle2, XCircle, Phone, Save, LogOut } from "lucide-react";
 
-export default function AuthGuard({ navigate, isPending, isRejected, isRestricted, requiresMobileNumber, onRefreshStatus, onSaveMobile }) {
+export default function AuthGuard({ navigate, isPending, isRejected, isRestricted, requiresMobileNumber, onRefreshStatus, onSaveMobile, onLogout }) {
   const [checking, setChecking] = useState(false);
   const [mobileNumber, setMobileNumber] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  const [savedSuccess, setSavedSuccess] = useState(false);
 
   const handleCheckStatus = async () => {
     if (onRefreshStatus) {
@@ -31,6 +33,7 @@ export default function AuthGuard({ navigate, isPending, isRejected, isRestricte
     setError("");
     try {
       await onSaveMobile(cleaned);
+      setSavedSuccess(true);
     } catch (err) {
       setError(err.message || "Unable to save mobile number. Please try again.");
     } finally {
@@ -39,6 +42,37 @@ export default function AuthGuard({ navigate, isPending, isRejected, isRestricte
   };
 
   if (requiresMobileNumber) {
+    if (savedSuccess) {
+      return (
+        <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col items-center justify-center p-6 pt-24 font-sans">
+          <div className="max-w-md w-full bg-white border border-emerald-200 rounded-3xl p-8 text-center shadow-xl animate-fadeIn">
+            <div className="w-16 h-16 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-center text-emerald-600 mx-auto mb-6 shadow-sm">
+              <CheckCircle2 className="w-8 h-8" />
+            </div>
+            <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-200 text-xs font-bold uppercase tracking-wider mb-3 inline-block">
+              Verification in Progress
+            </span>
+            <h2 className="text-2xl font-black text-slate-900 mb-2">
+              Verification in Progress
+            </h2>
+            <p className="text-slate-800 text-sm font-semibold mb-2">
+              Your mobile number has been added successfully.
+            </p>
+            <p className="text-slate-500 text-xs mb-6 leading-relaxed">
+              Your employer profile is being updated. You can continue once verification is complete.
+            </p>
+            <button
+              type="button"
+              onClick={handleCheckStatus}
+              className="w-full bg-[#2B2A8C] hover:bg-[#1E1D66] text-white font-bold py-3.5 rounded-xl transition shadow-md flex items-center justify-center gap-2 text-sm cursor-pointer"
+            >
+              Continue to Employer Dashboard <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col items-center justify-center p-6 pt-24 font-sans">
         <div className="max-w-md w-full bg-white border border-blue-200 rounded-3xl p-8 text-center shadow-xl">
@@ -46,14 +80,16 @@ export default function AuthGuard({ navigate, isPending, isRejected, isRestricte
             <Phone className="w-8 h-8" />
           </div>
           <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-900 border border-blue-200 text-xs font-bold uppercase tracking-wider mb-3 inline-block">
-            Profile Completion Required
+            Verification: Mobile Number Required
           </span>
           <h2 className="text-2xl font-black text-slate-900 mb-2">
             Mobile Number Required
           </h2>
-          <p className="text-slate-600 text-sm mb-6 leading-relaxed">
-            Please add your mobile number to continue using your Employer account.
-            Your mobile number will be securely stored in your RafflesJobs account.
+          <p className="text-slate-700 text-sm mb-2 font-medium">
+            Your employer account has been approved, but your mobile number is not yet provided.
+          </p>
+          <p className="text-slate-500 text-xs mb-6 leading-relaxed">
+            Please add your mobile number to complete verification and continue using the employer portal.
           </p>
 
           <form onSubmit={handleSaveMobile} className="space-y-4">
@@ -88,19 +124,28 @@ export default function AuthGuard({ navigate, isPending, isRejected, isRestricte
               ) : (
                 <>
                   <Save className="w-4 h-4" />
-                  Save & Continue
+                  Add Mobile Number
                 </>
               )}
             </button>
           </form>
 
-          <div className="mt-4">
+          <div className="mt-4 flex flex-col gap-2">
             <button
               onClick={() => navigate("/contact")}
               className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl transition text-sm flex items-center justify-center gap-2 cursor-pointer"
             >
               <Mail className="w-4 h-4" /> Contact Support
             </button>
+            {onLogout && (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" /> Sign Out
+              </button>
+            )}
           </div>
         </div>
       </div>

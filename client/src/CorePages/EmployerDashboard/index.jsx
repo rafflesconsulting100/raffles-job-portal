@@ -10,10 +10,11 @@ import {
   updateCandidateStatus,
   fetchStudentDatabase
 } from "../../Service/Operation/employerApi";
-import { getProfile } from "../../Service/Operation/authApi";
+import { getProfile, logout } from "../../Service/Operation/authApi";
 import { updateUserProfile } from "../../Service/Operation/seekerApi";
 import { showSuccess, showError } from "../../Utils/toast";
 import { getToken } from "../../Utils/memoryStore";
+import { clearClientSession } from "../../Service/apiConnector";
 
 import AuthGuard from "./AuthGuard";
 import HeaderBar from "./HeaderBar";
@@ -503,6 +504,18 @@ export default function EmployerDashboard() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout(token);
+    } catch {
+      // Best-effort
+    }
+    clearClientSession();
+    setUser(null);
+    navigate("/login");
+    showSuccess("Logged out successfully");
+  };
+
   // Auth Guard Screen if not logged in or not an Employer
   if (!token || !user || user.role !== "Employer") {
     return <AuthGuard navigate={navigate} />;
@@ -529,11 +542,15 @@ export default function EmployerDashboard() {
       user?.status === "Suspended");
 
   // Check if employer requires mobile number completion (approved but no mobile)
+  const hasMobile =
+    (typeof user?.mobileNumber === 'string' && user.mobileNumber.trim() !== '') ||
+    (typeof user?.contactNumber === 'string' && user.contactNumber.trim() !== '');
+
   const requiresMobileNumber =
     !isEmployerRejected &&
     !isEmployerPending &&
     !isEmployerRestricted &&
-    user?.requiresMobileNumber === true;
+    (user?.requiresMobileNumber === true || !hasMobile);
 
   if (isEmployerRejected) {
     return (
@@ -571,6 +588,8 @@ export default function EmployerDashboard() {
         navigate={navigate}
         requiresMobileNumber={true}
         onSaveMobile={handleSaveMobile}
+        onRefreshStatus={handleRefreshStatus}
+        onLogout={handleLogout}
       />
     );
   }

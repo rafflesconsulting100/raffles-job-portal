@@ -220,13 +220,23 @@ exports.getAllEmployers = async (req, res, next) => {
         const jobIds = jobs.map((j) => j._id);
         const applicantCount = await Application.countDocuments({ job: { $in: jobIds } });
 
-        const isGranted = emp.employerAccess !== false && emp.isApproved !== false && emp.status === 'Active';
-        const isRejected = emp.status === 'Rejected';
-        const isPending = !isRejected && (emp.status === 'Pending' || (emp.isApproved === false && emp.status !== 'Suspended'));
+        const dbApproval = (empObj.approvalStatus || '').toLowerCase();
+        let finalApprovalStatus;
+        if (dbApproval && ['pending', 'approved', 'rejected', 'revoked'].includes(dbApproval)) {
+          finalApprovalStatus = dbApproval;
+        } else {
+          const isRejected = emp.status === 'Rejected';
+          const isRevoked = emp.status === 'Suspended' || emp.employerAccess === false;
+          const isPending = emp.status === 'Pending' || emp.isApproved === false;
+          finalApprovalStatus = isRejected ? 'rejected' : isRevoked ? 'revoked' : isPending ? 'pending' : 'approved';
+        }
+
+        const isGranted = finalApprovalStatus === 'approved';
 
         return {
           ...empObj,
-          companyName: empObj.companyName || empObj.username,
+          companyName: empObj.companyName || empObj.username || '',
+          username: empObj.username || empObj.companyName || '',
           mobileNumber: empObj.mobileNumber || empObj.contactNumber || '',
           contactNumber: empObj.contactNumber || empObj.mobileNumber || '',
           jobCount,
@@ -235,13 +245,7 @@ exports.getAllEmployers = async (req, res, next) => {
           isApproved: isGranted,
           employerAccess: isGranted,
           status: emp.status,
-          approvalStatus: isRejected
-            ? 'rejected'
-            : isPending
-            ? 'pending'
-            : isGranted
-            ? 'approved'
-            : 'revoked',
+          approvalStatus: finalApprovalStatus,
         };
       })
     );

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowRightIcon, LockIcon, MailIcon, PhoneIcon, UserIcon } from 'lucide-react';
+import { ArrowRightIcon, LockIcon, MailIcon, PhoneIcon, UserIcon, Building2 } from 'lucide-react';
 import { sendOtp } from '../Service/Operation/authApi';
 import { showSuccess, showError } from '../Utils/toast';
 import { normalizeMobileNumber } from '../Utils/validation';
@@ -20,6 +20,7 @@ export default function Register() {
   // Form States
   const [formData, setFormData] = useState({
     name: '',
+    companyName: '',
     email: '',
     mobileNumber: '',
     password: '',
@@ -59,8 +60,12 @@ export default function Register() {
       // Field-level validation for Employer registration
       const errs = {};
 
+      if (!formData.companyName || !formData.companyName.trim()) {
+        errs.companyName = 'Company name is required.';
+      }
+
       if (!formData.name || !formData.name.trim()) {
-        errs.name = 'Company name is required.';
+        errs.name = 'Contact person name is required.';
       }
 
       if (!formData.mobileNumber || !formData.mobileNumber.trim()) {
@@ -135,9 +140,11 @@ export default function Register() {
         // Redirect to separate verification page, passing the register form
         // data in router state. Router state is lost on a page refresh, so a
         // copy is kept in sessionStorage for the OTP page to fall back on.
+        const companyNameVal = formData.companyName.trim() || formData.name.trim();
+        const usernameVal = formData.name.trim() || formData.companyName.trim();
         const pendingRegistration = {
-          username: formData.name.trim(),
-          companyName: formData.name.trim(),
+          username: usernameVal,
+          companyName: companyNameVal,
           email: formData.email.trim(),
           password: formData.password,
           confirmPassword: formData.confirmPassword,
@@ -184,20 +191,32 @@ export default function Register() {
 
         <form onSubmit={handleContinue} className="space-y-4">
           {/* Input Interactive Fields */}
-          <AuthInput
-            label={isEmployerRole ? 'Company Name' : 'Full Name'}
-            icon={UserIcon}
-            type="text"
-            name="name"
-            placeholder={isEmployerRole ? 'Enter your company name' : 'Enter your full name'}
-            value={formData.name}
-            onChange={handleTextChange}
-            error={fieldErrors.name}
-            required
-          />
-
           {isEmployerRole ? (
             <>
+              <AuthInput
+                label="Company Name"
+                icon={Building2}
+                type="text"
+                name="companyName"
+                placeholder="Enter your company name"
+                value={formData.companyName}
+                onChange={handleTextChange}
+                error={fieldErrors.companyName}
+                required
+              />
+
+              <AuthInput
+                label="Contact Person Name"
+                icon={UserIcon}
+                type="text"
+                name="name"
+                placeholder="Enter contact person name"
+                value={formData.name}
+                onChange={handleTextChange}
+                error={fieldErrors.name}
+                required
+              />
+
               <AuthInput
                 label="Mobile Number"
                 icon={PhoneIcon}
@@ -224,17 +243,31 @@ export default function Register() {
               />
             </>
           ) : (
-            <AuthInput
-              label="Personal Email"
-              icon={MailIcon}
-              type="email"
-              name="email"
-              placeholder="name@gmail.com"
-              value={formData.email}
-              onChange={handleTextChange}
-              error={fieldErrors.email}
-              required
-            />
+            <>
+              <AuthInput
+                label="Full Name"
+                icon={UserIcon}
+                type="text"
+                name="name"
+                placeholder="Enter your full name"
+                value={formData.name}
+                onChange={handleTextChange}
+                error={fieldErrors.name}
+                required
+              />
+
+              <AuthInput
+                label="Personal Email"
+                icon={MailIcon}
+                type="email"
+                name="email"
+                placeholder="name@gmail.com"
+                value={formData.email}
+                onChange={handleTextChange}
+                error={fieldErrors.email}
+                required
+              />
+            </>
           )}
 
           <AuthInput

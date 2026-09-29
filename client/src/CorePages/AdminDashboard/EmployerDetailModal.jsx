@@ -183,9 +183,14 @@ export default function EmployerDetailModal({
                 <span>Mobile: <strong>{mobileNumber}</strong></span>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <Phone size={16} className="text-slate-400 shrink-0" />
-                <span>Mobile: <strong className="text-slate-400">Not provided</strong></span>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Phone size={16} className="text-slate-400 shrink-0" />
+                  <span>Mobile: <strong className="text-slate-500">Not provided</strong></span>
+                </div>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold">
+                  <span>VERIFICATION IN PROGRESS: Mobile number required</span>
+                </div>
               </div>
             )}
             <div className="flex items-center gap-2">

@@ -229,12 +229,17 @@ export default function EmployersTab({
                             </p>
                             {getMobile(emp) ? (
                               <p className="text-xs text-slate-600 font-semibold flex items-center gap-1 mt-0.5">
-                                <Phone size={12} /> {getMobile(emp)}
+                                <Phone size={12} /> Mobile: {getMobile(emp)}
                               </p>
                             ) : (
-                              <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                                <Phone size={12} /> Mobile: Not provided
-                              </p>
+                              <div className="mt-1 space-y-0.5">
+                                <p className="text-xs text-slate-500 flex items-center gap-1">
+                                  <Phone size={12} className="text-slate-400" /> Mobile: <span className="font-semibold text-slate-600">Not provided</span>
+                                </p>
+                                <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                  VERIFICATION IN PROGRESS: Mobile number required
+                                </span>
+                              </div>
                             )}
                             {emp.location && (
                               <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
