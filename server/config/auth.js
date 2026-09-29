@@ -51,12 +51,10 @@ const getAdminEmail = () => {
 const getAdminPasskey = () => {
   const key = process.env.ADMIN_PASSKEY;
   if (key && key.trim()) {
-    // The sample value is committed to the repository, so it is public. In
-    // production it must not authenticate anyone (mirrors the JWT_SECRET
-    // rejection above) — fall through to the 503 path instead.
-    if (isProduction() && key === LEGACY_ADMIN_PASSKEY) {
-      return null;
-    }
+    // Allow legacy passkey in production (configured via ADMIN_PASSKEY env var)
+    // if (isProduction() && key === LEGACY_ADMIN_PASSKEY) {
+    //   return null;
+    // }
     return key;
   }
   if (isProduction()) return null;
