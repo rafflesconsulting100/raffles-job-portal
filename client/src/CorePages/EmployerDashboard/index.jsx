@@ -108,6 +108,27 @@ export default function EmployerDashboard() {
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [studentStats, setStudentStats] = useState(null);
 
+  // Re-validate employer access with the server on mount so a freshly
+  // approved/revoked account is reflected before any employer-only API call.
+  useEffect(() => {
+    if (!token) return undefined;
+    let cancelled = false;
+    getProfile(token)
+      .then((res) => {
+        if (cancelled || !res || !res.success || !res.user) return;
+        localStorage.setItem("user", JSON.stringify(res.user));
+        setUser(res.user);
+        window.dispatchEvent(new Event("auth-change"));
+      })
+      .catch((err) => {
+        console.error("Failed to refresh employer profile on mount:", err);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Load overall dashboard data
   const loadDashboardData = async (authToken) => {
     setJobsLoading(true);

@@ -14,7 +14,9 @@ const {
   getAllUsers,
   updateUserRole,
   deleteUserByAdmin,
+  getAllApplications,
 } = require('../controllers/adminController');
+const { updateApplicationStatus } = require('../controllers/applicationController');
 const { protect, restrictTo } = require('../middleware/authMiddleware');
 const { adminLoginLimiter } = require('../middleware/rateLimitMiddleware');
 
@@ -35,6 +37,9 @@ router.put('/employers/:id/revoke', revokeEmployer);
 router.put('/approve/:id', approveEmployer);
 router.put('/reject/:id', rejectEmployer);
 router.put('/revoke/:id', revokeEmployer);
+
+router.get('/applications', getAllApplications);
+router.patch('/applications/:id/status', updateApplicationStatus);
 
 router.get('/jobs', getAllJobs);
 router.put('/jobs/:id/status', updateJobStatus);

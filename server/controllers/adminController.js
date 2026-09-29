@@ -309,6 +309,10 @@ exports.toggleEmployerAccess = async (req, res, next) => {
 
     await employer.save();
 
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[DEBUG][AdminGrantAccess] Employer: ${employer._id}, status: ${employer.status}, employerAccess: ${employer.employerAccess}, isApproved: ${employer.isApproved}`);
+    }
+
     const isGranted = !!(employer.employerAccess && employer.isApproved && employer.status === 'Active');
 
     // Notify the employer whenever the approval state changes
@@ -562,4 +566,31 @@ exports.rejectEmployer = async (req, res, next) => {
 exports.revokeEmployer = async (req, res, next) => {
   req.body = { ...req.body, approvalStatus: 'revoked', status: 'Suspended', employerAccess: false, isApproved: false };
   return exports.toggleEmployerAccess(req, res, next);
+};
+
+// @desc    Get All Job Applications Platform-wide (Admin)
+// @route   GET /api/admin/applications
+// @access  Private (Admin)
+exports.getAllApplications = async (req, res, next) => {
+  try {
+    const applications = await Application.find()
+      .populate('applicant', 'username email avatar bio location skills contactNumber education experience projects certifications resume resumeOriginalName')
+      .populate({
+        path: 'job',
+        populate: { path: 'creator', select: 'username email avatar' },
+      })
+      .sort({ createdAt: -1 });
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[DEBUG][AdminApplications] Admin ${req.user?._id} fetched ${applications.length} applications`);
+    }
+
+    res.status(200).json({
+      success: true,
+      count: applications.length,
+      applications,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
