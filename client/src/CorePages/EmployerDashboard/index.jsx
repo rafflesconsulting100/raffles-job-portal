@@ -11,6 +11,7 @@ import {
   fetchStudentDatabase
 } from "../../Service/Operation/employerApi";
 import { getProfile } from "../../Service/Operation/authApi";
+import { updateUserProfile } from "../../Service/Operation/seekerApi";
 import { showSuccess, showError } from "../../Utils/toast";
 import { getToken } from "../../Utils/memoryStore";
 
@@ -481,6 +482,27 @@ export default function EmployerDashboard() {
     }
   };
 
+  // Save mobile number for profile completion
+  const handleSaveMobile = async (mobileNumber) => {
+    if (!token) throw new Error("Not authenticated");
+    try {
+      const formData = new FormData();
+      formData.append("mobileNumber", mobileNumber);
+      const res = await updateUserProfile(formData, token);
+      if (res.success && res.user) {
+        localStorage.setItem("user", JSON.stringify(res.user));
+        setUser(res.user);
+        window.dispatchEvent(new Event("auth-change"));
+        showSuccess("Mobile number added successfully!");
+        loadDashboardData(token);
+      } else {
+        throw new Error(res.message || "Failed to save mobile number");
+      }
+    } catch (err) {
+      throw Object.assign(new Error(err.message || "Unable to save mobile number. Please try again."), { cause: err });
+    }
+  };
+
   // Auth Guard Screen if not logged in or not an Employer
   if (!token || !user || user.role !== "Employer") {
     return <AuthGuard navigate={navigate} />;
@@ -505,6 +527,13 @@ export default function EmployerDashboard() {
     (approval === "revoked" ||
       user?.employerAccess === false ||
       user?.status === "Suspended");
+
+  // Check if employer requires mobile number completion (approved but no mobile)
+  const requiresMobileNumber =
+    !isEmployerRejected &&
+    !isEmployerPending &&
+    !isEmployerRestricted &&
+    user?.requiresMobileNumber === true;
 
   if (isEmployerRejected) {
     return (
@@ -532,6 +561,16 @@ export default function EmployerDashboard() {
         navigate={navigate}
         isRestricted={true}
         onRefreshStatus={handleRefreshStatus}
+      />
+    );
+  }
+
+  if (requiresMobileNumber) {
+    return (
+      <AuthGuard
+        navigate={navigate}
+        requiresMobileNumber={true}
+        onSaveMobile={handleSaveMobile}
       />
     );
   }

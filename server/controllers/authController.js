@@ -37,6 +37,13 @@ const sendTokenResponse = (user, statusCode, res) => {
     sameSite: 'lax', // Lax is helpful for local cross-port dev
   };
 
+  // Determine if employer requires mobile number completion
+  const requiresMobileNumber = user.role === 'Employer' &&
+    user.isApproved === true &&
+    user.employerAccess === true &&
+    user.status === 'Active' &&
+    (!user.mobileNumber || user.mobileNumber.trim() === '');
+
   res.status(statusCode).cookie('token', token, cookieOptions).json({
     success: true,
     token,
@@ -73,6 +80,7 @@ const sendTokenResponse = (user, statusCode, res) => {
       resume: user.resume,
       resumeOriginalName: user.resumeOriginalName,
       savedJobs: user.savedJobs,
+      requiresMobileNumber,
     },
   });
 };

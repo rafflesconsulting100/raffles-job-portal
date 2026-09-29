@@ -1,8 +1,11 @@
 import React, { useState } from "react";
-import { Lock, ChevronRight, ShieldAlert, Clock, Mail, RefreshCw, CheckCircle2, XCircle } from "lucide-react";
+import { Lock, ChevronRight, ShieldAlert, Clock, Mail, RefreshCw, CheckCircle2, XCircle, Phone, Save } from "lucide-react";
 
-export default function AuthGuard({ navigate, isPending, isRejected, isRestricted, onRefreshStatus }) {
+export default function AuthGuard({ navigate, isPending, isRejected, isRestricted, requiresMobileNumber, onRefreshStatus, onSaveMobile }) {
   const [checking, setChecking] = useState(false);
+  const [mobileNumber, setMobileNumber] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   const handleCheckStatus = async () => {
     if (onRefreshStatus) {
@@ -16,6 +19,93 @@ export default function AuthGuard({ navigate, isPending, isRejected, isRestricte
       window.location.reload();
     }
   };
+
+  const handleSaveMobile = async (e) => {
+    e.preventDefault();
+    const cleaned = mobileNumber.replace(/\D/g, '');
+    if (!cleaned || cleaned.length < 10) {
+      setError("Please enter a valid 10-digit mobile number");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      await onSaveMobile(cleaned);
+    } catch (err) {
+      setError(err.message || "Unable to save mobile number. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (requiresMobileNumber) {
+    return (
+      <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col items-center justify-center p-6 pt-24 font-sans">
+        <div className="max-w-md w-full bg-white border border-blue-200 rounded-3xl p-8 text-center shadow-xl">
+          <div className="w-16 h-16 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-center text-blue-600 mx-auto mb-6 shadow-sm">
+            <Phone className="w-8 h-8" />
+          </div>
+          <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-900 border border-blue-200 text-xs font-bold uppercase tracking-wider mb-3 inline-block">
+            Profile Completion Required
+          </span>
+          <h2 className="text-2xl font-black text-slate-900 mb-2">
+            Mobile Number Required
+          </h2>
+          <p className="text-slate-600 text-sm mb-6 leading-relaxed">
+            Please add your mobile number to continue using your Employer account.
+            Your mobile number will be securely stored in your RafflesJobs account.
+          </p>
+
+          <form onSubmit={handleSaveMobile} className="space-y-4">
+            <div className="text-left">
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Mobile Number</label>
+              <div className="flex items-center border border-slate-300 rounded-xl px-4 h-12 bg-white">
+                <span className="text-slate-500 font-bold mr-2">+91</span>
+                <input
+                  type="tel"
+                  value={mobileNumber}
+                  onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  placeholder="Enter 10-digit mobile number"
+                  className="w-full bg-transparent text-sm outline-none font-medium tracking-widest"
+                  maxLength={10}
+                  disabled={saving}
+                  required
+                />
+              </div>
+              {error && <p className="text-xs font-semibold text-red-500 mt-1.5">{error}</p>}
+            </div>
+
+            <button
+              type="submit"
+              disabled={saving}
+              className="w-full bg-[#2B2A8C] hover:bg-[#1E1D66] disabled:bg-slate-300 text-white font-bold py-3.5 rounded-xl transition shadow-md flex items-center justify-center gap-2 text-sm cursor-pointer"
+            >
+              {saving ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  Save & Continue
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="mt-4">
+            <button
+              onClick={() => navigate("/contact")}
+              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl transition text-sm flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Mail className="w-4 h-4" /> Contact Support
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isPending) {
     return (
