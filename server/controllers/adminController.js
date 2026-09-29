@@ -224,10 +224,10 @@ exports.getAllEmployers = async (req, res, next) => {
         let finalApprovalStatus;
         if (dbApproval === 'rejected' || emp.status === 'Rejected') {
           finalApprovalStatus = 'rejected';
-        } else if (dbApproval === 'revoked' || emp.status === 'Suspended') {
-          finalApprovalStatus = 'revoked';
         } else if (dbApproval === 'pending' || emp.status === 'Pending') {
           finalApprovalStatus = 'pending';
+        } else if (dbApproval === 'revoked' || emp.status === 'Suspended') {
+          finalApprovalStatus = 'revoked';
         } else if (dbApproval === 'approved' || (emp.status === 'Active' && emp.isApproved !== false && emp.employerAccess !== false)) {
           finalApprovalStatus = 'approved';
         } else {
@@ -249,6 +249,8 @@ exports.getAllEmployers = async (req, res, next) => {
           employerAccess: isGranted,
           status: emp.status,
           approvalStatus: finalApprovalStatus,
+          // Ensure mobile number is always available for frontend
+          hasMobile: !!(empObj.mobileNumber || empObj.contactNumber),
         };
       })
     );

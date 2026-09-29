@@ -13,8 +13,8 @@ const resolveApprovalStatus = (user) => {
   if (!user || user.role !== 'Employer') return 'approved';
   const raw = (user.approvalStatus || '').toLowerCase();
   if (raw === 'rejected' || user.status === 'Rejected') return 'rejected';
-  if (raw === 'revoked' || user.status === 'Suspended') return 'revoked';
   if (raw === 'pending' || user.status === 'Pending') return 'pending';
+  if (raw === 'revoked' || user.status === 'Suspended') return 'revoked';
   if (raw === 'approved' || (user.status === 'Active' && user.isApproved !== false && user.employerAccess !== false)) {
     return 'approved';
   }
@@ -531,6 +531,10 @@ exports.getProfile = async (req, res, next) => {
     if (user.role === 'Employer' && user.approvalStatus !== resolvedApproval) {
       await User.updateOne({ _id: user._id }, { $set: { approvalStatus: resolvedApproval } });
     }
+
+    // Ensure mobile number fields are always present in response
+    userObj.mobileNumber = userObj.mobileNumber || userObj.contactNumber || '';
+    userObj.contactNumber = userObj.contactNumber || userObj.mobileNumber || '';
 
     res.status(200).json({ success: true, user: userObj, employer: userObj });
   } catch (error) {

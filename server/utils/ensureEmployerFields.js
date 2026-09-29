@@ -33,15 +33,16 @@ async function ensureEmployerFields() {
       if (!emp.approvalStatus) {
         if (emp.status === 'Rejected') {
           emp.approvalStatus = 'rejected';
-        } else if (emp.status === 'Suspended' || emp.employerAccess === false) {
-          emp.approvalStatus = 'revoked';
-        } else if (
-          emp.status === 'Pending' ||
-          (emp.isApproved === false && emp.status !== 'Suspended' && emp.status !== 'Rejected')
-        ) {
+        } else if (emp.status === 'Pending' || emp.status === 'pending') {
           emp.approvalStatus = 'pending';
-        } else {
+        } else if (emp.status === 'Suspended') {
+          emp.approvalStatus = 'revoked';
+        } else if (emp.status === 'Active' && emp.isApproved !== false && emp.employerAccess !== false) {
           emp.approvalStatus = 'approved';
+        } else if (emp.employerAccess === false || emp.isApproved === false) {
+          emp.approvalStatus = 'revoked';
+        } else {
+          emp.approvalStatus = 'pending';
         }
         needsSave = true;
       }

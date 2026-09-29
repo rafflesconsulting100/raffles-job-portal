@@ -236,9 +236,12 @@ export default function EmployersTab({
                                 <p className="text-xs text-slate-500 flex items-center gap-1">
                                   <Phone size={12} className="text-slate-400" /> Mobile: <span className="font-semibold text-slate-600">Not provided</span>
                                 </p>
-                                <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                                  VERIFICATION IN PROGRESS: Mobile number required
-                                </span>
+                                {/* Only show verification badge for APPROVED employers without mobile */}
+                                {isGranted && !getMobile(emp) && (
+                                  <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                    VERIFICATION IN PROGRESS: Mobile number required
+                                  </span>
+                                )}
                               </div>
                             )}
                             {emp.location && (

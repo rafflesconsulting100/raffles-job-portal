@@ -41,8 +41,10 @@ const userSchema = new mongoose.Schema(
       default: function () {
         if (this.role === 'Employer') {
           if (this.status === 'Rejected') return 'rejected';
-          if (this.status === 'Suspended' || this.employerAccess === false) return 'revoked';
+          if (this.status === 'Pending') return 'pending';
+          if (this.status === 'Suspended') return 'revoked';
           if (this.status === 'Active' && this.isApproved !== false && this.employerAccess !== false) return 'approved';
+          if (this.employerAccess === false || this.isApproved === false) return 'revoked';
           return 'pending';
         }
         return 'approved';
