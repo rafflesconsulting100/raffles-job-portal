@@ -17,7 +17,6 @@ import {
   MapPin,
   Phone
 } from "lucide-react";
-import { getEmployerState } from "../../Utils/employerState";
 
 export default function EmployersTab({
   employers,
@@ -33,8 +32,19 @@ export default function EmployersTab({
 
   const getMobile = (emp) => emp.mobileNumber || emp.contactNumber || "";
 
+  // Use the approvalStatus from the API response directly
+  const getEmployerStatus = (emp) => {
+    const status = (emp.approvalStatus || "").toLowerCase();
+    if (status === "rejected") return "rejected";
+    if (status === "revoked") return "revoked";
+    if (status === "pending") return "pending";
+    if (status === "approved") return "granted";
+    // Fallback for any unexpected values
+    return "pending";
+  };
+
   const filteredEmployers = employers.filter((emp) => {
-    const state = getEmployerState(emp);
+    const state = getEmployerStatus(emp);
     const matchesSearch =
       emp.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       emp.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -48,10 +58,10 @@ export default function EmployersTab({
     return matchesSearch;
   });
 
-  const pendingCount = employers.filter((e) => getEmployerState(e) === "pending").length;
-  const grantedCount = employers.filter((e) => getEmployerState(e) === "granted").length;
-  const revokedCount = employers.filter((e) => getEmployerState(e) === "revoked").length;
-  const rejectedCount = employers.filter((e) => getEmployerState(e) === "rejected").length;
+  const pendingCount = employers.filter((e) => getEmployerStatus(e) === "pending").length;
+  const grantedCount = employers.filter((e) => getEmployerStatus(e) === "granted").length;
+  const revokedCount = employers.filter((e) => getEmployerStatus(e) === "revoked").length;
+  const rejectedCount = employers.filter((e) => getEmployerStatus(e) === "rejected").length;
 
   const handleAccessToggle = async (empId, currentGranted) => {
     setTogglingId(empId);
@@ -195,7 +205,7 @@ export default function EmployersTab({
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredEmployers.map((emp) => {
-                  const state = getEmployerState(emp);
+                  const state = getEmployerStatus(emp);
                   const isGranted = state === "granted";
                   const isPending = state === "pending";
                   const isRejected = state === "rejected";
@@ -211,12 +221,19 @@ export default function EmployersTab({
                           </div>
                           <div>
                             <p className="font-bold text-slate-900 text-base">{emp.companyName || emp.username}</p>
+                            {emp.companyName && emp.username && emp.companyName !== emp.username && (
+                              <p className="text-xs text-slate-600 font-medium">Contact: {emp.username}</p>
+                            )}
                             <p className="text-xs text-slate-500 flex items-center gap-1">
                               <Mail size={12} /> {emp.email}
                             </p>
-                            {getMobile(emp) && (
+                            {getMobile(emp) ? (
                               <p className="text-xs text-slate-600 font-semibold flex items-center gap-1 mt-0.5">
                                 <Phone size={12} /> {getMobile(emp)}
+                              </p>
+                            ) : (
+                              <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                                <Phone size={12} /> Mobile: Not provided
                               </p>
                             )}
                             {emp.location && (

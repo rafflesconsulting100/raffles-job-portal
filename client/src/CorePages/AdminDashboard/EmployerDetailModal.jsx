@@ -1,7 +1,7 @@
 import React from "react";
 import {
   X,
-    Mail,
+  Mail,
   MapPin,
   Phone,
   Calendar,
@@ -11,7 +11,9 @@ import {
   ShieldAlert,
   Clock,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Building2,
+  User as UserIcon
 } from "lucide-react";
 
 export default function EmployerDetailModal({
@@ -21,22 +23,11 @@ export default function EmployerDetailModal({
 }) {
   if (!employer) return null;
 
-  const approval = (employer.approvalStatus || employer.status || "").toLowerCase();
-  const isRejected = approval === "rejected" || employer.status === "Rejected";
-
-  const isPending =
-    !isRejected &&
-    (approval === "pending" ||
-      employer.status === "Pending" ||
-      (employer.isApproved === false && employer.status !== "Suspended"));
-
-  const isGranted =
-    !isRejected &&
-    !isPending &&
-    (approval === "approved" ||
-      (employer.employerAccess !== false &&
-        employer.isApproved !== false &&
-        employer.status === "Active"));
+  // Use the approvalStatus from the API response directly
+  const approvalStatus = (employer.approvalStatus || "").toLowerCase();
+  const isRejected = approvalStatus === "rejected";
+  const isPending = approvalStatus === "pending";
+  const isGranted = approvalStatus === "approved";
 
   const mobileNumber = employer.mobileNumber || employer.contactNumber || "";
 
@@ -53,6 +44,11 @@ export default function EmployerDetailModal({
               <h3 className="text-xl font-bold text-white leading-tight">
                 {employer.companyName || employer.username}
               </h3>
+              {employer.companyName && employer.username && employer.companyName !== employer.username && (
+                <p className="text-xs text-slate-300 font-medium mt-0.5">
+                  Contact: {employer.username}
+                </p>
+              )}
               <p className="text-xs text-slate-300 font-medium flex items-center gap-1 mt-0.5">
                 <Mail size={12} /> {employer.email}
               </p>
@@ -163,6 +159,18 @@ export default function EmployerDetailModal({
 
           {/* METADATA LIST */}
           <div className="space-y-3 pt-2 text-sm text-slate-700">
+            {employer.companyName && (
+              <div className="flex items-center gap-2">
+                <Building2 size={16} className="text-slate-400 shrink-0" />
+                <span>Company: <strong>{employer.companyName}</strong></span>
+              </div>
+            )}
+            {employer.username && employer.username !== employer.companyName && (
+              <div className="flex items-center gap-2">
+                <UserIcon size={16} className="text-slate-400 shrink-0" />
+                <span>Contact Person: <strong>{employer.username}</strong></span>
+              </div>
+            )}
             {employer.location && (
               <div className="flex items-center gap-2">
                 <MapPin size={16} className="text-slate-400 shrink-0" />
@@ -192,14 +200,7 @@ export default function EmployerDetailModal({
               <span>
                 Approval Status:{" "}
                 <strong>
-                  {employer.approvalStatus ||
-                    (isPending
-                      ? "Pending"
-                      : isGranted
-                      ? "Approved"
-                      : isRejected
-                      ? "Rejected"
-                      : "Revoked")}
+                  {employer.approvalStatus ? employer.approvalStatus.charAt(0).toUpperCase() + employer.approvalStatus.slice(1) : "Unknown"}
                 </strong>
               </span>
             </div>
