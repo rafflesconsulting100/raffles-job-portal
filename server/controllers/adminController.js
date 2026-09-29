@@ -222,13 +222,16 @@ exports.getAllEmployers = async (req, res, next) => {
 
         const dbApproval = (empObj.approvalStatus || '').toLowerCase();
         let finalApprovalStatus;
-        if (dbApproval && ['pending', 'approved', 'rejected', 'revoked'].includes(dbApproval)) {
-          finalApprovalStatus = dbApproval;
+        if (dbApproval === 'rejected' || emp.status === 'Rejected') {
+          finalApprovalStatus = 'rejected';
+        } else if (dbApproval === 'revoked' || emp.status === 'Suspended') {
+          finalApprovalStatus = 'revoked';
+        } else if (dbApproval === 'pending' || emp.status === 'Pending') {
+          finalApprovalStatus = 'pending';
+        } else if (dbApproval === 'approved' || (emp.status === 'Active' && emp.isApproved !== false && emp.employerAccess !== false)) {
+          finalApprovalStatus = 'approved';
         } else {
-          const isRejected = emp.status === 'Rejected';
-          const isRevoked = emp.status === 'Suspended' || emp.employerAccess === false;
-          const isPending = emp.status === 'Pending' || emp.isApproved === false;
-          finalApprovalStatus = isRejected ? 'rejected' : isRevoked ? 'revoked' : isPending ? 'pending' : 'approved';
+          finalApprovalStatus = 'pending';
         }
 
         const isGranted = finalApprovalStatus === 'approved';

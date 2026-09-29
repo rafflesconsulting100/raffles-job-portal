@@ -17,6 +17,7 @@ import { getToken } from "../../Utils/memoryStore";
 import { clearClientSession } from "../../Service/apiConnector";
 
 import AuthGuard from "./AuthGuard";
+import { RefreshCw } from "lucide-react";
 import HeaderBar from "./HeaderBar";
 import NavigationTabs from "./NavigationTabs";
 import OverviewTab from "./OverviewTab";
@@ -39,6 +40,7 @@ export default function EmployerDashboard() {
   const selectedJobIdParam = searchParams.get("jobId") || "";
 
   const [token] = useState(() => getToken());
+  const [profileLoading, setProfileLoading] = useState(() => !!token);
   const [user, setUser] = useState(() => {
     try {
       const stored = localStorage.getItem("user");
@@ -124,6 +126,9 @@ export default function EmployerDashboard() {
       })
       .catch((err) => {
         console.error("Failed to refresh employer profile on mount:", err);
+      })
+      .finally(() => {
+        if (!cancelled) setProfileLoading(false);
       });
     return () => {
       cancelled = true;
@@ -463,13 +468,23 @@ export default function EmployerDashboard() {
         window.dispatchEvent(new Event("auth-change"));
         const appr = (res.user.approvalStatus || "").toLowerCase();
         const isApproved =
-          (appr ? appr === "approved" : true) &&
-          res.user.isApproved &&
-          res.user.employerAccess &&
-          res.user.status === "Active";
+          appr === "approved" ||
+          (res.user.status === "Active" &&
+            res.user.isApproved !== false &&
+            res.user.employerAccess !== false &&
+            res.user.status !== "Pending");
+
+        const hasMob =
+          (typeof res.user.mobileNumber === 'string' && res.user.mobileNumber.trim() !== '') ||
+          (typeof res.user.contactNumber === 'string' && res.user.contactNumber.trim() !== '');
+
         if (isApproved) {
-          showSuccess("Your account is approved! Loading your dashboard.");
-          loadDashboardData(token);
+          if (!hasMob) {
+            showSuccess("Your account is approved! Please add your mobile number to complete verification.");
+          } else {
+            showSuccess("Your account is approved! Loading your dashboard.");
+            loadDashboardData(token);
+          }
         } else if (appr === "rejected" || res.user.status === "Rejected") {
           showError("Your employer account registration was not approved.");
         } else if (appr === "revoked" || res.user.status === "Suspended" || res.user.employerAccess === false) {
@@ -518,39 +533,63 @@ export default function EmployerDashboard() {
 
   // Auth Guard Screen if not logged in or not an Employer
   if (!token || !user || user.role !== "Employer") {
-    return <AuthGuard navigate={navigate} />;
+    return <AuthGuard navigate={navigate} onLogout={handleLogout} />;
+  }
+
+  if (profileLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 font-sans">
+        <div className="text-center text-slate-500">
+          <RefreshCw className="w-8 h-8 animate-spin text-[#2B2A8C] mx-auto mb-3" />
+          <p className="font-semibold text-sm">Verifying account credentials...</p>
+        </div>
+      </div>
+    );
   }
 
   const approval = (user?.approvalStatus || "").toLowerCase();
 
-  // Check if the employer registration was rejected by Admin
-  const isEmployerRejected = approval === "rejected" || user?.status === "Rejected";
-
-  // Check if employer access is pending admin approval
-  const isEmployerPending =
-    !isEmployerRejected &&
-    (approval === "pending" ||
-      user?.status === "Pending" ||
-      (user?.isApproved === false && user?.status !== "Suspended"));
-
-  // Check if employer access is revoked or suspended by Admin
+  // 1. REVOKED / SUSPENDED
   const isEmployerRestricted =
-    !isEmployerRejected &&
-    !isEmployerPending &&
-    (approval === "revoked" ||
-      user?.employerAccess === false ||
-      user?.status === "Suspended");
+    approval === "revoked" ||
+    user?.status === "Suspended" ||
+    user?.employerAccess === false;
 
-  // Check if employer requires mobile number completion (approved but no mobile)
+  // 2. REJECTED
+  const isEmployerRejected =
+    !isEmployerRestricted &&
+    (approval === "rejected" || user?.status === "Rejected");
+
+  // 3. PENDING ADMIN APPROVAL
+  const isApprovedEmployer =
+    !isEmployerRestricted &&
+    !isEmployerRejected &&
+    (approval === "approved" ||
+      (user?.isApproved !== false &&
+        user?.employerAccess !== false &&
+        user?.status !== "Suspended"));
+
+  const isEmployerPending =
+    !isEmployerRestricted && !isEmployerRejected && !isApprovedEmployer;
+
+  // 4. APPROVED + MOBILE MISSING
   const hasMobile =
     (typeof user?.mobileNumber === 'string' && user.mobileNumber.trim() !== '') ||
     (typeof user?.contactNumber === 'string' && user.contactNumber.trim() !== '');
 
   const requiresMobileNumber =
-    !isEmployerRejected &&
-    !isEmployerPending &&
-    !isEmployerRestricted &&
-    (user?.requiresMobileNumber === true || !hasMobile);
+    isApprovedEmployer && (user?.requiresMobileNumber === true || !hasMobile);
+
+  if (isEmployerRestricted) {
+    return (
+      <AuthGuard
+        navigate={navigate}
+        isRestricted={true}
+        onRefreshStatus={handleRefreshStatus}
+        onLogout={handleLogout}
+      />
+    );
+  }
 
   if (isEmployerRejected) {
     return (
@@ -558,6 +597,7 @@ export default function EmployerDashboard() {
         navigate={navigate}
         isRejected={true}
         onRefreshStatus={handleRefreshStatus}
+        onLogout={handleLogout}
       />
     );
   }
@@ -568,16 +608,7 @@ export default function EmployerDashboard() {
         navigate={navigate}
         isPending={true}
         onRefreshStatus={handleRefreshStatus}
-      />
-    );
-  }
-
-  if (isEmployerRestricted) {
-    return (
-      <AuthGuard
-        navigate={navigate}
-        isRestricted={true}
-        onRefreshStatus={handleRefreshStatus}
+        onLogout={handleLogout}
       />
     );
   }

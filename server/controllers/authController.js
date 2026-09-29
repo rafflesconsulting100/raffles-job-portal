@@ -8,6 +8,19 @@ const { normalizeMobileNumber, mobileSearchValues } = require('../utils/validati
 const { verifyFirebaseIdToken } = require('../utils/firebaseAuth');
 const { getJwtSecret } = require('../config/auth');
 
+// Helper to canonically resolve employer approval status
+const resolveApprovalStatus = (user) => {
+  if (!user || user.role !== 'Employer') return 'approved';
+  const raw = (user.approvalStatus || '').toLowerCase();
+  if (raw === 'rejected' || user.status === 'Rejected') return 'rejected';
+  if (raw === 'revoked' || user.status === 'Suspended') return 'revoked';
+  if (raw === 'pending' || user.status === 'Pending') return 'pending';
+  if (raw === 'approved' || (user.status === 'Active' && user.isApproved !== false && user.employerAccess !== false)) {
+    return 'approved';
+  }
+  return 'pending';
+};
+
 // Create token helper
 const sendTokenResponse = (user, statusCode, res) => {
   const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
@@ -37,12 +50,10 @@ const sendTokenResponse = (user, statusCode, res) => {
     sameSite: 'lax', // Lax is helpful for local cross-port dev
   };
 
-  // Determine if employer requires mobile number completion
-  const requiresMobileNumber = user.role === 'Employer' &&
-    user.isApproved === true &&
-    user.employerAccess === true &&
-    user.status === 'Active' &&
-    (!user.mobileNumber || user.mobileNumber.trim() === '');
+  const resolvedApproval = resolveApprovalStatus(user);
+  const isApprovedEmployer = user.role === 'Employer' && resolvedApproval === 'approved';
+  const hasMobile = (typeof (user.mobileNumber || user.contactNumber) === 'string' && (user.mobileNumber || user.contactNumber).trim() !== '');
+  const requiresMobileNumber = user.role === 'Employer' && isApprovedEmployer && !hasMobile;
 
   res.status(statusCode).cookie('token', token, cookieOptions).json({
     success: true,
@@ -53,18 +64,16 @@ const sendTokenResponse = (user, statusCode, res) => {
       companyName: user.companyName || (user.role === 'Employer' ? user.username : ''),
       email: user.email,
       role: user.role,
-      approvalStatus: user.approvalStatus || (
-        user.status === 'Rejected'
-          ? 'rejected'
-          : user.status === 'Pending' || user.isApproved === false
-          ? 'pending'
-          : user.status === 'Suspended' || user.employerAccess === false
-          ? 'revoked'
-          : 'approved'
-      ),
-      isApproved: user.isApproved !== undefined ? user.isApproved : true,
-      employerAccess: user.employerAccess !== undefined ? user.employerAccess : true,
-      status: user.status || 'Active',
+      approvalStatus: resolvedApproval,
+      isApproved: isApprovedEmployer,
+      employerAccess: isApprovedEmployer,
+      status: resolvedApproval === 'approved'
+        ? 'Active'
+        : resolvedApproval === 'rejected'
+        ? 'Rejected'
+        : resolvedApproval === 'revoked'
+        ? 'Suspended'
+        : 'Pending',
       mobileNumber: user.mobileNumber || user.contactNumber || '',
       contactNumber: user.contactNumber || user.mobileNumber || '',
       avatar: user.avatar,
@@ -84,6 +93,7 @@ const sendTokenResponse = (user, statusCode, res) => {
     },
   });
 };
+
 
 // @desc    Register new Job Seeker via Google
 // @route   POST /api/auth/job-seeker/google/register
@@ -498,20 +508,29 @@ exports.getProfile = async (req, res, next) => {
     const userObj = user.toObject();
     delete userObj.password;
 
-    const isApprovedEmployer = user.role === 'Employer' &&
-      (user.approvalStatus === 'approved' || (
-        user.status === 'Active' &&
-        user.isApproved !== false &&
-        user.employerAccess !== false &&
-        user.status !== 'Pending' &&
-        user.status !== 'Rejected' &&
-        user.status !== 'Suspended'
-      ));
+    const resolvedApproval = resolveApprovalStatus(user);
+    const isApprovedEmployer = user.role === 'Employer' && resolvedApproval === 'approved';
 
-    const hasMobile = (typeof user.mobileNumber === 'string' && user.mobileNumber.trim() !== '') ||
-      (typeof user.contactNumber === 'string' && user.contactNumber.trim() !== '');
+    userObj.approvalStatus = resolvedApproval;
+    userObj.isApproved = isApprovedEmployer;
+    userObj.employerAccess = isApprovedEmployer;
+    userObj.status = resolvedApproval === 'approved'
+      ? 'Active'
+      : resolvedApproval === 'rejected'
+      ? 'Rejected'
+      : resolvedApproval === 'revoked'
+      ? 'Suspended'
+      : 'Pending';
+
+    const hasMobile = (typeof userObj.mobileNumber === 'string' && userObj.mobileNumber.trim() !== '') ||
+      (typeof userObj.contactNumber === 'string' && userObj.contactNumber.trim() !== '');
 
     userObj.requiresMobileNumber = user.role === 'Employer' && isApprovedEmployer && !hasMobile;
+
+    // Self-heal out-of-sync database fields silently
+    if (user.role === 'Employer' && user.approvalStatus !== resolvedApproval) {
+      await User.updateOne({ _id: user._id }, { $set: { approvalStatus: resolvedApproval } });
+    }
 
     res.status(200).json({ success: true, user: userObj });
   } catch (error) {
@@ -680,18 +699,22 @@ exports.updateProfile = async (req, res, next) => {
     const userObj = user.toObject();
     delete userObj.password;
 
-    const isApprovedEmployer = user.role === 'Employer' &&
-      (user.approvalStatus === 'approved' || (
-        user.status === 'Active' &&
-        user.isApproved !== false &&
-        user.employerAccess !== false &&
-        user.status !== 'Pending' &&
-        user.status !== 'Rejected' &&
-        user.status !== 'Suspended'
-      ));
+    const resolvedApproval = resolveApprovalStatus(user);
+    const isApprovedEmployer = user.role === 'Employer' && resolvedApproval === 'approved';
 
-    const hasMobile = (typeof user.mobileNumber === 'string' && user.mobileNumber.trim() !== '') ||
-      (typeof user.contactNumber === 'string' && user.contactNumber.trim() !== '');
+    userObj.approvalStatus = resolvedApproval;
+    userObj.isApproved = isApprovedEmployer;
+    userObj.employerAccess = isApprovedEmployer;
+    userObj.status = resolvedApproval === 'approved'
+      ? 'Active'
+      : resolvedApproval === 'rejected'
+      ? 'Rejected'
+      : resolvedApproval === 'revoked'
+      ? 'Suspended'
+      : 'Pending';
+
+    const hasMobile = (typeof userObj.mobileNumber === 'string' && userObj.mobileNumber.trim() !== '') ||
+      (typeof userObj.contactNumber === 'string' && userObj.contactNumber.trim() !== '');
 
     userObj.requiresMobileNumber = user.role === 'Employer' && isApprovedEmployer && !hasMobile;
 

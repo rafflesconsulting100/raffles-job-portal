@@ -79,8 +79,9 @@ const restrictTo = (...roles) => {
 const checkEmployerAccess = (req, res, next) => {
   if (req.user && req.user.role === 'Employer') {
     const approval = (req.user.approvalStatus || '').toLowerCase();
+    const isApprovedByDb = approval === 'approved' || (req.user.status === 'Active' && req.user.isApproved !== false && req.user.employerAccess !== false && req.user.status !== 'Pending');
     const isAccessGranted = 
-      (approval ? approval === 'approved' : true) &&
+      isApprovedByDb &&
       req.user.employerAccess !== false && 
       req.user.isApproved !== false && 
       req.user.status !== 'Suspended' &&

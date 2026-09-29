@@ -197,6 +197,15 @@ export default function AuthGuard({ navigate, isPending, isRejected, isRestricte
             >
               <Mail className="w-4 h-4" /> Contact Raffles Support
             </button>
+            {onLogout && (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-1.5 cursor-pointer mt-1"
+              >
+                <LogOut className="w-3.5 h-3.5" /> Sign Out
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -233,6 +242,15 @@ export default function AuthGuard({ navigate, isPending, isRejected, isRestricte
             >
               Return to Home Page
             </button>
+            {onLogout && (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-1.5 cursor-pointer mt-1"
+              >
+                <LogOut className="w-3.5 h-3.5" /> Sign Out
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -263,6 +281,15 @@ export default function AuthGuard({ navigate, isPending, isRejected, isRestricte
             >
               Return to Home Page
             </button>
+            {onLogout && (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-1.5 cursor-pointer mt-1"
+              >
+                <LogOut className="w-3.5 h-3.5" /> Sign Out
+              </button>
+            )}
           </div>
         </div>
       </div>
