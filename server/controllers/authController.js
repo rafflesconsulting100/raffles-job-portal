@@ -552,6 +552,22 @@ exports.updateProfile = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
+    // ── DEBUG: Phase 1 — Auth user & request body ──────────────────────────
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('\n==================================================')
+      console.log('EMPLOYER MOBILE UPDATE DEBUG');
+      console.log('==================================================');
+      console.log('1. CURRENT AUTH USER');
+      console.log('   id   :', String(user._id));
+      console.log('   email:', user.email);
+      console.log('   role :', user.role);
+      console.log('   approvalStatus:', user.approvalStatus);
+      console.log('   mobileNumber (BEFORE):', user.mobileNumber || '(empty)');
+      console.log('   contactNumber (BEFORE):', user.contactNumber || '(empty)');
+      console.log('2. RAW REQUEST BODY:', JSON.stringify(req.body, null, 2));
+    }
+    // ── END DEBUG ────────────────────────────────────────────────────────────
+
     const {
       username,
       companyName,
@@ -598,10 +614,21 @@ exports.updateProfile = async (req, res, next) => {
 
     if (incomingMobile !== undefined && incomingMobile !== null) {
       const rawMobile = typeof incomingMobile === 'string' ? incomingMobile.trim() : String(incomingMobile).trim();
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('3. INCOMING MOBILE VALUE:', JSON.stringify(incomingMobile));
+        console.log('   rawMobile (trimmed):', rawMobile);
+      }
+
       if (!rawMobile) {
         return res.status(400).json({ success: false, message: 'Mobile number cannot be empty' });
       }
       const normalizedMobile = normalizeMobileNumber(rawMobile);
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('   normalizedMobile:', normalizedMobile);
+      }
+
       if (!normalizedMobile) {
         return res.status(400).json({
           success: false,
@@ -620,6 +647,13 @@ exports.updateProfile = async (req, res, next) => {
       }
       user.mobileNumber = normalizedMobile;
       user.contactNumber = normalizedMobile;
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('   user.mobileNumber SET TO:', user.mobileNumber);
+        console.log('   user.contactNumber SET TO:', user.contactNumber);
+      }
+    } else if (process.env.NODE_ENV !== 'production') {
+      console.log('3. INCOMING MOBILE VALUE: (not provided in this request)');
     }
 
     if (bio !== undefined) user.bio = bio;
@@ -686,12 +720,29 @@ exports.updateProfile = async (req, res, next) => {
 
     await user.save();
 
-    // Verify the save actually persisted the mobile number by re-fetching from database
-    const verifiedUser = await User.findById(user._id).select('mobileNumber contactNumber').lean();
-    if (!verifiedUser || (!verifiedUser.mobileNumber && !verifiedUser.contactNumber)) {
-      return res.status(500).json({ 
-        success: false, 
-        message: 'Mobile number was not persisted to database. Please try again.' 
+    // ── DEBUG: Phase 2 — Verify DB write ────────────────────────────────────
+    const verifiedUser = await User.findById(user._id)
+      .select('mobileNumber contactNumber approvalStatus status isApproved employerAccess')
+      .lean();
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('4. AFTER user.save() — DB re-fetch:');
+      console.log('   mobileNumber  :', verifiedUser?.mobileNumber || '(empty)');
+      console.log('   contactNumber :', verifiedUser?.contactNumber || '(empty)');
+      console.log('   approvalStatus:', verifiedUser?.approvalStatus);
+      console.log('   status        :', verifiedUser?.status);
+      console.log('   isApproved    :', verifiedUser?.isApproved);
+      console.log('   employerAccess:', verifiedUser?.employerAccess);
+      console.log('==================================================\n');
+    }
+    // ── END DEBUG ────────────────────────────────────────────────────────────
+
+    // Only reject if a mobile was submitted but didn't persist
+    const mobileWasSubmitted = incomingMobile !== undefined && incomingMobile !== null;
+    if (mobileWasSubmitted && (!verifiedUser || (!verifiedUser.mobileNumber && !verifiedUser.contactNumber))) {
+      return res.status(500).json({
+        success: false,
+        message: 'Mobile number was not persisted to database. Please try again.',
       });
     }
 
