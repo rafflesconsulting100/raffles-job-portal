@@ -21,16 +21,6 @@ try {
   process.exit(1);
 }
 
-// Connect to MongoDB Database, then make sure every job has a public URL slug
-// (required for /jobs/<slug> SEO pages and the sitemap).
-connectDB()
-  .then(async () => {
-    await ensureJobSlugs();
-    await ensureEmployerFields();
-    await ensureUserRecords();
-  })
-  .catch((err) => console.error('Slug backfill failed:', err.message));
-
 const app = express();
 
 // Reverse proxy handling (needed so rate limiting keys on the real client IP).
@@ -152,37 +142,42 @@ app.use('/api', (req, res) => {
 // Error handling middleware (Must be last)
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
-const NODE_ENV = process.env.NODE_ENV || 'development';
+// Connect to MongoDB Database, then make sure every job has a public URL slug
+// (required for /jobs/<slug> SEO pages and the sitemap).
+// Server only starts listening AFTER DB connection is established.
+connectDB()
+  .then(async (conn) => {
+    await ensureJobSlugs();
+    await ensureEmployerFields();
+    await ensureUserRecords();
 
-if (!process.env.NODE_ENV) {
-  console.warn('[startup] NODE_ENV is not set — treating this instance as development. Set NODE_ENV=production when deploying.');
-}
+    const PORT = process.env.PORT || 5000;
+    const NODE_ENV = process.env.NODE_ENV || 'development';
 
-// Create HTTP server and attach Socket.IO
-const server = http.createServer(app);
-initSocket(server);
+    if (!process.env.NODE_ENV) {
+      console.warn('[startup] NODE_ENV is not set — treating this instance as development. Set NODE_ENV=production when deploying.');
+    }
 
-server.listen(PORT, () => {
-  console.log(`Server running in ${NODE_ENV} mode on port ${PORT}`);
-});
+    // Create HTTP server and attach Socket.IO
+    const server = http.createServer(app);
+    initSocket(server);
 
-// Handle unhandled promise rejections / uncaught exceptions.
-// Registered after the server is created so `server` is never in its TDZ.
-process.on('unhandledRejection', (err) => {
-  console.error(`Unhandled Rejection: ${err && err.message ? err.message : err}`);
-  if (server) {
-    server.close(() => process.exit(1));
-  } else {
+    server.listen(PORT, () => {
+      console.log(`Server running in ${NODE_ENV} mode on port ${PORT}`);
+    });
+
+    // Handle unhandled promise rejections / uncaught exceptions.
+    process.on('unhandledRejection', (err) => {
+      console.error(`Unhandled Rejection: ${err && err.message ? err.message : err}`);
+      server.close(() => process.exit(1));
+    });
+
+    process.on('uncaughtException', (err) => {
+      console.error(`Uncaught Exception: ${err && err.message ? err.message : err}`);
+      server.close(() => process.exit(1));
+    });
+  })
+  .catch((err) => {
+    console.error('Database connection failed:', err.message);
     process.exit(1);
-  }
-});
-
-process.on('uncaughtException', (err) => {
-  console.error(`Uncaught Exception: ${err && err.message ? err.message : err}`);
-  if (server) {
-    server.close(() => process.exit(1));
-  } else {
-    process.exit(1);
-  }
-});
+  });
