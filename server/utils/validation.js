@@ -1,10 +1,10 @@
 // Mobile number validation shared by Employer registration.
 
 // Accepts:
-//   9876543210        -> 10 digit Indian mobile (starts 6-9)   => +919876543210
-//   09876543210       -> 0 + 10 digit Indian mobile            => +919876543210
-//   919876543210      -> 91 + 10 digit Indian mobile           => +919876543210
-//   +919876543210     -> international format                  => +919876543210
+//   TEST_MOBILE_NUMBER        -> 10 digit Indian mobile (starts 6-9)   => +91TEST_MOBILE_NUMBER
+//   0<TEST_MOBILE_NUMBER>     -> 0 + 10 digit Indian mobile            => +91<TEST_MOBILE_NUMBER>
+//   91<TEST_MOBILE_NUMBER>    -> 91 + 10 digit Indian mobile           => +91<TEST_MOBILE_NUMBER>
+//   +<TEST_MOBILE_NUMBER>     -> international format                  => +<TEST_MOBILE_NUMBER>
 //   +<country><number>-> 10 to 15 digits after "+"             => unchanged
 // Returns the normalized number, or null when the value is invalid.
 const normalizeMobileNumber = (value) => {
