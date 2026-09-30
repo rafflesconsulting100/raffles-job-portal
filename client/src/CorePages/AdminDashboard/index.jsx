@@ -156,7 +156,22 @@ export default function AdminDashboard() {
     if (!token) return;
     try {
       const payload = { employerAccess: newAccessState, isApproved: newAccessState };
-      if (decision) payload.status = decision;
+      if (decision === "Rejected") {
+        payload.approvalStatus = "rejected";
+        payload.status = "Rejected";
+        payload.employerAccess = false;
+        payload.isApproved = false;
+      } else if (newAccessState === true) {
+        payload.approvalStatus = "approved";
+        payload.status = "Active";
+        payload.employerAccess = true;
+        payload.isApproved = true;
+      } else if (newAccessState === false) {
+        payload.approvalStatus = "revoked";
+        payload.status = "Suspended";
+        payload.employerAccess = false;
+        payload.isApproved = false;
+      }
 
       const res = await toggleEmployerAccess(employerId, payload, token);
       if (res.success) {
@@ -166,8 +181,9 @@ export default function AdminDashboard() {
         if (selectedEmployerModal && selectedEmployerModal._id === employerId) {
           setSelectedEmployerModal({
             ...selectedEmployerModal,
-            employerAccess: newAccessState,
-            isApproved: newAccessState,
+            ...res.employer,
+            employerAccess: res.employer?.employerAccess ?? newAccessState,
+            isApproved: res.employer?.isApproved ?? newAccessState,
             status: res.employer?.status || (newAccessState ? "Active" : "Suspended"),
             approvalStatus: res.employer?.approvalStatus,
           });

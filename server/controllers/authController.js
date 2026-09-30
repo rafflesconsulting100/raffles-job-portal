@@ -2,11 +2,27 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
 const OTP = require('../models/OTP');
+const AuditLog = require('../models/AuditLog');
 const sendEmail = require('../config/email');
 const { uploadAvatar, uploadResume } = require('../config/cloudinary');
 const { normalizeMobileNumber, mobileSearchValues } = require('../utils/validation');
 const { verifyFirebaseIdToken } = require('../utils/firebaseAuth');
 const { getJwtSecret } = require('../config/auth');
+
+// Helper: write an audit log entry (non-fatal — errors are swallowed)
+const writeAudit = async (targetUser, action, performedBy, description, meta = {}) => {
+  try {
+    await AuditLog.create({
+      targetUser,
+      performedBy: performedBy || null,
+      action,
+      description,
+      meta: new Map(Object.entries(meta).map(([k, v]) => [k, String(v)])),
+    });
+  } catch (err) {
+    console.error('[AuditLog] Failed to write audit entry:', err.message);
+  }
+};
 
 // Helper to canonically resolve employer approval status
 const resolveApprovalStatus = (user) => {
@@ -54,6 +70,22 @@ const sendTokenResponse = (user, statusCode, res) => {
   const isApprovedEmployer = user.role === 'Employer' && resolvedApproval === 'approved';
   const hasMobile = (typeof (user.mobileNumber || user.contactNumber) === 'string' && (user.mobileNumber || user.contactNumber).trim() !== '');
   const requiresMobileNumber = user.role === 'Employer' && isApprovedEmployer && !hasMobile;
+
+  if (user.role === 'Employer') {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('\n==================================================');
+      console.log('AUTHENTICATED EMPLOYER');
+      console.log('userId:', String(user._id));
+      console.log('email:', user.email);
+      console.log('role:', user.role);
+      console.log('approvalStatus:', resolvedApproval);
+      console.log('==================================================\n');
+    }
+    writeAudit(user._id, 'employer_login', user._id, `Employer ${user.email} logged in`, {
+      email: user.email,
+      approvalStatus: resolvedApproval,
+    });
+  }
 
   res.status(statusCode).cookie('token', token, cookieOptions).json({
     success: true,
@@ -431,6 +463,14 @@ exports.register = async (req, res, next) => {
     // Consume the verified OTP only once the account exists.
     await OTP.deleteMany({ email });
 
+    if (isEmployer) {
+      await writeAudit(user._id, 'employer_registered', user._id, `New employer registered: ${user.email} (${companyName})`, {
+        companyName,
+        mobileNumber: employerMobile,
+        approvalStatus: 'pending',
+      });
+    }
+
     sendTokenResponse(user, 201, res);
   } catch (error) {
     next(error);
@@ -743,6 +783,12 @@ exports.updateProfile = async (req, res, next) => {
       return res.status(500).json({
         success: false,
         message: 'Mobile number was not persisted to database. Please try again.',
+      });
+    }
+
+    if (mobileWasSubmitted && user.role === 'Employer') {
+      await writeAudit(user._id, 'employer_mobile_updated', user._id, `Employer updated mobile number to ${user.mobileNumber}`, {
+        mobileNumber: user.mobileNumber,
       });
     }
 

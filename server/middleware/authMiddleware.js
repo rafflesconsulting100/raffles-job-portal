@@ -33,7 +33,7 @@ const protect = async (req, res, next) => {
       if (req.user.role === 'Employer') {
         if (req.user.status === 'Rejected' || req.user.approvalStatus === 'rejected') {
           message = 'Your employer account registration was not approved.';
-        } else if (req.user.status === 'Suspended' || req.user.approvalStatus === 'revoked' || req.user.employerAccess === false) {
+        } else if (req.user.status === 'Suspended' || req.user.approvalStatus === 'revoked') {
           message = 'Your employer access has been revoked. Please contact RafflesJobs support.';
         }
       }
@@ -79,32 +79,28 @@ const restrictTo = (...roles) => {
 const checkEmployerAccess = (req, res, next) => {
   if (req.user && req.user.role === 'Employer') {
     const approval = (req.user.approvalStatus || '').toLowerCase();
-    const isApprovedByDb = approval === 'approved' || (req.user.status === 'Active' && req.user.isApproved !== false && req.user.employerAccess !== false && req.user.status !== 'Pending');
-    const isAccessGranted = 
-      isApprovedByDb &&
-      req.user.employerAccess !== false && 
-      req.user.isApproved !== false && 
-      req.user.status !== 'Suspended' &&
-      req.user.status !== 'Rejected' &&
-      req.user.status !== 'Pending';
-      
-    if (!isAccessGranted) {
+    const isApproved =
+      approval === 'approved' ||
+      (req.user.status === 'Active' &&
+        req.user.isApproved === true &&
+        req.user.employerAccess === true &&
+        req.user.status !== 'Pending' &&
+        req.user.status !== 'Suspended' &&
+        req.user.status !== 'Rejected');
+
+    if (!isApproved) {
       if (process.env.NODE_ENV !== 'production') {
-        console.log(`[DEBUG][EmployerAccessCheck] Employer ${req.user._id} status: ${req.user.status}, employerAccess: ${req.user.employerAccess}, isApproved: ${req.user.isApproved} -> DENIED`);
+        console.log(`[DEBUG][EmployerAccessCheck] Employer ${req.user._id} approval: ${approval}, status: ${req.user.status} -> DENIED`);
       }
 
-      let message = 'Your employer portal access is pending admin approval or has been restricted. Please contact support.';
+      let message = 'Your employer account is pending Admin approval.';
 
-      if (
-        approval === 'pending' ||
-        req.user.status === 'Pending' ||
-        (req.user.isApproved === false && req.user.status !== 'Suspended' && req.user.status !== 'Rejected')
-      ) {
-        message = 'Your employer account is pending Admin approval.';
-      } else if (approval === 'rejected' || req.user.status === 'Rejected') {
+      if (approval === 'rejected' || req.user.status === 'Rejected') {
         message = 'Your employer account registration was not approved.';
-      } else if (approval === 'revoked' || req.user.status === 'Suspended' || req.user.employerAccess === false) {
+      } else if (approval === 'revoked' || req.user.status === 'Suspended') {
         message = 'Your employer access has been revoked. Please contact RafflesJobs support.';
+      } else {
+        message = 'Your employer account is pending Admin approval.';
       }
 
       return res.status(403).json({
@@ -114,8 +110,21 @@ const checkEmployerAccess = (req, res, next) => {
       });
     }
 
+    // Backend Access Control: Approved employers must provide mobile before creating jobs / accessing candidate tools
+    const hasMobile =
+      (typeof req.user.mobileNumber === 'string' && req.user.mobileNumber.trim() !== '') ||
+      (typeof req.user.contactNumber === 'string' && req.user.contactNumber.trim() !== '');
+
+    if (!hasMobile) {
+      return res.status(403).json({
+        success: false,
+        code: 'MOBILE_NUMBER_REQUIRED',
+        message: 'Mobile number is required. Please add your mobile number to complete verification before accessing employer features.',
+      });
+    }
+
     if (process.env.NODE_ENV !== 'production') {
-      console.log(`[DEBUG][EmployerAccessCheck] Employer ${req.user._id} status: ${req.user.status}, employerAccess: ${req.user.employerAccess}, isApproved: ${req.user.isApproved} -> ALLOWED`);
+      console.log(`[DEBUG][EmployerAccessCheck] Employer ${req.user._id} approval: ${approval}, status: ${req.user.status} -> ALLOWED`);
     }
   }
   next();

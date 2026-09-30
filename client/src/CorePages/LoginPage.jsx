@@ -67,9 +67,9 @@ export default function SignIn() {
 
         if (data.user.role === 'Employer') {
           const approval = (data.user.approvalStatus || '').toLowerCase();
-          const isRevoked = approval === 'revoked' || data.user.status === 'Suspended' || data.user.employerAccess === false;
+          const isRevoked = approval === 'revoked' || data.user.status === 'Suspended';
           const isRejected = !isRevoked && (approval === 'rejected' || data.user.status === 'Rejected');
-          const isApproved = !isRevoked && !isRejected && (approval === 'approved' || (data.user.status === 'Active' && data.user.isApproved !== false && data.user.employerAccess !== false));
+          const isApproved = !isRevoked && !isRejected && (approval === 'approved' || (data.user.status === 'Active' && data.user.isApproved === true && data.user.employerAccess === true));
           const isPending = !isRevoked && !isRejected && !isApproved;
 
           if (isRevoked) {

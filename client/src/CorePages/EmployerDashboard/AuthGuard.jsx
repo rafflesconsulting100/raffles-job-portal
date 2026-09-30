@@ -194,7 +194,7 @@ export default function AuthGuard({
             <Clock className="w-8 h-8 animate-pulse" />
           </div>
           <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold uppercase tracking-wider mb-3 inline-block">
-            Verification in Progress
+            Awaiting Admin Approval
           </span>
           <h2 className="text-2xl font-black text-slate-900 mb-2">
             Admin Approval Pending

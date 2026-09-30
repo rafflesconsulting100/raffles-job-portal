@@ -44,7 +44,6 @@ const userSchema = new mongoose.Schema(
           if (this.status === 'Pending') return 'pending';
           if (this.status === 'Suspended') return 'revoked';
           if (this.status === 'Active' && this.isApproved !== false && this.employerAccess !== false) return 'approved';
-          if (this.employerAccess === false || this.isApproved === false) return 'revoked';
           return 'pending';
         }
         return 'approved';
@@ -224,15 +223,14 @@ userSchema.pre('save', async function (next) {
     ) {
       if (this.status === 'Rejected') {
         this.approvalStatus = 'rejected';
-      } else if (this.status === 'Suspended' || this.employerAccess === false) {
-        this.approvalStatus = 'revoked';
-      } else if (
-        this.status === 'Pending' ||
-        (this.isApproved === false && this.status !== 'Suspended' && this.status !== 'Rejected')
-      ) {
+      } else if (this.status === 'Pending') {
         this.approvalStatus = 'pending';
+      } else if (this.status === 'Suspended') {
+        this.approvalStatus = 'revoked';
       } else if (this.status === 'Active' && this.isApproved !== false && this.employerAccess !== false) {
         this.approvalStatus = 'approved';
+      } else if (this.status !== 'Pending' && this.status !== 'Rejected') {
+        this.approvalStatus = this.employerAccess === false ? 'revoked' : 'pending';
       }
     }
   }

@@ -22,10 +22,14 @@ export default function UsersTab({
 
   const getEmployerApprovalState = (u) => {
     if (u.role !== "Employer") return null;
-    if (u.status === "Rejected") return "Rejected";
-    if (u.status === "Pending" || (u.isApproved === false && u.status !== "Suspended")) return "Pending Approval";
-    if (u.status === "Suspended" || u.employerAccess === false || u.isApproved === false) return "Revoked";
-    return "Approved";
+    const approval = (u.approvalStatus || "").toLowerCase();
+    const status = (u.status || "").toLowerCase();
+
+    if (approval === "rejected" || status === "rejected") return "Rejected";
+    if (approval === "pending" || status === "pending") return "Pending Approval";
+    if (approval === "revoked" || status === "suspended") return "Revoked";
+    if (approval === "approved" || (status === "active" && u.isApproved === true && u.employerAccess === true)) return "Approved";
+    return "Pending Approval";
   };
 
   const filteredUsers = users.filter((u) => {

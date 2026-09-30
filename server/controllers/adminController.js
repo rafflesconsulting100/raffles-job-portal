@@ -1,4 +1,4 @@
-﻿const jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
 const Job = require('../models/Job');
@@ -231,7 +231,43 @@ exports.getAdminStats = async (req, res, next) => {
 // @access  Private (Admin)
 exports.getAllEmployers = async (req, res, next) => {
   try {
-    const employers = await User.find({ role: 'Employer' })
+    const { search, status } = req.query;
+    const query = { role: 'Employer' };
+
+    if (search && typeof search === 'string' && search.trim()) {
+      const term = search.trim();
+      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(escaped, 'i');
+      query.$or = [
+        { username: regex },
+        { companyName: regex },
+        { email: regex },
+        { mobileNumber: regex },
+        { contactNumber: regex },
+        { location: regex },
+      ];
+    }
+
+    if (status && typeof status === 'string' && status !== 'all') {
+      const s = status.toLowerCase();
+      if (s === 'pending') {
+        query.approvalStatus = 'pending';
+      } else if (s === 'granted' || s === 'approved') {
+        query.approvalStatus = 'approved';
+      } else if (s === 'rejected') {
+        query.approvalStatus = 'rejected';
+      } else if (s === 'revoked') {
+        query.approvalStatus = 'revoked';
+      } else if (s === 'mobile_required' || s === 'mobilerow') {
+        query.approvalStatus = 'approved';
+        query.$or = [
+          { mobileNumber: { $in: ['', null] } },
+          { contactNumber: { $in: ['', null] } },
+        ];
+      }
+    }
+
+    const employers = await User.find(query)
       .select('-password')
       .sort({ createdAt: -1 });
 
@@ -321,19 +357,19 @@ exports.toggleEmployerAccess = async (req, res, next) => {
       employer.status = 'Rejected';
       employer.employerAccess = false;
       employer.isApproved = false;
-    } else if (rawApproval === 'approved' || status === 'Active' || employerAccess === true) {
+    } else if (rawApproval === 'approved' || status === 'Active' || (employerAccess === true && rawApproval !== 'pending' && status !== 'Pending')) {
       employer.approvalStatus = 'approved';
       employer.status = 'Active';
       employer.employerAccess = true;
       employer.isApproved = true;
-    } else if (rawApproval === 'revoked' || status === 'Suspended' || employerAccess === false) {
-      employer.approvalStatus = 'revoked';
-      employer.status = 'Suspended';
-      employer.employerAccess = false;
-      employer.isApproved = false;
     } else if (rawApproval === 'pending' || status === 'Pending') {
       employer.approvalStatus = 'pending';
       employer.status = 'Pending';
+      employer.employerAccess = false;
+      employer.isApproved = false;
+    } else if (rawApproval === 'revoked' || status === 'Suspended' || employerAccess === false) {
+      employer.approvalStatus = 'revoked';
+      employer.status = 'Suspended';
       employer.employerAccess = false;
       employer.isApproved = false;
     } else {
@@ -345,7 +381,21 @@ exports.toggleEmployerAccess = async (req, res, next) => {
     await employer.save();
 
     if (process.env.NODE_ENV !== 'production') {
-      console.log(`[DEBUG][AdminGrantAccess] Employer: ${employer._id}, status: ${employer.status}, employerAccess: ${employer.employerAccess}, isApproved: ${employer.isApproved}`);
+      const logAction = rawApproval === 'approved' || employer.approvalStatus === 'approved'
+        ? (previousStatus === 'revoked' ? 'ADMIN RE-GRANT' : 'ADMIN APPROVE')
+        : rawApproval === 'revoked' || employer.approvalStatus === 'revoked'
+        ? 'ADMIN REVOKE'
+        : rawApproval === 'rejected' || employer.approvalStatus === 'rejected'
+        ? 'ADMIN REJECT'
+        : 'ADMIN ACCESS UPDATE';
+
+      console.log(`\n==================================================`);
+      console.log(logAction);
+      console.log(`target employer ID: ${employer._id}`);
+      console.log(`target email: ${employer.email}`);
+      console.log(`before status: ${previousStatus}`);
+      console.log(`after status: ${employer.approvalStatus}`);
+      console.log(`==================================================\n`);
     }
 
     const isGranted = !!(employer.employerAccess && employer.isApproved && employer.status === 'Active');

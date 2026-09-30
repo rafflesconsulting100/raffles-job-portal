@@ -471,8 +471,8 @@ export default function EmployerDashboard() {
         const isApproved =
           appr === "approved" ||
           (res.user.status === "Active" &&
-            res.user.isApproved !== false &&
-            res.user.employerAccess !== false &&
+            res.user.isApproved === true &&
+            res.user.employerAccess === true &&
             res.user.status !== "Pending");
 
         const hasMob =
@@ -488,7 +488,7 @@ export default function EmployerDashboard() {
           }
         } else if (appr === "rejected" || res.user.status === "Rejected") {
           showError("Your employer account registration was not approved.");
-        } else if (appr === "revoked" || res.user.status === "Suspended" || res.user.employerAccess === false) {
+        } else if (appr === "revoked" || res.user.status === "Suspended") {
           showError("Your employer access has been revoked. Please contact RafflesJobs support.");
         } else {
           showError("Your employer account is pending Admin approval.");
@@ -622,23 +622,22 @@ export default function EmployerDashboard() {
   }
 
   const approval = (user?.approvalStatus || "").toLowerCase();
+  const status = user?.status || "";
 
   // 1. REVOKED / SUSPENDED
   const isEmployerRestricted =
-    approval === "revoked" ||
-    user?.status === "Suspended" ||
-    user?.employerAccess === false;
+    approval === "revoked" || status === "Suspended";
 
   // 2. REJECTED
   const isEmployerRejected =
     !isEmployerRestricted &&
-    (approval === "rejected" || user?.status === "Rejected");
+    (approval === "rejected" || status === "Rejected");
 
   // 3. APPROVED — only treat as approved when the server explicitly says so
   const isApprovedEmployer =
     !isEmployerRestricted &&
     !isEmployerRejected &&
-    approval === "approved";
+    (approval === "approved" || (status === "Active" && user?.isApproved === true && user?.employerAccess === true));
 
   const isEmployerPending =
     !isEmployerRestricted && !isEmployerRejected && !isApprovedEmployer;

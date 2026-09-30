@@ -39,8 +39,6 @@ async function ensureEmployerFields() {
           emp.approvalStatus = 'revoked';
         } else if (emp.status === 'Active' && emp.isApproved !== false && emp.employerAccess !== false) {
           emp.approvalStatus = 'approved';
-        } else if (emp.employerAccess === false || emp.isApproved === false) {
-          emp.approvalStatus = 'revoked';
         } else {
           emp.approvalStatus = 'pending';
         }

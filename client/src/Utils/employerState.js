@@ -12,9 +12,8 @@ export function getEmployerState(employer) {
   if (approval === "rejected" || status === "rejected") return "rejected";
   if (approval === "revoked" || status === "suspended") return "revoked";
   if (approval === "pending" || status === "pending") return "pending";
-  if (employer.employerAccess === false) return "revoked";
-  if (employer.isApproved === false) return "pending";
-  return "granted";
+  if (approval === "approved" || (status === "active" && employer.isApproved === true && employer.employerAccess === true)) return "granted";
+  return "pending";
 }
 
 export const EMPLOYER_STATE_META = {
