@@ -259,10 +259,9 @@ exports.getAllEmployers = async (req, res, next) => {
       } else if (s === 'revoked') {
         query.approvalStatus = 'revoked';
       } else if (s === 'mobile_required' || s === 'mobilerow') {
-        query.approvalStatus = 'approved';
-        query.$or = [
-          { mobileNumber: { $in: ['', null] } },
-          { contactNumber: { $in: ['', null] } },
+        query.$and = [
+          { $or: [{ mobileNumber: { $exists: false } }, { mobileNumber: null }, { mobileNumber: '' }] },
+          { $or: [{ contactNumber: { $exists: false } }, { contactNumber: null }, { contactNumber: '' }] },
         ];
       }
     }
