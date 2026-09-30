@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
@@ -438,7 +439,11 @@ exports.register = async (req, res, next) => {
         ]
       });
       if (existingMobile) {
-        return res.status(400).json({ success: false, message: 'This mobile number is already registered.' });
+        return res.status(400).json({
+          success: false,
+          code: 'MOBILE_ALREADY_REGISTERED',
+          message: 'This mobile number is already registered to another account. Please use a different mobile number.',
+        });
       }
     }
 
@@ -675,16 +680,37 @@ exports.updateProfile = async (req, res, next) => {
           message: 'Please provide a valid mobile number (10-digit mobile number or +91XXXXXXXXXX).',
         });
       }
-      const existingMobile = await User.findOne({
-        _id: { $ne: user._id },
-        $or: [
-          { contactNumber: { $in: mobileSearchValues(normalizedMobile) } },
-          { mobileNumber: { $in: mobileSearchValues(normalizedMobile) } },
-        ],
-      });
-      if (existingMobile) {
-        return res.status(400).json({ success: false, message: 'This mobile number is already registered.' });
+      // Check if this mobile number already belongs to the current user (self-owned number is allowed)
+      const currentUserId = new mongoose.Types.ObjectId(String(user._id));
+      const isAlreadyCurrentNumber =
+        user.mobileNumber === normalizedMobile ||
+        user.contactNumber === normalizedMobile;
+
+      if (!isAlreadyCurrentNumber) {
+        const existingMobile = await User.findOne({
+          _id: { $ne: currentUserId },
+          $or: [
+            { contactNumber: { $in: mobileSearchValues(normalizedMobile) } },
+            { mobileNumber: { $in: mobileSearchValues(normalizedMobile) } },
+          ],
+        });
+
+        if (existingMobile) {
+          // Double check: if by any chance this matched the same user document
+          const isSameUser =
+            String(existingMobile._id) === String(user._id) ||
+            (existingMobile.email && existingMobile.email.toLowerCase().trim() === user.email.toLowerCase().trim());
+
+          if (!isSameUser) {
+            return res.status(409).json({
+              success: false,
+              code: 'MOBILE_ALREADY_REGISTERED',
+              message: 'This mobile number is already registered to another account. Please use a different mobile number.',
+            });
+          }
+        }
       }
+
       user.mobileNumber = normalizedMobile;
       user.contactNumber = normalizedMobile;
 
