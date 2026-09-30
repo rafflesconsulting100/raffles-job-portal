@@ -647,6 +647,13 @@ export default function EmployerDashboard() {
     (typeof user?.mobileNumber === 'string' && user.mobileNumber.trim() !== '') ||
     (typeof user?.contactNumber === 'string' && user.contactNumber.trim() !== '');
 
+  const userMobile =
+    (typeof user?.mobileNumber === 'string' && user.mobileNumber.trim() !== '')
+      ? user.mobileNumber.trim()
+      : (typeof user?.contactNumber === 'string' && user.contactNumber.trim() !== '')
+      ? user.contactNumber.trim()
+      : '';
+
   // requiresMobileNumber is true only when approved AND no mobile in DB.
   // mobileSavedPendingContinue is the "success + continue" UI state shown
   // AFTER the number is saved — it must NOT block the dashboard.
@@ -680,6 +687,10 @@ export default function EmployerDashboard() {
       <AuthGuard
         navigate={navigate}
         isPending={true}
+        hasMobile={hasMobile}
+        userMobile={userMobile}
+        isMobileSavedSuccess={mobileSavedPendingContinue}
+        onSaveMobile={handleSaveMobile}
         onRefreshStatus={handleRefreshStatus}
         onLogout={handleLogout}
       />
@@ -691,6 +702,8 @@ export default function EmployerDashboard() {
       <AuthGuard
         navigate={navigate}
         requiresMobileNumber={true}
+        hasMobile={hasMobile}
+        userMobile={userMobile}
         isMobileSavedSuccess={mobileSavedPendingContinue}
         onSaveMobile={handleSaveMobile}
         onContinueToDashboard={handleContinueToDashboard}

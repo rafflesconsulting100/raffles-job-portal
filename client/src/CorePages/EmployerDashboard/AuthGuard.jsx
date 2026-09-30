@@ -1,12 +1,26 @@
 import React, { useState } from "react";
 import { Lock, ChevronRight, ShieldAlert, Clock, Mail, RefreshCw, CheckCircle2, XCircle, Phone, Save, LogOut } from "lucide-react";
 
+function formatPhoneNumber(val) {
+  if (!val) return "";
+  const str = String(val).trim();
+  if (str.startsWith("+91") && str.length === 13) {
+    return `+91 ${str.slice(3, 8)} ${str.slice(8)}`;
+  }
+  if (str.length === 10) {
+    return `+91 ${str.slice(0, 5)} ${str.slice(5)}`;
+  }
+  return str;
+}
+
 export default function AuthGuard({
   navigate,
   isPending,
   isRejected,
   isRestricted,
   requiresMobileNumber,
+  hasMobile,
+  userMobile,
   isMobileSavedSuccess,
   onSaveMobile,
   onContinueToDashboard,
@@ -74,16 +88,16 @@ export default function AuthGuard({
               <CheckCircle2 className="w-8 h-8" />
             </div>
             <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-200 text-xs font-bold uppercase tracking-wider mb-3 inline-block">
-              Verification in Progress
+              Mobile Number Added
             </span>
             <h2 className="text-2xl font-black text-slate-900 mb-2">
-              Verification in Progress
+              Mobile Number Added
             </h2>
             <p className="text-slate-800 text-sm font-semibold mb-2">
               Your mobile number has been added successfully.
             </p>
             <p className="text-slate-500 text-xs mb-6 leading-relaxed">
-              Your employer profile is being updated. You can continue once verification is complete.
+              Your employer profile has been completed. You can now proceed to your employer dashboard.
             </p>
             <button
               type="button"
@@ -94,7 +108,7 @@ export default function AuthGuard({
               {continuing ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  Verifying Account...
+                  Loading Dashboard...
                 </>
               ) : (
                 <>
@@ -114,13 +128,13 @@ export default function AuthGuard({
             <Phone className="w-8 h-8" />
           </div>
           <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-900 border border-blue-200 text-xs font-bold uppercase tracking-wider mb-3 inline-block">
-            Verification: Mobile Number Required
+            Mobile Number Required
           </span>
           <h2 className="text-2xl font-black text-slate-900 mb-2">
             Mobile Number Required
           </h2>
           <p className="text-slate-700 text-sm mb-2 font-medium">
-            Your employer account has been approved, but your mobile number is not yet provided.
+            Your employer account has been approved. Please add your mobile number to complete your profile.
           </p>
           <p className="text-slate-500 text-xs mb-6 leading-relaxed">
             Please add your mobile number to complete verification and continue using the employer portal.
@@ -187,6 +201,147 @@ export default function AuthGuard({
   }
 
   if (isPending) {
+    if (isMobileSavedSuccess) {
+      return (
+        <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col items-center justify-center p-6 pt-24 font-sans">
+          <div className="max-w-md w-full bg-white border border-emerald-200 rounded-3xl p-8 text-center shadow-xl animate-fadeIn">
+            <div className="w-16 h-16 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-center text-emerald-600 mx-auto mb-6 shadow-sm">
+              <CheckCircle2 className="w-8 h-8" />
+            </div>
+            <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold uppercase tracking-wider mb-3 inline-block">
+              Awaiting Admin Approval
+            </span>
+            <h2 className="text-2xl font-black text-slate-900 mb-2">
+              Mobile Number Added
+            </h2>
+            <p className="text-slate-800 text-sm font-semibold mb-2">
+              Your mobile number has been added successfully.
+            </p>
+            <p className="text-slate-500 text-xs mb-6 leading-relaxed">
+              Your employer account is still awaiting Admin approval. Admin approval is required before portal access is granted.
+            </p>
+
+            {/* Account Details Box */}
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6 text-left text-xs space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-medium">Mobile:</span>
+                <span className="font-bold text-slate-900 flex items-center gap-1.5">
+                  <Phone size={13} className="text-emerald-600" />
+                  {formatPhoneNumber(userMobile || mobileNumber)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-t border-slate-200/60 pt-2">
+                <span className="text-slate-500 font-medium">Status:</span>
+                <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                  AWAITING ADMIN APPROVAL
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                disabled={checking}
+                onClick={handleCheckStatus}
+                className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl transition shadow-md shadow-amber-500/20 flex items-center justify-center gap-2 text-sm cursor-pointer"
+              >
+                <RefreshCw className={`w-4 h-4 ${checking ? "animate-spin" : ""}`} />
+                {checking ? "Checking Status..." : "Check Approval Status"}
+              </button>
+              <button
+                onClick={() => navigate("/contact")}
+                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl transition text-sm flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Mail className="w-4 h-4" /> Contact Raffles Support
+              </button>
+              {onLogout && (
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  className="w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-1.5 cursor-pointer mt-1"
+                >
+                  <LogOut className="w-3.5 h-3.5" /> Sign Out
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (hasMobile) {
+      return (
+        <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col items-center justify-center p-6 pt-24 font-sans">
+          <div className="max-w-md w-full bg-white border border-amber-200 rounded-3xl p-8 text-center shadow-xl">
+            <div className="w-16 h-16 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-center text-amber-600 mx-auto mb-6 shadow-sm">
+              <Clock className="w-8 h-8 animate-pulse" />
+            </div>
+            <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold uppercase tracking-wider mb-3 inline-block">
+              Awaiting Admin Approval
+            </span>
+            <h2 className="text-2xl font-black text-slate-900 mb-2">
+              Admin Approval Pending
+            </h2>
+            <p className="text-slate-600 text-sm mb-4 leading-relaxed">
+              Your employer account is pending Admin approval. Thank you for registering your organization!
+              Your account is currently <strong>awaiting approval from the Raffles Administrator</strong>.
+            </p>
+
+            {/* Mobile Already Saved Box */}
+            <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-4 mb-4 text-left text-xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-600 font-medium">Mobile:</span>
+                <span className="font-bold text-slate-900 flex items-center gap-1.5">
+                  <Phone size={13} className="text-emerald-600" />
+                  {formatPhoneNumber(userMobile)}
+                </span>
+              </div>
+              <p className="text-emerald-800 text-[11px] font-medium pt-1 border-t border-emerald-200/60">
+                Your mobile number has been added. Your account is still awaiting Admin approval.
+              </p>
+            </div>
+
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6 text-left text-xs text-slate-600 space-y-2">
+              <p className="font-bold text-slate-800">What happens next?</p>
+              <div className="flex items-start gap-2">
+                <CheckCircle2 size={14} className="text-emerald-600 mt-0.5 shrink-0" />
+                <span>Admin reviews your organization credentials.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle2 size={14} className="text-emerald-600 mt-0.5 shrink-0" />
+                <span>Upon approval, access to post jobs and search the student database will be unlocked automatically.</span>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                disabled={checking}
+                onClick={handleCheckStatus}
+                className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl transition shadow-md shadow-amber-500/20 flex items-center justify-center gap-2 text-sm cursor-pointer"
+              >
+                <RefreshCw className={`w-4 h-4 ${checking ? "animate-spin" : ""}`} />
+                {checking ? "Checking Status..." : "Check Approval Status"}
+              </button>
+              <button
+                onClick={() => navigate("/contact")}
+                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl transition text-sm flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Mail className="w-4 h-4" /> Contact Raffles Support
+              </button>
+              {onLogout && (
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  className="w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-1.5 cursor-pointer mt-1"
+                >
+                  <LogOut className="w-3.5 h-3.5" /> Sign Out
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col items-center justify-center p-6 pt-24 font-sans">
         <div className="max-w-md w-full bg-white border border-amber-200 rounded-3xl p-8 text-center shadow-xl">
@@ -212,8 +367,61 @@ export default function AuthGuard({
             </div>
             <div className="flex items-start gap-2">
               <CheckCircle2 size={14} className="text-emerald-600 mt-0.5 shrink-0" />
-              <span>Upon approval, access to post jobs and search the student database will be unlocked automatically.</span>
+              <span>Upon approval, access to the employer portal will be unlocked.</span>
             </div>
+          </div>
+
+          {/* Section: Complete Your Employer Profile */}
+          <div className="border border-blue-200 bg-blue-50/40 rounded-2xl p-5 mb-6 text-left">
+            <h3 className="text-sm font-bold text-slate-900 mb-1 flex items-center gap-1.5">
+              <Phone size={15} className="text-blue-600" />
+              Complete Your Employer Profile
+            </h3>
+            <p className="text-xs text-slate-600 mb-3 leading-relaxed">
+              Your mobile number has not been provided yet. You can add your mobile number while your account is awaiting Admin approval.
+            </p>
+
+            <form onSubmit={handleSaveMobile} className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">Mobile Number</label>
+                <div className="flex items-center border border-slate-300 rounded-xl px-3.5 h-11 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
+                  <span className="text-slate-500 font-bold mr-2 text-xs">+91</span>
+                  <input
+                    type="tel"
+                    value={mobileNumber}
+                    onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    placeholder="Enter 10-digit mobile number"
+                    className="w-full bg-transparent text-sm outline-none font-medium tracking-wider"
+                    maxLength={10}
+                    disabled={saving}
+                    required
+                  />
+                </div>
+                {error && <p className="text-xs font-semibold text-red-500 mt-1.5">{error}</p>}
+              </div>
+
+              <button
+                type="submit"
+                disabled={saving}
+                className="w-full bg-[#2B2A8C] hover:bg-[#1E1D66] disabled:bg-slate-300 text-white font-bold py-3 rounded-xl transition shadow-md flex items-center justify-center gap-2 text-sm cursor-pointer"
+              >
+                {saving ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    Add Mobile Number
+                  </>
+                )}
+              </button>
+            </form>
+
+            <p className="text-[11px] text-slate-500 mt-2.5 leading-normal">
+              <strong>Note:</strong> Adding your mobile number does not approve your account. Admin approval is still required before portal access is granted.
+            </p>
           </div>
 
           <div className="space-y-3">
