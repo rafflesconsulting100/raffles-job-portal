@@ -93,3 +93,16 @@ export const removeFCMToken = async (token) => {
     throw error;
   }
 };
+
+/**
+ * Fetch notifications for authenticated user
+ */
+export const getNotifications = async () => {
+  try {
+    const response = await apiConnector('GET', '/api/notifications');
+    return response.data;
+  } catch (error) {
+    console.error('Failed to get notifications:', error.message);
+    return { notifications: [], count: 0 };
+  }
+};

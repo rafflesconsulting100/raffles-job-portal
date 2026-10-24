@@ -13,13 +13,11 @@ import {
   LayoutDashboard,
   LogOut,
   ShieldCheck,
-  Bell,
 } from "lucide-react";
 import { showSuccess } from '../Utils/toast';
 import { clearClientSession } from '../Service/apiConnector';
 import { logout } from '../Service/Operation/authApi';
 import { getToken } from '../Utils/memoryStore';
-import { getNotifications } from '../Service/apiConnector';
 import lightLogo from "../assets/rafflelogo-light.png";
 import darkLogo from "../assets/rafflelogo-dark.png";
 
@@ -60,8 +58,6 @@ export default function Navbar() {
     }
   });
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -98,20 +94,6 @@ export default function Navbar() {
       window.removeEventListener("focus", handleSync);
     };
   }, [syncUser]);
-
-  useEffect(() => {
-    const loadNotifications = async () => {
-      if (!user?.id) return;
-      try {
-        const result = await getNotifications(user.id);
-        setNotifications(result.notifications || []);
-        setUnreadCount(result.count || 0);
-      } catch (error) {
-        console.error('Failed to load notifications:', error);
-      }
-    };
-    loadNotifications();
-  }, [user?.id]);
 
   useEffect(() => {
     const timer = setTimeout(syncUser, 0);

@@ -695,6 +695,7 @@ export default function rafflesPrerenderPlugin() {
   return {
     name: 'raffles-prerender',
     apply: 'build',
+    enforce: 'post',
     configResolved(config) {
       outDir = config.build.outDir;
       root = config.root;

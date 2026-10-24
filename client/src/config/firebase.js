@@ -5,11 +5,12 @@ import {
   signInWithPopup,
   setPersistence,
   browserLocalPersistence,
+} from 'firebase/auth';
+import {
   getMessaging,
   onMessage,
   getToken,
   deleteToken,
-  onTokenRefresh,
 } from 'firebase/messaging';
 import { getFirestore } from 'firebase/firestore';
 
@@ -26,9 +27,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const messaging = getMessaging(app);
-export { onMessage, getToken, deleteToken, onTokenRefresh };
+export { onMessage, getToken, deleteToken };
 export const firestore = getFirestore(app);
 
+export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 export const signInWithGooglePopup = async () => {
