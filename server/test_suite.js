@@ -106,7 +106,7 @@ async function runTests() {
       body: JSON.stringify({
         companyName: '',
         username: '',
-        mobileNumber: 'TEST_MOBILE_NUMBER',
+        mobileNumber: '9876543210',
         email: noCompanyEmail,
         password: testPassword,
         confirmPassword: testPassword,
@@ -152,7 +152,7 @@ async function runTests() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         companyName: 'Terms Test Co',
-        mobileNumber: 'TEST_MOBILE_NUMBER',
+        mobileNumber: '9876543211',
         email: noTermsEmail,
         password: testPassword,
         confirmPassword: testPassword,
@@ -174,7 +174,7 @@ async function runTests() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         companyName: 'Dup Email Co',
-        mobileNumber: 'TEST_MOBILE_NUMBER',
+        mobileNumber: '9876543212',
         email: testEmail,
         password: testPassword,
         confirmPassword: testPassword,

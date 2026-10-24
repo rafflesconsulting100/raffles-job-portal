@@ -3,6 +3,7 @@ const Application = require('../models/Application');
 const User = require('../models/User');
 const { notifyJobUpdated, notifyJobDeleted } = require('../utils/googleIndexing');
 const { notExpiredCondition, isExpired } = require('../utils/jobExpiry');
+const { notifyJobSeekersAboutNewJob } = require('./notificationController');
 
 const SITE_ORIGIN = process.env.SITE_URL || 'https://www.rafflesjobs.com';
 
@@ -203,10 +204,18 @@ exports.createJob = async (req, res, next) => {
     const jobUrl = publicJobUrl(job);
     if (jobUrl) notifyJobUpdated(jobUrl);
 
+    // [Trace Stage 1] Job created successfully
+    const correlationId = `job_${job._id}_${Date.now()}`;
+    console.log(`[Trace Stage 1] Job created successfully: id=${job._id}, title="${job.title}", creator=${req.user.id}, cid=${correlationId}`);
+
+    // Notify eligible job seekers about the new job posting
+    await notifyJobSeekersAboutNewJob(job, correlationId);
+
     res.status(201).json({
       success: true,
       message: 'Job posted successfully',
       job,
+      correlationId,
     });
   } catch (error) {
     next(error);

@@ -173,6 +173,13 @@ const userSchema = new mongoose.Schema(
         ref: 'Job',
       },
     ],
+    deviceTokens: [
+      {
+        token: { type: String, required: true, trim: true },
+        createdAt: { type: Date, default: Date.now },
+        deviceType: { type: String, default: 'android' },
+      },
+    ],
   },
   {
     timestamps: true,

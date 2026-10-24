@@ -2,10 +2,13 @@ const { sendNotificationToUser } = require('../utils/socket');
 const Application = require('../models/Application');
 const Job = require('../models/Job');
 const User = require('../models/User');
-const Notification = require('../models/Notification');
 const { uploadResume } = require('../config/cloudinary');
 const sendEmail = require('../config/email');
 const { isExpired } = require('../utils/jobExpiry');
+const {
+  notifyEmployerAboutApplication,
+  notifyCandidateAboutStatusChange,
+} = require('./notificationController');
 
 // @desc    Apply for a job
 // @route   POST /api/applications/apply/:jobId
@@ -85,20 +88,18 @@ exports.applyJob = async (req, res, next) => {
       throw err;
     }
 
-    // Everything below is best-effort: the application is already persisted, so
-    // a notification/socket failure must not turn a successful apply into a 500
-    // (the user would retry and hit "You have already applied to this job").
-    try {
-      const newNotif = await Notification.create({
-        recipient: job.creator,
-        sender: req.user.id,
-        message: `${req.user.username} applied for "${job.title}" at ${job.company}`,
-        type: 'new_application',
-        relatedJob: job._id,
-      });
+    // [Trace Stage 1] Job application submitted successfully
+    const correlationId = `app_${application._id}_${Date.now()}`;
+    console.log(`[Trace Stage 1] Job application submitted: id=${application._id}, job=${application.job}, applicant=${application.applicant}, cid=${correlationId}`);
 
-      const populatedNotif = await Notification.findById(newNotif._id).populate('sender', 'username avatar');
-      sendNotificationToUser(job.creator, populatedNotif || newNotif);
+    // Populate job and applicant for notification
+    const populatedApp = await Application.findById(application._id)
+      .populate('job')
+      .populate('applicant', 'username');
+
+    // Notify employer about new application (best effort)
+    try {
+      await notifyEmployerAboutApplication(populatedApp, correlationId);
     } catch (err) {
       console.error('Failed to notify employer about new application:', err.message);
     }
@@ -107,6 +108,7 @@ exports.applyJob = async (req, res, next) => {
       success: true,
       message: 'Application submitted successfully',
       application,
+      correlationId,
     });
   } catch (error) {
     next(error);
@@ -193,22 +195,8 @@ exports.updateApplicationStatus = async (req, res, next) => {
     // best-effort so an SMTP/socket outage cannot report a failure for a save
     // that actually succeeded.
     try {
-      // Send in-app notification to the candidate
-      const actionMsg = status === 'accepted' ? 'ACCEPTED' : 'REJECTED';
-      const newNotif = await Notification.create({
-        recipient: application.applicant._id,
-        sender: req.user.id,
-        message: `Your application status for "${application.job.title}" at ${application.job.company} was updated to: ${actionMsg}`,
-        type: 'status_change',
-        relatedJob: application.job._id,
-      });
-
-      try {
-        const populatedNotif = await Notification.findById(newNotif._id).populate('sender', 'username avatar');
-        sendNotificationToUser(application.applicant._id, populatedNotif || newNotif);
-      } catch (err) {
-        console.error('Failed to emit real-time notification to candidate:', err.message);
-      }
+      // Send in-app notification + FCM push to the candidate
+      await notifyCandidateAboutStatusChange(application, status, req.user.id);
 
       // Send email notification to applicant via Raffles Jobs Brevo SMTP
       const { getRafflesEmailTemplate, escapeHtml } = require('../utils/emailTemplate');

@@ -66,3 +66,30 @@ export const apiConnector = (method, url, bodyData, headers, params) => {
     params: params ? params : null,
   });
 };
+
+/**
+ * Register FCM device token with the backend
+ * Associates the token with the authenticated user
+ */
+export const registerFCMToken = async (token) => {
+  try {
+    const response = await apiConnector('POST', '/api/users/register-token', { token });
+    return response.data;
+  } catch (error) {
+    console.error('Failed to register FCM token:', error.message);
+    throw error;
+  }
+};
+
+/**
+ * Remove FCM device token (call on logout)
+ */
+export const removeFCMToken = async (token) => {
+  try {
+    const response = await apiConnector('POST', '/api/users/remove-token', { token });
+    return response.data;
+  } catch (error) {
+    console.error('Failed to remove FCM token:', error.message);
+    throw error;
+  }
+};
