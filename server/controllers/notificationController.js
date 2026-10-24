@@ -54,7 +54,7 @@ exports.registerToken = async (req, res, next) => {
 
     // Remove this device token from any other accounts on this device to prevent cross-account push leakage
     await User.updateMany(
-      { _id: { $ne: user._id } },
+      { _id: { $ne: req.user.id } },
       {
         $pull: {
           deviceTokens: { token: token },
@@ -63,36 +63,34 @@ exports.registerToken = async (req, res, next) => {
     );
     try {
       await User.collection.updateMany(
-        { _id: { $ne: user._id }, deviceTokens: token },
+        { _id: { $ne: req.user.id }, deviceTokens: token },
         { $pull: { deviceTokens: token } }
       );
     } catch (_) {}
 
-    // Initialize array if needed
-    if (!user.deviceTokens) {
-      user.deviceTokens = [];
-    }
+    // Atomically pull any previous instance of this token from current user to prevent duplicates
+    await User.updateOne(
+      { _id: req.user.id },
+      {
+        $pull: {
+          deviceTokens: { token: token },
+        },
+      }
+    );
 
-    // Clean up any corrupted "[object Object]" or empty tokens from current user
-    user.deviceTokens = user.deviceTokens.filter(t => {
-      const tStr = typeof t === 'string' ? t : t?.token;
-      return tStr && tStr !== '[object Object]' && tStr.trim().length > 0;
-    });
-
-    // Check if token already exists
-    const exists = user.deviceTokens.some(t => {
-      const tStr = typeof t === 'string' ? t : t?.token;
-      return tStr === token;
-    });
-
-    if (!exists) {
-      user.deviceTokens.push({
-        token,
-        createdAt: new Date(),
-        deviceType: req.body?.deviceType || 'android',
-      });
-      await user.save({ validateBeforeSave: false });
-    }
+    // Atomically push the fresh device token (no Mongoose version locking)
+    await User.updateOne(
+      { _id: req.user.id },
+      {
+        $push: {
+          deviceTokens: {
+            token,
+            createdAt: new Date(),
+            deviceType: req.body?.deviceType || 'android',
+          },
+        },
+      }
+    );
 
     res.status(200).json({
       success: true,
@@ -114,18 +112,20 @@ exports.removeToken = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'FCM token is required' });
     }
 
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-
-    if (user.deviceTokens && user.deviceTokens.length > 0) {
-      user.deviceTokens = user.deviceTokens.filter(t => {
-        const tokenStr = typeof t === 'string' ? t : t?.token;
-        return tokenStr !== token && tokenStr !== '[object Object]';
-      });
-      await user.save({ validateBeforeSave: false });
-    }
+    await User.updateOne(
+      { _id: req.user.id },
+      {
+        $pull: {
+          deviceTokens: { token: token },
+        },
+      }
+    );
+    try {
+      await User.collection.updateOne(
+        { _id: req.user.id, deviceTokens: token },
+        { $pull: { deviceTokens: token } }
+      );
+    } catch (_) {}
 
     res.status(200).json({
       success: true,
